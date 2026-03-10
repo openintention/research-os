@@ -20,6 +20,9 @@ class MicrositeConfig:
     repo_url: str | None = None
 
 
+DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
+
+
 def build_microsite(
     *,
     repo_root: Path,
@@ -68,7 +71,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--repo-url",
-        default=os.environ.get("OPENINTENTION_REPO_URL"),
+        default=os.environ.get("OPENINTENTION_REPO_URL", DEFAULT_PUBLIC_REPO_URL),
         help="Optional public repo URL to surface on the microsite.",
     )
     args = parser.parse_args()

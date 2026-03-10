@@ -37,3 +37,7 @@ What to inspect first:
 - `docs/seeded-efforts.md`
 - `docs/public-launch-runbook.md`
 - `docs/launch-package/evidence.md`
+
+Live links:
+- repo: `https://github.com/openintention/research-os`
+- microsite: `https://openintention.io`

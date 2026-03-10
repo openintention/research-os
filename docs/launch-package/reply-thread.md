@@ -27,3 +27,8 @@ Also being explicit about what is and is not real today:
 - the control plane and publication mirrors are real
 - the current tiny-loop contribution paths are proxy loops
 - this is not presented as a production H100 benchmarking harness
+
+5.
+Links:
+- repo: `https://github.com/openintention/research-os`
+- site: `https://openintention.io`

@@ -23,3 +23,7 @@ Still honest about where it is today:
 - the control plane is real
 - the proxy contribution loops are real
 - the current tiny client is still a local proxy, not a real H100 benchmark harness
+
+Public links:
+- repo: `https://github.com/openintention/research-os`
+- site: `https://openintention.io`

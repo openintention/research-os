@@ -35,6 +35,9 @@ If the public repo is live, attach it directly to the microsite build:
 OPENINTENTION_REPO_URL=<public_repo_url> python scripts/build_microsite.py
 ```
 
+Canonical public repo:
+- `https://github.com/openintention/research-os`
+
 ## Minimum evidence to attach publicly
 
 - one excerpt from the eval effort brief
