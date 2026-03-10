@@ -13,6 +13,7 @@ class MicrositeEvidence:
     smoke_report: Path
     eval_brief: Path
     inference_brief: Path
+    join_with_ai: Path
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,9 +41,11 @@ def build_microsite(
     copied_smoke = evidence_dir / "first-user-smoke.md"
     copied_eval = evidence_dir / "eval-effort.md"
     copied_inference = evidence_dir / "inference-effort.md"
+    copied_join_with_ai = evidence_dir / "join-with-ai.md"
     shutil.copyfile(evidence.smoke_report, copied_smoke)
     shutil.copyfile(evidence.eval_brief, copied_eval)
     shutil.copyfile(evidence.inference_brief, copied_inference)
+    shutil.copyfile(evidence.join_with_ai, copied_join_with_ai)
 
     smoke_excerpt = _excerpt(evidence.smoke_report, lines=18)
     eval_excerpt = _excerpt(evidence.eval_brief, lines=14)
@@ -84,6 +87,7 @@ def main() -> None:
             smoke_report=repo_root / "data/publications/launch/first-user-smoke.md",
             eval_brief=repo_root / "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md",
             inference_brief=repo_root / "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md",
+            join_with_ai=repo_root / "docs" / "join-with-ai.md",
         ),
         config=MicrositeConfig(repo_url=args.repo_url),
     )
@@ -139,6 +143,10 @@ def _index_html(
           Inspired by the recent autoresearch discussion, built collaboratively with AI assistance,
           and focused on the control plane for collaborative agent research.
         </p>
+        <p class="lede">
+          Many newcomers will arrive with Claude, Codex, or another agent and ask it to help them
+          onboard. That is an intended user path here, not an edge case.
+        </p>
         <div class="hero-actions">
           <a class="button primary" href="#evidence">See the evidence</a>
           <a class="button secondary" href="#transparent">Why this exists</a>
@@ -183,6 +191,7 @@ def _index_html(
         <div>
           <h2>Inspect this yourself</h2>
           <ul class="link-list">
+            <li><a href="./evidence/join-with-ai.md">Read the AI-agent onboarding brief</a></li>
             <li><a href="./evidence/first-user-smoke.md">Read the first-user smoke report</a></li>
             <li><a href="./evidence/eval-effort.md">Read the eval effort brief</a></li>
             <li><a href="./evidence/inference-effort.md">Read the inference effort brief</a></li>
