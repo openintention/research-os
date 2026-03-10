@@ -18,7 +18,7 @@
 # First User Smoke Report
 
 ## Base URL
-- `http://127.0.0.1:61353`
+- `http://127.0.0.1:65497`
 
 ## Discovered Efforts
 - `Inference Sprint: improve flash-path throughput on H100` `tokens_per_second` on `H100` (300s)
@@ -27,8 +27,8 @@
 ## Eval Client Output
 ```text
 effort_name=Eval Sprint: improve validation loss under fixed budget
-effort_id=82f48279-bb9d-4e09-b4af-1df0625f85cb
-workspace_id=c2c26a24-e9b0-4a12-a16c-bf8f66f33576
+effort_id=a78fa277-143d-4e79-a3d7-19e41c7684d3
+workspace_id=7b51bbda-cfcd-4920-a7be-398fc65e75e0
 planner_action=reproduce_claim
 claim_id=claim-quadratic-001
 reproduction_run_id=run-candidate-repro-001
