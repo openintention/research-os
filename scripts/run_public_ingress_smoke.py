@@ -7,7 +7,8 @@ import re
 import shutil
 import subprocess
 import sys
-from urllib.request import urlopen
+import tempfile
+from urllib.request import Request, urlopen
 
 
 DEFAULT_SITE_URL = "https://openintention.io"
@@ -31,22 +32,25 @@ def run_public_ingress_smoke(
     output_dir: str,
     python_executable: str = sys.executable,
     repo_url: str | None = None,
+    work_dir: str | None = None,
 ) -> Path:
-    output_root = Path(output_dir)
+    output_root = Path(output_dir).resolve()
     output_root.mkdir(parents=True, exist_ok=True)
 
     landing_html = fetch_text(site_url)
     resolved_repo_url = repo_url or extract_public_repo_url(landing_html)
 
-    clone_root = output_root / "clone"
+    work_root = Path(work_dir) if work_dir is not None else Path(tempfile.mkdtemp(prefix="openintention-public-ingress-"))
+    work_root.mkdir(parents=True, exist_ok=True)
+    clone_root = work_root / "clone"
     if clone_root.exists():
         shutil.rmtree(clone_root)
 
     command_log = [
-        f"git clone --depth 1 {resolved_repo_url} {clone_root}",
-        f"{python_executable} -m venv {clone_root / '.venv-public-ingress'}",
-        f"{_venv_python(clone_root / '.venv-public-ingress')} -m pip install -e .[dev]",
-        f"{_venv_python(clone_root / '.venv-public-ingress')} scripts/run_first_user_smoke.py --output-dir {output_root / 'first-user'}",
+        f"git clone --depth 1 {resolved_repo_url} <temp_clone_dir>/clone",
+        "<host_python> -m venv <temp_clone_dir>/clone/.venv-public-ingress",
+        "<temp_clone_dir>/clone/.venv-public-ingress/bin/python -m pip install -e .[dev]",
+        "<temp_clone_dir>/clone/.venv-public-ingress/bin/python scripts/run_first_user_smoke.py --output-dir <artifact_dir>/first-user",
     ]
 
     _run_command(["git", "clone", "--depth", "1", resolved_repo_url, str(clone_root)])
@@ -57,7 +61,7 @@ def run_public_ingress_smoke(
     venv_python = _venv_python(venv_dir)
     _run_command([str(venv_python), "-m", "pip", "install", "-e", ".[dev]"], cwd=clone_root)
 
-    smoke_output_dir = output_root / "first-user"
+    smoke_output_dir = work_root / "first-user"
     _run_command(
         [
             str(venv_python),
@@ -72,15 +76,17 @@ def run_public_ingress_smoke(
     if not agent_brief_path.exists():
         raise FileNotFoundError(f"missing agent brief at {agent_brief_path}")
 
-    smoke_report_path = smoke_output_dir / "first-user-smoke.md"
-    if not smoke_report_path.exists():
-        raise FileNotFoundError(f"missing smoke report at {smoke_report_path}")
+    work_smoke_report_path = smoke_output_dir / "first-user-smoke.md"
+    if not work_smoke_report_path.exists():
+        raise FileNotFoundError(f"missing smoke report at {work_smoke_report_path}")
+    smoke_report_path = output_root / "first-user-smoke.md"
+    shutil.copyfile(work_smoke_report_path, smoke_report_path)
 
     result = PublicIngressResult(
         site_url=site_url,
         repo_url=resolved_repo_url,
         clone_path=str(clone_root),
-        agent_brief_path=str(agent_brief_path),
+        agent_brief_path="clone/docs/join-with-ai.md",
         smoke_report_path=str(smoke_report_path),
         commands=command_log,
         smoke_report_excerpt=_excerpt(smoke_report_path, lines=18),
@@ -107,9 +113,9 @@ def build_public_ingress_report(result: PublicIngressResult) -> str:
             *command_lines,
             "",
             "## First User Smoke Excerpt",
-            "```text",
+            "````text",
             result.smoke_report_excerpt.strip(),
-            "```",
+            "````",
             "",
             "## Outcome",
             "- A newcomer can arrive from the public site, discover the public repo, hand the repo to an AI agent, and complete the canonical seeded-effort smoke path.",
@@ -127,7 +133,11 @@ def extract_public_repo_url(landing_html: str) -> str:
 
 
 def fetch_text(url: str) -> str:
-    with urlopen(url, timeout=20) as response:
+    request = Request(
+        url,
+        headers={"User-Agent": "OpenIntentionAgent/0.1 (+https://github.com/openintention/research-os)"},
+    )
+    with urlopen(request, timeout=20) as response:
         return response.read().decode("utf-8")
 
 
@@ -148,12 +158,18 @@ def main() -> None:
         default="data/publications/launch/public-ingress",
         help="Directory to write the public-ingress verification artifacts into.",
     )
+    parser.add_argument(
+        "--work-dir",
+        default=None,
+        help="Optional working directory for the cloned repo and venv. Defaults to a system temp directory.",
+    )
     args = parser.parse_args()
 
     report_path = run_public_ingress_smoke(
         site_url=args.site_url,
         repo_url=args.repo_url,
         output_dir=args.output_dir,
+        work_dir=args.work_dir,
     )
     print(report_path)
 

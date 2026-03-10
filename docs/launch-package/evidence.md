@@ -7,14 +7,17 @@ This launch package should point to generated evidence, not only prose.
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 - `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
 - `data/publications/launch/first-user-smoke.md`
+- `data/publications/launch/public-ingress/public-ingress-smoke.md`
 
 ## Regeneration command
 
 ```bash
+python scripts/run_public_ingress_smoke.py
 python scripts/run_first_user_smoke.py
 ```
 
-That command should:
+Those commands should:
+- start from the live public site and repo and verify the newcomer path end to end
 - seed the local state
 - run the eval proxy contribution
 - run the inference proxy contribution

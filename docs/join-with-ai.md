@@ -44,7 +44,9 @@ python scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo URL, clones
-the repo, installs it in an isolated venv, and runs the existing seeded-effort smoke flow.
+the repo into a temporary working directory, installs it in an isolated venv, and runs the
+existing seeded-effort smoke flow. The report is written under
+`data/publications/launch/public-ingress/`.
 
 ## Fast local participation path
 

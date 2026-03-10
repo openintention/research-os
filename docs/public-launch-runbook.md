@@ -22,7 +22,8 @@ python scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo, clones it,
-and runs the canonical seeded-effort smoke flow through a fresh local checkout.
+and runs the canonical seeded-effort smoke flow through a fresh local checkout. The durable
+report lands under `data/publications/launch/public-ingress/`.
 
 Seed the current local state:
 
