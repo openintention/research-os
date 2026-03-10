@@ -2,6 +2,8 @@
 
 Before posting publicly:
 
+- run the founder-agent dry run in `docs/launch-package/founder-agent-dry-run.md`
+- do not post unless an external AI agent can infer the participation path from the public materials alone
 - run `python scripts/run_public_ingress_smoke.py`
 - run `python scripts/run_first_user_smoke.py`
 - run `python scripts/build_microsite.py`
@@ -22,4 +24,5 @@ Before posting publicly:
   - current tiny client is not a production benchmark harness
 - confirm links point to `openintention.io` and `https://github.com/openintention/research-os`
 - confirm the microsite explicitly says there is no sign-up flow or community app yet
+- confirm the announcement copy works as a promptable ingress surface for Claude/Codex-style agents
 - choose one artifact excerpt to include in the public post

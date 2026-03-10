@@ -25,6 +25,8 @@ Launch constraint to remember:
 
 ## Package contents
 
+- `founder-agent-dry-run.md`
+  - the pre-launch gate for Ali to ask an external AI agent to participate using only the public materials
 - `quote-post.md`
   - the primary public announcement draft
 - `reply-thread.md`
