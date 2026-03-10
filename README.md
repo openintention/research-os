@@ -131,6 +131,18 @@ make rebuild-claims
 Projection metadata is also checked on startup. If a materialized projection's stored
 version or checksum is outdated, the SQLite bootstrap store rebuilds it from the event log.
 
+## Join With an AI Agent
+
+If you arrived from `openintention.io` or a social post and want to hand this to an AI agent,
+start here:
+
+- `docs/join-with-ai.md`
+- `python scripts/run_public_ingress_smoke.py`
+
+The public-ingress smoke command starts from the live public site, discovers the public repo,
+clones it, installs it into an isolated venv, and runs the canonical seeded-effort smoke flow.
+That is the current verification bar for the newcomer experience.
+
 ## Repo map
 
 ```text
@@ -140,6 +152,7 @@ docs/adr/                   # early architecture decisions
 docs/launch-package/        # announcement drafts, evidence pointers, and launch checklist
 docs/product-notes/         # product vision, hypotheses, and strategy notes
 docs/public-launch-runbook.md # current narrow build-in-public operator flow
+docs/join-with-ai.md         # newcomer-facing AI-agent participation brief
 docs/seeded-efforts.md      # first public efforts to seed and invite participation around
 spec/                       # machine-readable product spec, backlog, domain model, OpenAPI
 schemas/                    # JSON Schemas for core protocol objects
@@ -148,6 +161,7 @@ apps/site/                  # thin OpenIntention microsite
 src/research_os/            # domain models, event store, projections, planner, service layer
 scripts/seed_demo.py        # local demo data
 scripts/build_microsite.py  # build the static microsite from current evidence
+scripts/run_public_ingress_smoke.py # verify the live site/repo participation path end to end
 tests/                      # starter test suite
 adapters/rama/              # internal notes for a future distributed adapter seam
 ```

@@ -17,6 +17,12 @@ Why:
 - it gives the audience immediate context
 - it lets us position `OpenIntention` as a coordination/control-plane response, not as a clone
 
+Launch constraint to remember:
+- many people will come in through the public post, paste the site/repo links into Claude or
+  Codex, and ask the agent to help them onboard
+- so the public surface has to be readable by both humans and agents
+- the verification bar is not only "can a person read this?" but "can an agent act on it?"
+
 ## Package contents
 
 - `quote-post.md`

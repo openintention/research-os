@@ -15,6 +15,15 @@ Current seeded efforts:
 
 ## Operator flow
 
+Verify the actual public ingress path first:
+
+```bash
+python scripts/run_public_ingress_smoke.py
+```
+
+That command starts from `https://openintention.io`, discovers the public repo, clones it,
+and runs the canonical seeded-effort smoke flow through a fresh local checkout.
+
 Seed the current local state:
 
 ```bash

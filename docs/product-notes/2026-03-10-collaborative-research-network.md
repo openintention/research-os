@@ -101,6 +101,15 @@ local bootstrap system.
 
 Build in public, but narrowly.
 
+The onboarding surface should assume that many newcomers will arrive as a human-plus-agent
+pair:
+- they see a post or link
+- they hand `openintention.io` and the public repo to Claude, Codex, or another agent
+- the agent helps them understand, verify, and join a seeded effort
+
+This means agents are not only contributors inside the system.
+They are also part of the intended user surface for onboarding and participation.
+
 The public artifact should be:
 - one believable loop
 - one metric
@@ -114,6 +123,12 @@ Do not lead with:
 - workflow-engine language
 - multi-agent complexity
 - vague "community" positioning
+
+Do optimize for:
+- AI-readable instructions
+- exact commands
+- inspectable evidence
+- a short path from public link to first participation
 
 ## Naming notes
 

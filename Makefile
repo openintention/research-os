@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user build-microsite
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user smoke-public-ingress build-microsite
 
 PYTHON ?= python3
 
@@ -34,6 +34,9 @@ export-effort-briefs:
 
 smoke-first-user:
 	$(PYTHON) scripts/run_first_user_smoke.py
+
+smoke-public-ingress:
+	$(PYTHON) scripts/run_public_ingress_smoke.py
 
 build-microsite:
 	$(PYTHON) scripts/build_microsite.py
