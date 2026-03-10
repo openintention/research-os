@@ -1,0 +1,23 @@
+# Launch Checklist
+
+Before posting publicly:
+
+- run `python scripts/run_first_user_smoke.py`
+- run `python scripts/build_microsite.py`
+- if the public repo is live, rebuild with `OPENINTENTION_REPO_URL=<public_repo_url> python scripts/build_microsite.py`
+- confirm `data/publications/launch/first-user-smoke.md` exists
+- confirm both effort briefs were regenerated under `data/publications/efforts/`
+- confirm `apps/site/dist/index.html` exists
+- confirm `apps/site/dist/assets/favicon.svg` exists
+- confirm the quote-post copy still matches the current repo reality
+- confirm the transparency line is present:
+  - inspired by Andrej's work
+  - built collaboratively with AI assistance
+  - not affiliated with Andrej
+- confirm the honesty line is present:
+  - control plane is real
+  - proxy contribution loops are real
+  - current tiny client is not a production benchmark harness
+- confirm links point to `openintention.io` and the current repo
+- confirm the microsite explicitly says there is no sign-up flow or community app yet
+- choose one artifact excerpt to include in the public post

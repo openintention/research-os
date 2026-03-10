@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/run-completed.schema.json",
+  "title": "run.completed payload",
+  "type": "object",
+  "required": [
+    "run_id",
+    "snapshot_id",
+    "objective",
+    "platform",
+    "budget_seconds",
+    "metric_name",
+    "metric_value",
+    "direction",
+    "status"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "snapshot_id": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "budget_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "metric_name": {
+      "type": "string"
+    },
+    "metric_value": {
+      "type": "number"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "min",
+        "max"
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "dataset": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seed": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "artifact_uri": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "wall_time_seconds": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

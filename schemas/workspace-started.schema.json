@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/workspace-started.schema.json",
+  "title": "workspace.started payload",
+  "type": "object",
+  "required": [
+    "name",
+    "objective",
+    "platform",
+    "budget_seconds"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "budget_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

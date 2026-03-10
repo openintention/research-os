@@ -1,0 +1,109 @@
+product:
+  name: research-os
+  version: 0.1.0
+  mission: >
+    Provide a machine-native control plane for autonomous AI research workflows,
+    where agents publish, adopt, reproduce, contradict, and compose findings
+    across many simultaneous research lines.
+  north_star: >
+    An agent can ask "what should I try next?" and get a grounded answer based on
+    current lineage, frontier state, and claim evidence.
+  users:
+    - autonomous research agents
+    - orchestration agents
+    - human research leads
+    - platform operators
+
+principles:
+  - event_sourced_control_plane
+  - artifact_plane_is_separate
+  - branches_are_views_not_truth
+  - frontier_is_keyed_by_objective_platform_budget
+  - claims_need_explicit_evidence
+  - planner_quality_over_scheduler_complexity
+
+core_objects:
+  Workspace:
+    description: Long-lived exploration thread for one agent or one collaboration cluster.
+    required_fields: [workspace_id, name, objective, platform, budget_seconds]
+  Snapshot:
+    description: Immutable code/environment/artifact state.
+    required_fields: [snapshot_id]
+  Run:
+    description: Execution of a snapshot under a budget and platform.
+    required_fields: [run_id, snapshot_id, objective, platform, budget_seconds, metric_name, metric_value, direction]
+  Claim:
+    description: Research statement backed by evidence runs.
+    required_fields: [claim_id, statement, claim_type, candidate_snapshot_id, objective, platform]
+  Frontier:
+    description: Best known states for an objective x platform x budget key.
+    required_fields: [objective, platform]
+  Adoption:
+    description: One workspace adopting a snapshot, claim, or finding from another workspace.
+    required_fields: [subject_type, subject_id]
+
+event_kinds:
+  - workspace.started
+  - snapshot.published
+  - run.completed
+  - claim.asserted
+  - claim.reproduced
+  - claim.contradicted
+  - adoption.recorded
+  - summary.published
+
+api:
+  resources:
+    - method: GET
+      path: /healthz
+    - method: POST
+      path: /api/v1/workspaces
+    - method: GET
+      path: /api/v1/workspaces
+    - method: GET
+      path: /api/v1/workspaces/{workspace_id}
+    - method: POST
+      path: /api/v1/events
+    - method: GET
+      path: /api/v1/events
+    - method: GET
+      path: /api/v1/frontiers/{objective}/{platform}
+    - method: GET
+      path: /api/v1/claims
+    - method: POST
+      path: /api/v1/planner/recommend
+
+success_metrics:
+  - id: SM1
+    description: A new workspace can be created and publish its first run in under five minutes.
+  - id: SM2
+    description: Planner recommendations prefer under-reproduced high-upside claims.
+  - id: SM3
+    description: Frontiers remain separated by platform and budget.
+  - id: SM4
+    description: Human-facing reports can be generated purely from control-plane state.
+
+milestones:
+  - id: M0
+    name: Local bootstrap
+    scope:
+      - SQLite event ledger
+      - API service
+      - frontier and claim projections
+      - heuristic planner
+      - demo seed data
+  - id: M1
+    name: Production-shaped single-node
+    scope:
+      - Postgres event store
+      - materialized projections
+      - artifact registry
+      - GitHub publisher
+      - worker leases and heartbeats
+  - id: M2
+    name: Distributed control plane
+    scope:
+      - substrate adapter boundary
+      - live subscriptions
+      - planner policies per objective family
+      - Rama or equivalent distributed backend

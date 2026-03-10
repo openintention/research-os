@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/recommend-next-request.schema.json",
+  "title": "RecommendNextRequest",
+  "type": "object",
+  "required": [
+    "objective",
+    "platform"
+  ],
+  "properties": {
+    "objective": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "budget_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "workspace_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "worker_capabilities": {
+      "type": "object",
+      "properties": {
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "max_budget_seconds": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

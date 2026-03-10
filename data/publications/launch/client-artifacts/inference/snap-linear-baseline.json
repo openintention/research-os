@@ -1,0 +1,9 @@
+{
+  "budget_seconds": 300,
+  "feature_mode": "linear",
+  "learning_rate": 0.05,
+  "objective": "tokens_per_second",
+  "platform": "H100",
+  "snapshot_id": "snap-linear-baseline",
+  "steps": 80
+}

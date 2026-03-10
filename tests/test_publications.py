@@ -1,0 +1,317 @@
+from __future__ import annotations
+
+from fastapi.testclient import TestClient
+
+from apps.api.main import create_app
+from research_os.artifacts.local import LocalArtifactRegistry
+from research_os.settings import Settings
+
+
+def test_workspace_discussion_publication_is_rendered_from_workspace_state(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-workspace.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    artifact_registry = LocalArtifactRegistry(settings.artifact_root)
+    snapshot_artifact = artifact_registry.put_bytes(b"workspace discussion snapshot bundle")
+
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "publisher-demo",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "description": "Publication mirror workspace",
+        },
+    ).json()["workspace_id"]
+
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-pub-1",
+                "aggregate_kind": "snapshot",
+                "payload": {
+                    "snapshot_id": "snap-pub-1",
+                    "artifact_uri": snapshot_artifact.uri,
+                    "source_bundle_digest": snapshot_artifact.digest,
+                    "git_ref": "refs/workspaces/publisher-demo",
+                },
+            },
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "claim.asserted",
+                "workspace_id": workspace_id,
+                "aggregate_id": "claim-pub-1",
+                "aggregate_kind": "claim",
+                "payload": {
+                    "claim_id": "claim-pub-1",
+                    "statement": "The publication snapshot improves validation bpb.",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-pub-1",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/workspaces/{workspace_id}/discussion")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert response.json()["kind"] == "github.discussion"
+    assert "Discussion: publisher-demo" in body
+    assert "Publication mirror workspace" in body
+    assert "claim-pub-1" in body
+    assert "snapshot.published" in body
+
+
+def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-snapshot.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    artifact_registry = LocalArtifactRegistry(settings.artifact_root)
+    snapshot_artifact = artifact_registry.put_bytes(b"snapshot pull request bundle")
+
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "publisher-snapshot-demo",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+        },
+    ).json()["workspace_id"]
+
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-pr-1",
+                "aggregate_kind": "snapshot",
+                "payload": {
+                    "snapshot_id": "snap-pr-1",
+                    "parent_snapshot_ids": ["snap-base"],
+                    "artifact_uri": snapshot_artifact.uri,
+                    "source_bundle_digest": snapshot_artifact.digest,
+                    "git_ref": "refs/workspaces/publisher-snapshot-demo",
+                    "notes": "Try the improved optimizer schedule.",
+                },
+            },
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "run.completed",
+                "workspace_id": workspace_id,
+                "aggregate_id": "run-pr-1",
+                "aggregate_kind": "run",
+                "payload": {
+                    "run_id": "run-pr-1",
+                    "snapshot_id": "snap-pr-1",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                    "budget_seconds": 300,
+                    "metric_name": "val_bpb",
+                    "metric_value": 1.19,
+                    "direction": "min",
+                    "status": "success",
+                },
+            },
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "claim.asserted",
+                "workspace_id": workspace_id,
+                "aggregate_id": "claim-pr-1",
+                "aggregate_kind": "claim",
+                "payload": {
+                    "claim_id": "claim-pr-1",
+                    "statement": "The optimizer schedule improves validation bpb.",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-pr-1",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/workspaces/{workspace_id}/pull-requests/snap-pr-1")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert response.json()["kind"] == "github.pull_request"
+    assert "PR: snap-pr-1" in body
+    assert "refs/workspaces/publisher-snapshot-demo" in body
+    assert snapshot_artifact.digest in body
+    assert "run-pr-1" in body
+    assert "claim-pr-1" in body
+
+
+def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-eval.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Eval Sprint: improve validation loss under fixed budget",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "summary": "Seeded eval effort for short fixed-budget loops.",
+            "tags": {"effort_type": "eval", "seeded": "true"},
+        },
+    ).json()["effort_id"]
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "eval-participant",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "effort_id": effort_id,
+        },
+    ).json()["workspace_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "run.completed",
+                "workspace_id": workspace_id,
+                "aggregate_id": "run-effort-1",
+                "aggregate_kind": "run",
+                "payload": {
+                    "run_id": "run-effort-1",
+                    "snapshot_id": "snap-effort-1",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                    "budget_seconds": 300,
+                    "metric_name": "val_bpb",
+                    "metric_value": 1.18,
+                    "direction": "min",
+                    "status": "success",
+                },
+            },
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "claim.asserted",
+                "workspace_id": workspace_id,
+                "aggregate_id": "claim-effort-1",
+                "aggregate_kind": "claim",
+                "payload": {
+                    "claim_id": "claim-effort-1",
+                    "statement": "The candidate lowers validation bpb.",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-effort-1",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert response.json()["kind"] == "github.issue"
+    assert "Effort: Eval Sprint: improve validation loss under fixed budget" in body
+    assert "eval-participant" in body
+    assert "claim-effort-1" in body
+    assert "python -m clients.tiny_loop.run" in body
+
+
+def test_inference_effort_overview_publication_uses_inference_join_profile(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-inference.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Inference Sprint: improve flash-path throughput on H100",
+            "objective": "tokens_per_second",
+            "platform": "H100",
+            "budget_seconds": 300,
+            "summary": "Seeded inference effort for bounded throughput loops.",
+            "tags": {"effort_type": "inference", "seeded": "true"},
+        },
+    ).json()["effort_id"]
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "inference-participant",
+            "objective": "tokens_per_second",
+            "platform": "H100",
+            "budget_seconds": 300,
+            "effort_id": effort_id,
+        },
+    ).json()["workspace_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "run.completed",
+                "workspace_id": workspace_id,
+                "aggregate_id": "run-inference-1",
+                "aggregate_kind": "run",
+                "payload": {
+                    "run_id": "run-inference-1",
+                    "snapshot_id": "snap-inference-1",
+                    "objective": "tokens_per_second",
+                    "platform": "H100",
+                    "budget_seconds": 300,
+                    "metric_name": "tokens_per_second",
+                    "metric_value": 1284.0,
+                    "direction": "max",
+                    "status": "success",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "Effort: Inference Sprint: improve flash-path throughput on H100" in body
+    assert "inference-participant" in body
+    assert "tokens_per_second" in body
+    assert "python -m clients.tiny_loop.run --profile inference-sprint" in body

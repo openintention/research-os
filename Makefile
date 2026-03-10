@@ -1,0 +1,39 @@
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user build-microsite
+
+PYTHON ?= python3
+
+install:
+	$(PYTHON) -m pip install -e ".[dev]"
+
+run:
+	uvicorn apps.api.main:app --reload
+
+test:
+	$(PYTHON) -m pytest
+
+seed:
+	$(PYTHON) scripts/seed_demo.py --reset
+
+rebuild-frontier:
+	$(PYTHON) scripts/rebuild_frontier_projection.py
+
+rebuild-claims:
+	$(PYTHON) scripts/rebuild_claim_projection.py
+
+lint:
+	$(PYTHON) -m ruff check .
+
+openapi:
+	$(PYTHON) scripts/export_openapi.py
+
+tiny-loop:
+	$(PYTHON) -m clients.tiny_loop.run
+
+export-effort-briefs:
+	$(PYTHON) scripts/export_effort_briefs.py
+
+smoke-first-user:
+	$(PYTHON) scripts/run_first_user_smoke.py
+
+build-microsite:
+	$(PYTHON) scripts/build_microsite.py

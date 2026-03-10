@@ -1,0 +1,118 @@
+types:
+  EventEnvelope:
+    fields:
+      event_id: string
+      kind: string
+      occurred_at: datetime
+      workspace_id: string?
+      aggregate_id: string?
+      aggregate_kind: string?
+      actor_id: string?
+      payload: object
+      tags: object
+
+events:
+  effort.registered:
+    description: Registers a seeded shared effort that workspaces can join.
+    required_payload:
+      - effort_id
+      - name
+      - objective
+      - platform
+      - budget_seconds
+    optional_payload:
+      - summary
+      - tags
+
+  workspace.started:
+    description: Creates a new workspace.
+    required_payload:
+      - name
+      - objective
+      - platform
+      - budget_seconds
+    optional_payload:
+      - effort_id
+      - description
+      - tags
+
+  snapshot.published:
+    description: Publishes an immutable snapshot into a workspace with optional artifact-plane references.
+    required_payload:
+      - snapshot_id
+    optional_payload:
+      - parent_snapshot_ids
+      - artifact_uri
+      - source_bundle_digest
+      - git_ref
+      - notes
+
+  run.completed:
+    description: Publishes the result of a run for a snapshot.
+    required_payload:
+      - run_id
+      - snapshot_id
+      - objective
+      - platform
+      - budget_seconds
+      - metric_name
+      - metric_value
+      - direction
+      - status
+    optional_payload:
+      - dataset
+      - seed
+      - notes
+      - artifact_uri
+      - wall_time_seconds
+
+  claim.asserted:
+    description: States a research claim backed by evidence.
+    required_payload:
+      - claim_id
+      - statement
+      - claim_type
+      - candidate_snapshot_id
+      - objective
+      - platform
+    optional_payload:
+      - baseline_snapshot_id
+      - evidence_run_ids
+      - metric_name
+      - delta
+      - confidence
+
+  claim.reproduced:
+    description: Adds supporting evidence for a claim.
+    required_payload:
+      - claim_id
+      - evidence_run_id
+    optional_payload:
+      - notes
+
+  claim.contradicted:
+    description: Adds contradicting evidence for a claim.
+    required_payload:
+      - claim_id
+      - evidence_run_id
+    optional_payload:
+      - notes
+
+  adoption.recorded:
+    description: Records a workspace adopting a finding from another line of work.
+    required_payload:
+      - subject_type
+      - subject_id
+    optional_payload:
+      - from_workspace_id
+      - reason
+
+  summary.published:
+    description: Publishes a human-facing summary derived from control-plane state.
+    required_payload:
+      - summary_id
+      - title
+      - format
+    optional_payload:
+      - body
+      - artifact_uri

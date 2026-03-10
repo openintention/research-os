@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/claim-asserted.schema.json",
+  "title": "claim.asserted payload",
+  "type": "object",
+  "required": [
+    "claim_id",
+    "statement",
+    "claim_type",
+    "candidate_snapshot_id",
+    "objective",
+    "platform"
+  ],
+  "properties": {
+    "claim_id": {
+      "type": "string"
+    },
+    "statement": {
+      "type": "string"
+    },
+    "claim_type": {
+      "type": "string"
+    },
+    "candidate_snapshot_id": {
+      "type": "string"
+    },
+    "baseline_snapshot_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "objective": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "metric_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "delta": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "evidence_run_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

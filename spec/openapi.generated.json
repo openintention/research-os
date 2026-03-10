@@ -1,0 +1,1496 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "research-os",
+    "description": "Machine-native research operating system starter API.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthz Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces": {
+      "get": {
+        "summary": "List Workspaces",
+        "operationId": "list_workspaces_api_v1_workspaces_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceView"
+                  },
+                  "type": "array",
+                  "title": "Response List Workspaces Api V1 Workspaces Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Workspace",
+        "operationId": "create_workspace_api_v1_workspaces_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkspaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/efforts": {
+      "get": {
+        "summary": "List Efforts",
+        "operationId": "list_efforts_api_v1_efforts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EffortView"
+                  },
+                  "type": "array",
+                  "title": "Response List Efforts Api V1 Efforts Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Effort",
+        "operationId": "create_effort_api_v1_efforts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEffortRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EffortCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}": {
+      "get": {
+        "summary": "Get Workspace",
+        "operationId": "get_workspace_api_v1_workspaces__workspace_id__get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "post": {
+        "summary": "Append Event",
+        "operationId": "append_event_api_v1_events_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventEnvelope"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Events",
+        "operationId": "list_events_api_v1_events_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EventKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventEnvelope"
+                  },
+                  "title": "Response List Events Api V1 Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/frontiers/{objective}/{platform}": {
+      "get": {
+        "summary": "Get Frontier",
+        "operationId": "get_frontier_api_v1_frontiers__objective___platform__get",
+        "parameters": [
+          {
+            "name": "objective",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Objective"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Platform"
+            }
+          },
+          {
+            "name": "budget_seconds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Budget Seconds"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrontierView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/claims": {
+      "get": {
+        "summary": "List Claims",
+        "operationId": "list_claims_api_v1_claims_get",
+        "parameters": [
+          {
+            "name": "objective",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Objective"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClaimSummary"
+                  },
+                  "title": "Response List Claims Api V1 Claims Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/planner/recommend": {
+      "post": {
+        "summary": "Planner Recommend",
+        "operationId": "planner_recommend_api_v1_planner_recommend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendNextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendNextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/workspaces/{workspace_id}/discussion": {
+      "get": {
+        "summary": "Get Workspace Discussion",
+        "operationId": "get_workspace_discussion_api_v1_publications_workspaces__workspace_id__discussion_get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/efforts/{effort_id}": {
+      "get": {
+        "summary": "Get Effort Overview",
+        "operationId": "get_effort_overview_api_v1_publications_efforts__effort_id__get",
+        "parameters": [
+          {
+            "name": "effort_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Effort Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publications/workspaces/{workspace_id}/pull-requests/{snapshot_id}": {
+      "get": {
+        "summary": "Get Snapshot Pull Request",
+        "operationId": "get_snapshot_pull_request_api_v1_publications_workspaces__workspace_id__pull_requests__snapshot_id__get",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "snapshot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Snapshot Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CapabilityDescriptor": {
+        "properties": {
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Platforms"
+          },
+          "max_budget_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Budget Seconds"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "title": "CapabilityDescriptor"
+      },
+      "ClaimStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "supported",
+          "contested"
+        ],
+        "title": "ClaimStatus"
+      },
+      "ClaimSummary": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          },
+          "claim_type": {
+            "type": "string",
+            "title": "Claim Type"
+          },
+          "candidate_snapshot_id": {
+            "type": "string",
+            "title": "Candidate Snapshot Id"
+          },
+          "baseline_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Snapshot Id"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "metric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric Name"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "evidence_run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Run Ids"
+          },
+          "support_count": {
+            "type": "integer",
+            "title": "Support Count",
+            "default": 0
+          },
+          "contradiction_count": {
+            "type": "integer",
+            "title": "Contradiction Count",
+            "default": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClaimStatus",
+            "default": "pending"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_id",
+          "statement",
+          "claim_type",
+          "candidate_snapshot_id",
+          "objective",
+          "platform",
+          "updated_at"
+        ],
+        "title": "ClaimSummary"
+      },
+      "CreateEffortRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Budget Seconds",
+            "default": 300
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "objective",
+          "platform"
+        ],
+        "title": "CreateEffortRequest"
+      },
+      "CreateWorkspaceRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Budget Seconds",
+            "default": 300
+          },
+          "effort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "objective",
+          "platform"
+        ],
+        "title": "CreateWorkspaceRequest"
+      },
+      "EffortCreated": {
+        "properties": {
+          "effort_id": {
+            "type": "string",
+            "title": "Effort Id"
+          },
+          "bootstrap_event_id": {
+            "type": "string",
+            "title": "Bootstrap Event Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "effort_id",
+          "bootstrap_event_id"
+        ],
+        "title": "EffortCreated"
+      },
+      "EffortView": {
+        "properties": {
+          "effort_id": {
+            "type": "string",
+            "title": "Effort Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "title": "Budget Seconds"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
+          "workspace_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Workspace Ids"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "effort_id",
+          "name",
+          "objective",
+          "platform",
+          "budget_seconds",
+          "updated_at"
+        ],
+        "title": "EffortView"
+      },
+      "EventEnvelope": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EventKind"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "aggregate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Id"
+          },
+          "aggregate_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Kind"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "EventEnvelope"
+      },
+      "EventKind": {
+        "type": "string",
+        "enum": [
+          "effort.registered",
+          "workspace.started",
+          "snapshot.published",
+          "run.completed",
+          "claim.asserted",
+          "claim.reproduced",
+          "claim.contradicted",
+          "adoption.recorded",
+          "summary.published"
+        ],
+        "title": "EventKind"
+      },
+      "FrontierMember": {
+        "properties": {
+          "snapshot_id": {
+            "type": "string",
+            "title": "Snapshot Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "title": "Budget Seconds"
+          },
+          "metric_name": {
+            "type": "string",
+            "title": "Metric Name"
+          },
+          "metric_value": {
+            "type": "number",
+            "title": "Metric Value"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction"
+          },
+          "claim_count": {
+            "type": "integer",
+            "title": "Claim Count",
+            "default": 0
+          },
+          "support_count": {
+            "type": "integer",
+            "title": "Support Count",
+            "default": 0
+          },
+          "contradiction_count": {
+            "type": "integer",
+            "title": "Contradiction Count",
+            "default": 0
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
+          "last_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "snapshot_id",
+          "run_id",
+          "objective",
+          "platform",
+          "budget_seconds",
+          "metric_name",
+          "metric_value",
+          "direction",
+          "last_updated_at"
+        ],
+        "title": "FrontierMember"
+      },
+      "FrontierView": {
+        "properties": {
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Seconds"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/FrontierMember"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective",
+          "platform",
+          "members"
+        ],
+        "title": "FrontierView"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PublicationView": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": "markdown"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "title",
+          "body"
+        ],
+        "title": "PublicationView"
+      },
+      "RecommendNextRequest": {
+        "properties": {
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Budget Seconds",
+            "default": 300
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 3
+          },
+          "worker_capabilities": {
+            "$ref": "#/components/schemas/CapabilityDescriptor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective",
+          "platform"
+        ],
+        "title": "RecommendNextRequest"
+      },
+      "RecommendNextResponse": {
+        "properties": {
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recommendations"
+        ],
+        "title": "RecommendNextResponse"
+      },
+      "Recommendation": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Inputs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "priority",
+          "reason"
+        ],
+        "title": "Recommendation"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorkspaceCreated": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "title": "Workspace Id"
+          },
+          "bootstrap_event_id": {
+            "type": "string",
+            "title": "Bootstrap Event Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "bootstrap_event_id"
+        ],
+        "title": "WorkspaceCreated"
+      },
+      "WorkspaceView": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "budget_seconds": {
+            "type": "integer",
+            "title": "Budget Seconds"
+          },
+          "effort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "tags": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tags"
+          },
+          "snapshot_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Snapshot Ids"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Run Ids"
+          },
+          "claim_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Claim Ids"
+          },
+          "adoption_count": {
+            "type": "integer",
+            "title": "Adoption Count",
+            "default": 0
+          },
+          "summary_count": {
+            "type": "integer",
+            "title": "Summary Count",
+            "default": 0
+          },
+          "event_count": {
+            "type": "integer",
+            "title": "Event Count",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "name",
+          "objective",
+          "platform",
+          "budget_seconds",
+          "updated_at"
+        ],
+        "title": "WorkspaceView"
+      }
+    }
+  }
+}

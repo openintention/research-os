@@ -1,0 +1,9 @@
+{
+  "budget_seconds": 300,
+  "feature_mode": "quadratic",
+  "learning_rate": 0.05,
+  "objective": "val_bpb",
+  "platform": "A100",
+  "snapshot_id": "snap-quadratic-candidate",
+  "steps": 80
+}

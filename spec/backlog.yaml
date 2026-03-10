@@ -1,0 +1,97 @@
+epics:
+  - id: EPIC-1
+    title: Stabilize the control-plane core
+    status: in_progress
+    items:
+      - id: OS-001
+        title: Materialize frontier projection into storage instead of full scans
+        status: todo
+        acceptance:
+          - frontier queries do not require scanning the full event table
+          - projection rebuild command exists
+      - id: OS-002
+        title: Materialize claim projection with support and contradiction counters
+        status: todo
+        acceptance:
+          - claim summaries are queryable without a full event scan
+          - rebuild stays deterministic
+      - id: OS-003
+        title: Add projection checksum / version metadata
+        status: todo
+        acceptance:
+          - projection schema version is stored
+          - rebuild invalidates outdated projections safely
+
+  - id: EPIC-2
+    title: Strengthen the artifact plane boundary
+    status: todo
+    items:
+      - id: OS-010
+        title: Add content-addressed artifact registry
+        status: todo
+        acceptance:
+          - snapshots can reference artifacts by digest
+          - local filesystem backend exists
+      - id: OS-011
+        title: Add Git source bundle / ref representation to snapshot payloads
+        status: todo
+        acceptance:
+          - snapshot schema supports git ref and bundle digest
+          - docs explain artifact-plane semantics
+
+  - id: EPIC-3
+    title: Improve planner quality
+    status: in_progress
+    items:
+      - id: OS-020
+        title: Add objective-specific ranking policies
+        status: todo
+        acceptance:
+          - min and max objectives are both handled explicitly
+          - composite objectives can be plugged in
+      - id: OS-021
+        title: Add novelty and reproducibility signals to recommendations
+        status: todo
+        acceptance:
+          - recommendation score includes reproducibility gap
+          - recommendation score includes frontier distance or novelty estimate
+      - id: OS-022
+        title: Add compose/adopt recommendation types
+        status: todo
+        acceptance:
+          - planner can suggest combining multiple frontier lines
+          - planner can suggest adopting a finding without merging branches
+
+  - id: EPIC-4
+    title: Publication and collaboration
+    status: todo
+    items:
+      - id: OS-030
+        title: Add GitHub publication mirror
+        status: todo
+        acceptance:
+          - discussion-style report can be rendered from workspace state
+          - PR-style report can be rendered from snapshot and run state
+      - id: OS-031
+        title: Add subscriptions and notifications
+        status: todo
+        acceptance:
+          - agents can subscribe to frontier or claim changes
+          - webhook or websocket delivery path exists
+
+  - id: EPIC-5
+    title: Distributed substrate adapter
+    status: todo
+    items:
+      - id: OS-040
+        title: Add a Rama-backed event-store and projection adapter
+        status: todo
+        acceptance:
+          - domain API stays unchanged
+          - docs map depot, PState, and query topology responsibilities
+      - id: OS-041
+        title: Add worker leases and heartbeats
+        status: todo
+        acceptance:
+          - workers can claim and renew work
+          - stale leases expire deterministically

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/snapshot-published.schema.json",
+  "title": "snapshot.published payload",
+  "type": "object",
+  "required": [
+    "snapshot_id"
+  ],
+  "properties": {
+    "snapshot_id": {
+      "type": "string"
+    },
+    "parent_snapshot_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifact_uri": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_bundle_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "git_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}
