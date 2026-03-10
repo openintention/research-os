@@ -12,8 +12,8 @@ This launch package should point to generated evidence, not only prose.
 ## Regeneration command
 
 ```bash
-python scripts/run_public_ingress_smoke.py
-python scripts/run_first_user_smoke.py
+python3 scripts/run_public_ingress_smoke.py
+python3 scripts/run_first_user_smoke.py
 ```
 
 Those commands should:
@@ -27,7 +27,7 @@ Those commands should:
 To rebuild the static microsite evidence surface after that:
 
 ```bash
-python scripts/build_microsite.py
+python3 scripts/build_microsite.py
 # or
 make build-microsite
 ```
@@ -35,7 +35,7 @@ make build-microsite
 If the public repo is live, attach it directly to the microsite build:
 
 ```bash
-OPENINTENTION_REPO_URL=<public_repo_url> python scripts/build_microsite.py
+OPENINTENTION_REPO_URL=<public_repo_url> python3 scripts/build_microsite.py
 ```
 
 Canonical public repo:

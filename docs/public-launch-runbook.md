@@ -18,7 +18,7 @@ Current seeded efforts:
 Verify the actual public ingress path first:
 
 ```bash
-python scripts/run_public_ingress_smoke.py
+python3 scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo, clones it,
@@ -28,25 +28,25 @@ report lands under `data/publications/launch/public-ingress/`.
 Seed the current local state:
 
 ```bash
-python scripts/seed_demo.py --reset
+python3 scripts/seed_demo.py --reset
 ```
 
 Run the canonical eval proxy contribution:
 
 ```bash
-python -m clients.tiny_loop.run
+python3 -m clients.tiny_loop.run
 ```
 
 Run the canonical inference proxy contribution:
 
 ```bash
-python -m clients.tiny_loop.run --profile inference-sprint
+python3 -m clients.tiny_loop.run --profile inference-sprint
 ```
 
 Export the effort briefs:
 
 ```bash
-python scripts/export_effort_briefs.py
+python3 scripts/export_effort_briefs.py
 # or
 make export-effort-briefs
 ```

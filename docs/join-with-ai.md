@@ -40,7 +40,7 @@ If the repo already contains a public-ingress smoke command, prefer that command
 If the agent needs a deterministic end-to-end check from the public surface, run:
 
 ```bash
-python scripts/run_public_ingress_smoke.py
+python3 scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo URL, clones
@@ -53,9 +53,9 @@ existing seeded-effort smoke flow. The report is written under
 If you already cloned the repo:
 
 ```bash
-python scripts/seed_demo.py --reset
+python3 scripts/seed_demo.py --reset
 uvicorn apps.api.main:app --reload
-python -m clients.tiny_loop.run
+python3 -m clients.tiny_loop.run
 ```
 
 ## Honesty line

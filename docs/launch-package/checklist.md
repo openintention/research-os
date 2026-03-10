@@ -4,10 +4,10 @@ Before posting publicly:
 
 - run the founder-agent dry run in `docs/launch-package/founder-agent-dry-run.md`
 - do not post unless an external AI agent can infer the participation path from the public materials alone
-- run `python scripts/run_public_ingress_smoke.py`
-- run `python scripts/run_first_user_smoke.py`
-- run `python scripts/build_microsite.py`
-- if you need to override the canonical repo link, rebuild with `OPENINTENTION_REPO_URL=<public_repo_url> python scripts/build_microsite.py`
+- run `python3 scripts/run_public_ingress_smoke.py`
+- run `python3 scripts/run_first_user_smoke.py`
+- run `python3 scripts/build_microsite.py`
+- if you need to override the canonical repo link, rebuild with `OPENINTENTION_REPO_URL=<public_repo_url> python3 scripts/build_microsite.py`
 - confirm `data/publications/launch/first-user-smoke.md` exists
 - confirm `data/publications/launch/public-ingress/public-ingress-smoke.md` exists
 - confirm both effort briefs were regenerated under `data/publications/efforts/`

@@ -26,7 +26,7 @@ Expected contribution types:
 - adopt a useful finding into another workspace
 
 Local bootstrap path:
-- `python -m clients.tiny_loop.run`
+- `python3 -m clients.tiny_loop.run`
 - effort overview mirror: `/api/v1/publications/efforts/<eval_effort_id>`
 - exported brief: `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 
@@ -52,7 +52,7 @@ Expected contribution types:
 - adopt useful optimizations without merge semantics
 
 Local bootstrap path:
-- `python -m clients.tiny_loop.run --profile inference-sprint`
+- `python3 -m clients.tiny_loop.run --profile inference-sprint`
 - effort overview mirror: `/api/v1/publications/efforts/<inference_effort_id>`
 - exported brief: `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
 

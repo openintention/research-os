@@ -168,8 +168,53 @@ def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tm
     assert "PR: snap-pr-1" in body
     assert "refs/workspaces/publisher-snapshot-demo" in body
     assert snapshot_artifact.digest in body
+    assert str(snapshot_artifact.uri) in body
     assert "run-pr-1" in body
     assert "claim-pr-1" in body
+
+
+def test_snapshot_pull_request_hides_local_file_artifact_paths(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-snapshot-local-file.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "publisher-local-file-demo",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+        },
+    ).json()["workspace_id"]
+
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-local-file-1",
+                "aggregate_kind": "snapshot",
+                "payload": {
+                    "snapshot_id": "snap-local-file-1",
+                    "artifact_uri": "file:///tmp/local-artifact-bundle.json",
+                    "source_bundle_digest": "sha256:demo-local-file",
+                    "git_ref": "refs/workspaces/publisher-local-file-demo",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/workspaces/{workspace_id}/pull-requests/snap-local-file-1")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "file:///tmp/local-artifact-bundle.json" not in body
+    assert "local artifact plane path hidden (digest=sha256:demo-local-file)" in body
 
 
 def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path):
@@ -252,7 +297,9 @@ def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path
     assert "Effort: Eval Sprint: improve validation loss under fixed budget" in body
     assert "eval-participant" in body
     assert "claim-effort-1" in body
-    assert "python -m clients.tiny_loop.run" in body
+    assert "docs/seeded-efforts.md" in body
+    assert "/Users/aliargun/Documents/GitHub/research-os/docs/seeded-efforts.md" not in body
+    assert "python3 -m clients.tiny_loop.run" in body
 
 
 def test_inference_effort_overview_publication_uses_inference_join_profile(tmp_path):
@@ -314,4 +361,4 @@ def test_inference_effort_overview_publication_uses_inference_join_profile(tmp_p
     assert "Effort: Inference Sprint: improve flash-path throughput on H100" in body
     assert "inference-participant" in body
     assert "tokens_per_second" in body
-    assert "python -m clients.tiny_loop.run --profile inference-sprint" in body
+    assert "python3 -m clients.tiny_loop.run --profile inference-sprint" in body

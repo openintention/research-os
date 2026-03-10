@@ -52,10 +52,10 @@ What is still proxy:
 ## Quickstart
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-python scripts/seed_demo.py --reset
+python3 scripts/seed_demo.py --reset
 uvicorn apps.api.main:app --reload
 ```
 
@@ -74,20 +74,20 @@ curl http://127.0.0.1:8000/api/v1/publications/workspaces/<workspace_id>/pull-re
 To run the post-v1 external client experiment:
 
 ```bash
-python -m clients.tiny_loop.run
+python3 -m clients.tiny_loop.run
 ```
 
 That default client profile intentionally targets the seeded eval effort created by
 `scripts/seed_demo.py --reset`. For an isolated no-effort run, use:
 
 ```bash
-python -m clients.tiny_loop.run --profile standalone
+python3 -m clients.tiny_loop.run --profile standalone
 ```
 
 To target the seeded inference effort instead:
 
 ```bash
-python -m clients.tiny_loop.run --profile inference-sprint
+python3 -m clients.tiny_loop.run --profile inference-sprint
 ```
 
 Snapshot events can now carry content-addressed artifact references such as
@@ -110,7 +110,7 @@ curl http://127.0.0.1:8000/api/v1/publications/efforts/<effort_id>
 To export those seeded effort briefs as markdown files:
 
 ```bash
-python scripts/export_effort_briefs.py
+python3 scripts/export_effort_briefs.py
 # or
 make export-effort-briefs
 ```
@@ -121,8 +121,8 @@ If you already have an existing SQLite database from before projection materiali
 rebuild the projections once:
 
 ```bash
-python scripts/rebuild_frontier_projection.py
-python scripts/rebuild_claim_projection.py
+python3 scripts/rebuild_frontier_projection.py
+python3 scripts/rebuild_claim_projection.py
 # or
 make rebuild-frontier
 make rebuild-claims
@@ -137,7 +137,7 @@ If you arrived from `openintention.io` or a social post and want to hand this to
 start here:
 
 - `docs/join-with-ai.md`
-- `python scripts/run_public_ingress_smoke.py`
+- `python3 scripts/run_public_ingress_smoke.py`
 
 The public-ingress smoke command starts from the live public site, discovers the public repo,
 clones it, installs it into an isolated venv, and runs the canonical seeded-effort smoke flow.

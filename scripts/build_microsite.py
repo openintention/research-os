@@ -213,14 +213,14 @@ def _index_html(
           <div class="effort-type">Seeded effort</div>
           <h3>Eval Sprint: improve validation loss under fixed budget</h3>
           <p>Objective <span class="mono">val_bpb</span>, platform <span class="mono">A100</span>, budget <span class="mono">300s</span>.</p>
-          <p class="command">python -m clients.tiny_loop.run</p>
+          <p class="command">python3 -m clients.tiny_loop.run</p>
           <a href="./evidence/eval-effort.md">Open exported brief</a>
         </article>
         <article class="effort-card">
           <div class="effort-type">Seeded effort</div>
           <h3>Inference Sprint: improve flash-path throughput on H100</h3>
           <p>Objective <span class="mono">tokens_per_second</span>, platform <span class="mono">H100</span>, budget <span class="mono">300s</span>.</p>
-          <p class="command">python -m clients.tiny_loop.run --profile inference-sprint</p>
+          <p class="command">python3 -m clients.tiny_loop.run --profile inference-sprint</p>
           <a href="./evidence/inference-effort.md">Open exported brief</a>
         </article>
       </section>

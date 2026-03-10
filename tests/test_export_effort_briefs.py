@@ -32,6 +32,8 @@ def test_export_effort_briefs_writes_seeded_effort_markdown(tmp_path, monkeypatc
     ).read_text(encoding="utf-8")
 
     assert "Effort: Eval Sprint: improve validation loss under fixed budget" in eval_body
-    assert "python -m clients.tiny_loop.run" in eval_body
+    assert "docs/seeded-efforts.md" in eval_body
+    assert "/Users/aliargun/Documents/GitHub/research-os/docs/seeded-efforts.md" not in eval_body
+    assert "python3 -m clients.tiny_loop.run" in eval_body
     assert "Effort: Inference Sprint: improve flash-path throughput on H100" in inference_body
-    assert "python -m clients.tiny_loop.run --profile inference-sprint" in inference_body
+    assert "python3 -m clients.tiny_loop.run --profile inference-sprint" in inference_body

@@ -48,5 +48,5 @@ The package expects these generated artifacts:
 Regenerate them with:
 
 ```bash
-python scripts/run_first_user_smoke.py
+python3 scripts/run_first_user_smoke.py
 ```

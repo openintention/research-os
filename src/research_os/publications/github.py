@@ -73,7 +73,7 @@ def render_snapshot_pull_request(
         f"- Parent snapshots: {', '.join(payload.get('parent_snapshot_ids', [])) or 'none'}",
         f"- Git ref: `{payload.get('git_ref') or 'n/a'}`",
         f"- Source bundle digest: `{payload.get('source_bundle_digest') or 'n/a'}`",
-        f"- Artifact URI: `{payload.get('artifact_uri') or 'n/a'}`",
+        f"- Artifact reference: `{_render_artifact_reference(payload)}`",
     ]
 
     if payload.get("notes"):
@@ -157,7 +157,7 @@ def render_effort_overview(
             *claim_lines,
             "",
             "## Join",
-            "- Read the effort brief in `/Users/aliargun/Documents/GitHub/research-os/docs/seeded-efforts.md`.",
+            "- Read the effort brief in `docs/seeded-efforts.md`.",
             f"- Run `{join_command}`",
         ]
     )
@@ -219,7 +219,17 @@ def _is_better_run(candidate: EventEnvelope, existing: EventEnvelope) -> bool:
 def _render_effort_join_command(effort: EffortView) -> str:
     effort_type = effort.tags.get("effort_type")
     if effort_type == "inference":
-        return "python -m clients.tiny_loop.run --profile inference-sprint"
+        return "python3 -m clients.tiny_loop.run --profile inference-sprint"
     if effort_type == "eval":
-        return "python -m clients.tiny_loop.run"
-    return "python -m clients.tiny_loop.run --profile standalone"
+        return "python3 -m clients.tiny_loop.run"
+    return "python3 -m clients.tiny_loop.run --profile standalone"
+
+
+def _render_artifact_reference(payload: dict[str, object]) -> str:
+    artifact_uri = str(payload.get("artifact_uri") or "n/a")
+    if artifact_uri.startswith("file://"):
+        digest = payload.get("source_bundle_digest")
+        if digest:
+            return f"local artifact plane path hidden (digest={digest})"
+        return "local artifact plane path hidden"
+    return artifact_uri
