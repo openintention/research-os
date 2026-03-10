@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Machine-native lineage and coordination scaffold for autonomous AI research communities."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{name = "OpenAI"}]
+authors = [{name = "Ali Argün"}]
 dependencies = [
   "fastapi>=0.115,<1.0",
   "uvicorn[standard]>=0.30,<1.0",
