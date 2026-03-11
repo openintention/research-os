@@ -270,7 +270,13 @@ def _index_html(
           </p>
         </div>
         <aside class="hero-proof">
-          <div class="proof-card">
+          <div class="proof-card shell-card">
+            <div class="shell-bar">
+              <div class="shell-dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="shell-title">live effort · proof</div>
+            </div>
             <div class="proof-label">What “live effort” means here</div>
             <ul class="proof-list">
               <li>
@@ -335,7 +341,13 @@ def _index_html(
               <code>--profile inference-sprint</code>.
             </p>
           </div>
-          <div class="join-command-stack">
+          <div class="join-command-stack shell-card">
+            <div class="shell-bar">
+              <div class="shell-dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="shell-title">join command · session</div>
+            </div>
             <div class="proof-label">Join command</div>
             <p class="command command-hero">{escape(DEFAULT_JOIN_COMMAND)}</p>
           </div>
@@ -570,14 +582,19 @@ def _write_evidence_page(
 def _styles() -> str:
     return """
 :root {
-  --bg: #f4efe4;
-  --paper: rgba(255, 250, 241, 0.84);
-  --ink: #1f1b16;
-  --muted: #665d55;
-  --line: rgba(31, 27, 22, 0.12);
-  --accent: #b73a2f;
-  --accent-2: #0b6d6b;
-  --shadow: 0 24px 80px rgba(67, 48, 31, 0.12);
+  --bg: #071018;
+  --bg-2: #0c1623;
+  --panel: rgba(15, 23, 36, 0.9);
+  --panel-2: rgba(19, 29, 45, 0.88);
+  --shell: rgba(9, 16, 24, 0.96);
+  --ink: #edf3fb;
+  --muted: #9cadc2;
+  --line: rgba(144, 173, 209, 0.16);
+  --line-strong: rgba(144, 173, 209, 0.28);
+  --accent: #7ef7b8;
+  --accent-2: #63c7ff;
+  --accent-3: #ffb454;
+  --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
 }
 
 * { box-sizing: border-box; }
@@ -586,13 +603,14 @@ body {
   font-family: "Space Grotesk", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(183, 58, 47, 0.16), transparent 34%),
-    radial-gradient(circle at 90% 12%, rgba(11, 109, 107, 0.18), transparent 26%),
-    linear-gradient(180deg, #f6f0e5 0%, #efe7da 100%);
+    radial-gradient(circle at 10% 0%, rgba(126, 247, 184, 0.12), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(99, 199, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(255, 180, 84, 0.08), transparent 30%),
+    linear-gradient(180deg, #071018 0%, #0b121b 52%, #09111a 100%);
 }
 
 .page {
-  width: min(1120px, calc(100vw - 32px));
+  width: min(1140px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 40px 0 72px;
 }
@@ -602,7 +620,7 @@ body {
 .effort-card,
 .evidence-card {
   backdrop-filter: blur(10px);
-  background: var(--paper);
+  background: var(--panel);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
 }
@@ -611,6 +629,10 @@ body {
   border-radius: 28px;
   padding: 48px;
   margin-bottom: 24px;
+  background:
+    linear-gradient(180deg, rgba(20, 31, 47, 0.92), rgba(11, 18, 27, 0.94)),
+    linear-gradient(90deg, rgba(126, 247, 184, 0.04), transparent 40%),
+    linear-gradient(transparent 95%, rgba(144, 173, 209, 0.03) 95%);
 }
 
 .hero-grid {
@@ -633,6 +655,7 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent);
+  font-family: "IBM Plex Mono", monospace;
 }
 
 h1, h2, h3, p, ul { margin-top: 0; }
@@ -641,11 +664,17 @@ h1 {
   line-height: 0.94;
   max-width: 10ch;
   margin-bottom: 18px;
+  color: var(--ink);
 }
 
 h2 {
   font-size: 1.5rem;
   margin-bottom: 14px;
+  color: var(--ink);
+}
+
+h3 {
+  color: var(--ink);
 }
 
 .lede,
@@ -654,6 +683,15 @@ h2 {
 li {
   color: var(--muted);
   line-height: 1.55;
+}
+
+.lede {
+  color: #dce8f6;
+  font-size: 1.08rem;
+}
+
+.sublede {
+  color: var(--muted);
 }
 
 .hero-actions {
@@ -667,7 +705,7 @@ li {
   margin-top: 18px;
   margin-bottom: 8px;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--accent-2);
 }
 
 .hero-trust {
@@ -679,11 +717,12 @@ li {
 
 .hero-trust span {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(9, 16, 24, 0.72);
   border-radius: 999px;
   padding: 8px 12px;
   font-size: 0.9rem;
   color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .hero-proof {
@@ -695,11 +734,49 @@ li {
   border-radius: 24px;
   padding: 24px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(250, 245, 236, 0.84));
+    linear-gradient(180deg, rgba(18, 28, 42, 0.96), rgba(10, 17, 26, 0.98));
   border: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.shell-card {
+  background:
+    linear-gradient(180deg, rgba(16, 25, 38, 0.98), rgba(9, 15, 22, 0.98));
+  border: 1px solid var(--line-strong);
+}
+
+.shell-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.shell-dots {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.shell-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+
+.shell-dots span:nth-child(1) { background: #ff7b72; }
+.shell-dots span:nth-child(2) { background: var(--accent-3); }
+.shell-dots span:nth-child(3) { background: var(--accent); }
+
+.shell-title {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .proof-label {
@@ -708,6 +785,7 @@ li {
   letter-spacing: 0.12em;
   color: var(--accent-2);
   font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .proof-list {
@@ -724,7 +802,7 @@ li {
 }
 
 .proof-list strong {
-  color: var(--ink);
+  color: #ffffff;
 }
 
 .proof-list span {
@@ -740,23 +818,26 @@ li {
 .proof-pre {
   margin: 0;
   max-height: none;
+  color: #d7e8ff;
 }
 
 .button {
   text-decoration: none;
-  padding: 12px 16px;
-  border-radius: 999px;
+  padding: 12px 18px;
+  border-radius: 14px;
   font-weight: 700;
   border: 1px solid transparent;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
 }
 
 .button.primary {
-  background: var(--ink);
-  color: #fff8f0;
+  background: var(--accent);
+  color: #071018;
 }
 
 .button.secondary {
-  border-color: var(--line);
+  border-color: var(--line-strong);
+  background: rgba(9, 16, 24, 0.72);
   color: var(--ink);
 }
 
@@ -777,10 +858,13 @@ li {
   border-radius: 24px;
   padding: 28px;
   margin-bottom: 24px;
+  background:
+    linear-gradient(180deg, rgba(16, 25, 38, 0.88), rgba(12, 18, 27, 0.92));
 }
 
 .section-lede {
   margin-bottom: 20px;
+  color: #d5e1f1;
 }
 
 .link-list {
@@ -806,7 +890,7 @@ li {
 }
 
 .flow-card {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--panel-2);
   border: 1px solid var(--line);
 }
 
@@ -821,8 +905,18 @@ li {
   min-height: 0;
   border-radius: 22px;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--panel-2);
   border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+
+.step-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
 }
 
 .join-action-card {
@@ -833,8 +927,11 @@ li {
   border-radius: 24px;
   padding: 24px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(247, 239, 227, 0.78));
-  border: 1px solid var(--line);
+    linear-gradient(135deg, rgba(14, 24, 37, 0.98), rgba(11, 17, 26, 0.98));
+  border: 1px solid var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(126, 247, 184, 0.1),
+    0 18px 48px rgba(0, 0, 0, 0.25);
 }
 
 .join-action-copy h3 {
@@ -844,15 +941,19 @@ li {
 .join-command-stack {
   display: grid;
   gap: 10px;
+  padding: 18px;
+  border-radius: 22px;
 }
 
 .command-hero {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.65;
   padding: 18px;
   border-radius: 18px;
-  background: rgba(31, 27, 22, 0.05);
+  background: rgba(5, 11, 18, 0.82);
+  border: 1px solid var(--line);
+  color: #ecfff5;
 }
 
 .effort-type {
@@ -861,6 +962,7 @@ li {
   letter-spacing: 0.12em;
   color: var(--accent-2);
   margin-bottom: 12px;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .step-label {
@@ -870,6 +972,7 @@ li {
   color: var(--accent);
   margin-bottom: 12px;
   font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .card-links {
@@ -887,10 +990,11 @@ code {
 }
 
 .command {
-  background: rgba(31, 27, 22, 0.06);
+  background: rgba(9, 16, 24, 0.9);
   border-radius: 14px;
   padding: 12px;
-  color: var(--ink);
+  color: #edfff6;
+  border: 1px solid var(--line);
 }
 
 pre {
@@ -902,17 +1006,17 @@ pre {
   overflow: auto;
   padding: 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(6, 12, 18, 0.88);
   border: 1px solid var(--line);
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-2);
   font-weight: 700;
 }
 
 .footer-note {
-  color: var(--ink);
+  color: #d2dded;
   font-weight: 500;
 }
 
@@ -935,6 +1039,10 @@ a {
 
   h1 {
     max-width: 100%;
+  }
+
+  .join-command-stack {
+    padding: 16px;
   }
 }
 """
