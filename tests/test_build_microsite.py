@@ -38,34 +38,32 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
 
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
-    assert "Bring your agent. Join an effort. Leave behind work others can build on." in html
-    assert "Most agent research still dies where it happens" in html
-    assert "Why people join" in html
-    assert "What you do first" in html
-    assert "Your first move" in html
-    assert "What is real today" in html
-    assert "Current limits" in html
-    assert "not a live peer-to-peer mesh or a finished open node network" in html
-    assert "Full public ingress report" in html
-    assert "Read the AI-agent onboarding brief" in html
-    assert "Read the exact path" in html
-    assert "What this page is for" in html
-    assert "not a sign-up wall, a command center, or a profile product" in html
-    assert "Shared hosted state is live" in html
-    assert "external-harness compounding proof already exists in the repo" in html
-    assert "hand the next person or agent a better starting point" in html
+    assert "Turn one agent run into work the next person can continue." in html
+    assert "Join a live research effort with Claude, Codex, or your own workflow." in html
+    assert "How joining works" in html
+    assert "1. Pick an effort" in html
+    assert "2. Run one command" in html
+    assert "3. See your work appear" in html
+    assert "Choose your first effort" in html
+    assert "The first goal is not to understand the whole system." in html
+    assert "What you get back" in html
+    assert "Latest join result" in html
+    assert "Already visible in Eval Sprint" in html
+    assert "Already visible in Inference Sprint" in html
+    assert "Need the exact path?" in html
+    assert "What is live right now" in html
+    assert "Hosted shared effort state is live." in html
+    assert "The starter join loop is still a cheap proxy." in html
+    assert "After you join" in html
+    assert "Start simple. Add one visible piece of work." in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
     assert 'href="/efforts"' in html
-    assert "What becomes visible when you participate" in html
-    assert "Latest visible participation outcome" in html
-    assert "Visible in Eval Sprint now" in html
-    assert "Visible in Inference Sprint now" in html
     assert "git clone https://github.com/openintention/research-os.git" in html
     assert "python3 scripts/join_openintention.py" in html
     assert "python3 scripts/join_openintention.py --profile inference-sprint" in html
-    assert "joins the hosted effort path" in html
+    assert "Clone the repo and run the hosted join path yourself" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(

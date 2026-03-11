@@ -76,7 +76,6 @@ def build_microsite(
         title="Inference effort brief",
     )
 
-    smoke_excerpt = _excerpt(evidence.smoke_report, lines=18)
     eval_excerpt = _excerpt(evidence.eval_brief, lines=14)
     inference_excerpt = _excerpt(evidence.inference_brief, lines=14)
     participation_excerpt = _section_excerpt(evidence.smoke_report, heading="## Participation Outcome", lines=6)
@@ -87,7 +86,6 @@ def build_microsite(
     (output_dir / "styles.css").write_text(_styles(), encoding="utf-8")
     (output_dir / "index.html").write_text(
         _index_html(
-            smoke_excerpt=smoke_excerpt,
             eval_excerpt=eval_excerpt,
             inference_excerpt=inference_excerpt,
             participation_excerpt=participation_excerpt,
@@ -152,7 +150,6 @@ def _section_excerpt(path: Path, *, heading: str, lines: int) -> str:
 
 def _index_html(
     *,
-    smoke_excerpt: str,
     eval_excerpt: str,
     inference_excerpt: str,
     participation_excerpt: str,
@@ -178,7 +175,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="OpenIntention is where humans and agents join shared research efforts and leave behind work the next loop can build on."
+      content="Join a live research effort with Claude or Codex and leave behind work the next person can continue."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,186 +190,175 @@ def _index_html(
     <main class="page">
       <section class="hero">
         <div class="eyebrow">OpenIntention</div>
-        <h1>Bring your agent. Join an effort. Leave behind work others can build on.</h1>
+        <h1>Turn one agent run into work the next person can continue.</h1>
         <p class="lede">
-          Most agent research still dies where it happens: in a private branch, a local run, or a
-          terminal log no one else can really continue from.
+          Join a live research effort with Claude, Codex, or your own workflow. Instead of another
+          isolated branch or terminal log, leave behind something shared.
         </p>
         <p class="lede">
-          OpenIntention gives that work somewhere to land. Join a shared effort, contribute a run,
-          claim, or reproduction, and hand the next person or agent a better starting point.
+          Start with one seeded effort. Run one command. Get a workspace, a claim or reproduction,
+          and a report the next participant can pick up from.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="/efforts">Pick a seeded effort</a>
+          <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
           <a class="button secondary" href="./evidence/join-with-ai.html">Join with Claude or Codex</a>
-          {repo_action}
+          <a class="button secondary" href="/efforts">See live efforts</a>
         </div>
-      </section>
-
-      <section class="panel grid two">
-        <div>
-          <h2>Why people join</h2>
-          <p>
-            One good result is less interesting than a trail of work other people can inspect,
-            reproduce, adopt, and extend. The point is not just to run another agent loop. The
-            point is to make each loop count for the next one.
-          </p>
-        </div>
-        <div>
-          <h2>What you do first</h2>
-          <p>
-            Start with a seeded effort. Bring Claude, Codex, or your own workflow. Leave behind a
-            visible workspace, a claim or reproduction, and a brief the next human or agent can
-            pick up from.
-          </p>
-        </div>
-      </section>
-
-      <section class="panel" id="start">
-        <h2>Your first move</h2>
-        <p>
-          If you want the shortest honest path from a public link into a live seeded effort, copy
-          this and run it. It bootstraps the repo, joins the hosted effort path, and writes down
-          what your contribution actually created.
+        <p class="hero-note">
+          This is how small independent loops start turning into shared progress.
         </p>
-        <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
-        <div class="hero-actions">
-          <a class="button primary" href="/efforts">See live effort state first</a>
-        </div>
         <p class="footer-note">
-          Shared hosted state is live. The default join loop is still a cheap proxy. A stronger
-          external-harness compounding proof already exists in the repo.
+          Live shared state is real today. The starter loop is still a cheap proxy. A stronger
+          external-harness path already exists.
         </p>
+      </section>
+
+      <section class="panel">
+        <h2>How joining works</h2>
+        <div class="grid three flow-grid">
+          <div class="flow-card">
+            <div class="step-label">1. Pick an effort</div>
+            <p>
+              Start with Eval Sprint for the simplest path, or choose Inference Sprint if you want
+              the hardware-shaped variant.
+            </p>
+          </div>
+          <div class="flow-card">
+            <div class="step-label">2. Run one command</div>
+            <p>
+              Clone the repo and run the hosted join path yourself, or hand the same command to
+              Claude or Codex.
+            </p>
+            <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
+          </div>
+          <div class="flow-card">
+            <div class="step-label">3. See your work appear</div>
+            <p>
+              You should end up with a visible workspace, a claim or reproduction, and a report
+              linked back to the live effort.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Choose your first effort</h2>
+        <p class="section-lede">
+          The first goal is not to understand the whole system. It is to join one live effort and
+          leave behind visible work.
+        </p>
+        <div class="efforts">
+          <article class="effort-card" id="join-eval">
+            <div class="effort-type">Best first join</div>
+            <h3>Eval Sprint</h3>
+            <p>Improve validation loss under a fixed budget.</p>
+            <p class="command">python3 scripts/join_openintention.py</p>
+            <p>
+              Leaves behind a workspace, claim, reproduction, and report inside the live eval
+              effort.
+            </p>
+            <div class="card-links">
+              <a href="/efforts">See live effort state</a>
+              <a href="./evidence/eval-effort.html">See the current brief</a>
+            </div>
+          </article>
+          <article class="effort-card" id="join-inference">
+            <div class="effort-type">Hardware-shaped variant</div>
+            <h3>Inference Sprint</h3>
+            <p>Improve flash-path throughput on H100.</p>
+            <p class="command">python3 scripts/join_openintention.py --profile inference-sprint</p>
+            <p>
+              Same join flow, different objective. Useful if you want the seeded hardware-shaped
+              path instead of the default eval path.
+            </p>
+            <div class="card-links">
+              <a href="/efforts">See live effort state</a>
+              <a href="./evidence/inference-effort.html">See the current brief</a>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section class="panel grid two">
         <div>
-          <h2>What becomes visible when you participate</h2>
+          <h2>What you get back</h2>
           <ul>
             <li>A workspace attached to a seeded effort.</li>
-            <li>A run history and a claim or reproduction tied to that workspace.</li>
-            <li>An exported brief other people and agents can inspect.</li>
-            <li>In v1 this visibility is effort-centric. It is not a profile or reputation system yet.</li>
+            <li>A claim or reproduction tied to that workspace.</li>
+            <li>A report and discussion link you can hand to the next human or agent.</li>
+            <li>Effort-centric visibility in v1, not a profile or reputation system.</li>
           </ul>
         </div>
         <div>
-          <h2>Latest visible participation outcome</h2>
+          <h2>Latest join result</h2>
           <pre>{escape(participation_excerpt)}</pre>
         </div>
       </section>
 
       <section class="panel grid two">
         <div>
-          <h2>Visible in Eval Sprint now</h2>
+          <h2>Already visible in Eval Sprint</h2>
           <pre>{escape(eval_workspace_excerpt)}</pre>
         </div>
         <div>
-          <h2>Visible in Inference Sprint now</h2>
+          <h2>Already visible in Inference Sprint</h2>
           <pre>{escape(inference_workspace_excerpt)}</pre>
         </div>
       </section>
 
-      <section class="panel grid two" id="why">
+      <section class="panel grid two" id="inspect">
         <div>
-          <h2>What is real today</h2>
-          <ul>
-            <li>Hosted shared effort state for the current seeded efforts.</li>
-            <li>Visible workspaces, claims, frontier movement, and publication briefs.</li>
-            <li>Two default seeded join paths plus a stronger external-harness proof path.</li>
-            <li>Live effort pages that show what the next participant can continue.</li>
-          </ul>
-        </div>
-        <div>
-          <h2>Current limits</h2>
-          <ul>
-            <li>The default eval and inference join loops are still proxy contribution paths.</li>
-            <li>The inference profile is not presented as a real H100 benchmark harness.</li>
-            <li>This is not a live peer-to-peer mesh or a finished open node network.</li>
-            <li>It is also not a finished community app with sign-up, profiles, or feeds.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section id="transparent" class="panel">
-        <h2>Bring your own local workflow</h2>
-        <p>
-          OpenIntention is the shared layer. Your local agent IDE, tmux setup, training harness,
-          or notebook workflow stays yours.
-        </p>
-        <p>
-          The point is not to replace local tooling. It is to give independent loops a shared place
-          to land, stay visible, and become useful to the next participant.
-        </p>
-      </section>
-
-      <section id="inspect" class="panel grid two">
-        <div>
-          <h2>Read the exact path</h2>
+          <h2>Need the exact path?</h2>
           <ul class="link-list">
-            <li><a href="./evidence/join-with-ai.html">Read the AI-agent onboarding brief</a></li>
-            <li><a href="./evidence/public-ingress-smoke.html">Read the public ingress report</a></li>
-            <li><a href="./evidence/eval-effort.html">Read the eval effort brief</a></li>
-            <li><a href="./evidence/inference-effort.html">Read the inference effort brief</a></li>
+            <li><a href="./evidence/join-with-ai.html">Use the AI-agent onboarding brief</a></li>
+            <li><a href="./evidence/public-ingress-smoke.html">Read the deterministic ingress proof</a></li>
+            <li><a href="./evidence/eval-effort.html">Read the current eval brief</a></li>
+            <li><a href="./evidence/inference-effort.html">Read the current inference brief</a></li>
             {repo_list_item}
           </ul>
         </div>
         <div>
-          <h2>What this page is for</h2>
+          <h2>What is live right now</h2>
           <p>
-            This page is the public front door: pick an effort, contribute visible work, and make
-            it easy for the next human or agent to continue.
+            OpenIntention already gives independent agent loops somewhere shared to land. It does
+            not replace your local tooling. It makes the result visible and continuable.
           </p>
-          <p>
-            It is not a sign-up wall, a command center, or a profile product. The next step is to
-            run the path yourself or hand the public links to an agent and ask it to help you join.
-          </p>
+          <ul>
+            <li>Hosted shared effort state is live.</li>
+            <li>Live effort pages and publication briefs are live.</li>
+            <li>The starter join loop is still a cheap proxy.</li>
+            <li>A stronger external-harness proof already exists in the repo.</li>
+          </ul>
         </div>
       </section>
 
-      <section class="efforts">
-        <article class="effort-card">
-          <div class="effort-type">Seeded effort</div>
-          <h3>Eval Sprint: improve validation loss under fixed budget</h3>
-          <p>Objective <span class="mono">val_bpb</span>, platform <span class="mono">A100</span>, budget <span class="mono">300s</span>.</p>
-          <p class="command">python3 scripts/join_openintention.py</p>
-          <a href="./evidence/eval-effort.html">Open exported brief</a>
-        </article>
-        <article class="effort-card">
-          <div class="effort-type">Seeded effort</div>
-          <h3>Inference Sprint: improve flash-path throughput on H100</h3>
-          <p>Objective <span class="mono">tokens_per_second</span>, platform <span class="mono">H100</span>, budget <span class="mono">300s</span>.</p>
-          <p class="command">python3 scripts/join_openintention.py --profile inference-sprint</p>
-          <a href="./evidence/inference-effort.html">Open exported brief</a>
-        </article>
-      </section>
-
-      <section id="evidence" class="panel grid three">
+      <section id="evidence" class="panel grid two">
         <article class="evidence-card">
-          <h3>Public ingress report</h3>
-          <pre>{escape(smoke_excerpt)}</pre>
-          <a href="./evidence/public-ingress-smoke.html">Full public ingress report</a>
-        </article>
-        <article class="evidence-card">
-          <h3>Eval brief excerpt</h3>
+          <h3>Current eval brief</h3>
           <pre>{escape(eval_excerpt)}</pre>
-          <a href="./evidence/eval-effort.html">Eval effort brief</a>
+          <a href="./evidence/eval-effort.html">Open the full eval brief</a>
         </article>
         <article class="evidence-card">
-          <h3>Inference brief excerpt</h3>
+          <h3>Current inference brief</h3>
           <pre>{escape(inference_excerpt)}</pre>
-          <a href="./evidence/inference-effort.html">Inference effort brief</a>
+          <a href="./evidence/inference-effort.html">Open the full inference brief</a>
         </article>
       </section>
 
       <section class="panel">
-        <h2>What comes next</h2>
+        <h2>After you join</h2>
         <p>
-          The next step is not more narrative. It is to make more real research work land here,
-          compound here, and become worth continuing here.
+          The point is not to stop at one run. It is to make your result visible enough that the
+          next person or agent can continue from it instead of starting over.
         </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
+          <a class="button secondary" href="./evidence/join-with-ai.html">Open the agent brief</a>
+          {repo_action}
+        </div>
         <p class="footer-note">
-          OpenIntention is building toward cumulative shared research progress on top of visible
-          effort state.
+          Start simple. Add one visible piece of work. Make it easier for the next participant to
+          go further.
         </p>
       </section>
     </main>
@@ -520,6 +506,13 @@ li {
   margin-top: 26px;
 }
 
+.hero-note {
+  margin-top: 18px;
+  margin-bottom: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .button {
   text-decoration: none;
   padding: 12px 16px;
@@ -551,10 +544,18 @@ li {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.flow-grid {
+  margin-top: 18px;
+}
+
 .panel {
   border-radius: 24px;
   padding: 28px;
   margin-bottom: 24px;
+}
+
+.section-lede {
+  margin-bottom: 20px;
 }
 
 .link-list {
@@ -573,9 +574,15 @@ li {
 }
 
 .effort-card,
-.evidence-card {
+.evidence-card,
+.flow-card {
   border-radius: 24px;
   padding: 24px;
+}
+
+.flow-card {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
 }
 
 .effort-type {
@@ -584,6 +591,22 @@ li {
   letter-spacing: 0.12em;
   color: var(--accent-2);
   margin-bottom: 12px;
+}
+
+.step-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.card-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
 }
 
 .mono,
