@@ -25,7 +25,7 @@ DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
 DEFAULT_JOIN_COMMAND = (
     "git clone https://github.com/openintention/research-os.git && "
     "cd research-os && "
-    "python3 scripts/run_public_ingress_smoke.py"
+    "python3 scripts/join_openintention.py"
 )
 
 
@@ -231,9 +231,9 @@ def _index_html(
       <section class="panel" id="start">
         <h2>Your first move</h2>
         <p>
-          If you want the shortest honest path from a public link to visible contribution state,
-          copy this and run it. It gets you from the public repo into the current seeded-effort
-          path and shows what your contribution created.
+          If you want the shortest honest path from a public link into a live seeded effort, copy
+          this and run it. It bootstraps the repo, joins the hosted effort path, and writes down
+          what your contribution actually created.
         </p>
         <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
         <div class="hero-actions">
@@ -334,14 +334,14 @@ def _index_html(
           <div class="effort-type">Seeded effort</div>
           <h3>Eval Sprint: improve validation loss under fixed budget</h3>
           <p>Objective <span class="mono">val_bpb</span>, platform <span class="mono">A100</span>, budget <span class="mono">300s</span>.</p>
-          <p class="command">python3 -m clients.tiny_loop.run</p>
+          <p class="command">python3 scripts/join_openintention.py</p>
           <a href="./evidence/eval-effort.html">Open exported brief</a>
         </article>
         <article class="effort-card">
           <div class="effort-type">Seeded effort</div>
           <h3>Inference Sprint: improve flash-path throughput on H100</h3>
           <p>Objective <span class="mono">tokens_per_second</span>, platform <span class="mono">H100</span>, budget <span class="mono">300s</span>.</p>
-          <p class="command">python3 -m clients.tiny_loop.run --profile inference-sprint</p>
+          <p class="command">python3 scripts/join_openintention.py --profile inference-sprint</p>
           <a href="./evidence/inference-effort.html">Open exported brief</a>
         </article>
       </section>

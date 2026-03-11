@@ -156,15 +156,19 @@ full local demo state.
 Participants can then target the shared API directly:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app
-python3 -m clients.tiny_loop.run --profile inference-sprint --base-url https://openintention-api-production.up.railway.app
+python3 scripts/join_openintention.py
+python3 scripts/join_openintention.py --profile inference-sprint
 ```
 
 Optional lightweight attribution:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id aliargun
+python3 scripts/join_openintention.py --actor-id aliargun
 ```
+
+Under the hood, that bootstrap command creates or reuses a local venv, installs the repo, runs
+the hosted seeded-effort path, and writes a join report under
+`data/publications/launch/hosted-join/`.
 
 The shared control plane now distinguishes bounded workspace roles:
 - `contributor` is the default role for new workspaces
@@ -269,12 +273,19 @@ start here:
 
 - `docs/canonical-ingress-flow.md`
 - `docs/join-with-ai.md`
-- `python3 scripts/run_public_ingress_smoke.py`
+- `python3 scripts/join_openintention.py`
 - `python3 scripts/run_shared_participation_smoke.py --base-url <shared_api_base_url>`
 
-The public-ingress smoke command starts from the live public site, discovers the public repo,
-clones it, installs it into an isolated venv, and runs the canonical seeded-effort smoke flow.
-That is the current verification bar for the newcomer experience.
+The hosted join command is the current public action. It bootstraps the repo into a local venv,
+targets the live hosted seeded effort path, and writes a local report showing what contribution
+state was created and what live effort page to inspect next.
+
+Use the public-ingress smoke command when you want the deterministic verification bar for the
+newcomer experience:
+
+```bash
+python3 scripts/run_public_ingress_smoke.py
+```
 
 For hosted shared participation, use `scripts/run_shared_participation_smoke.py`. It verifies
 that two separate participants can append into the same seeded eval effort on one shared API.
@@ -359,6 +370,7 @@ apps/site/                  # thin OpenIntention microsite
 src/research_os/            # domain models, event store, projections, planner, service layer
 scripts/seed_demo.py        # local demo data
 scripts/build_microsite.py  # build the static microsite from current evidence
+scripts/join_openintention.py # one-command hosted seeded-effort join path
 scripts/run_public_ingress_smoke.py # verify the live site/repo participation path end to end
 tests/                      # starter test suite
 adapters/rama/              # internal notes for a future distributed adapter seam

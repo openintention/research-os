@@ -63,6 +63,9 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Visible in Eval Sprint now" in html
     assert "Visible in Inference Sprint now" in html
     assert "git clone https://github.com/openintention/research-os.git" in html
+    assert "python3 scripts/join_openintention.py" in html
+    assert "python3 scripts/join_openintention.py --profile inference-sprint" in html
+    assert "joins the hosted effort path" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(

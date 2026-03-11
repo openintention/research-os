@@ -1,7 +1,8 @@
 # Join OpenIntention With an AI Agent
 
 If you arrived from `https://openintention.io` or a social post, this is the shortest honest
-path to joining a live OpenIntention effort and leaving behind visible work.
+path to joining a live OpenIntention effort and leaving behind visible work other people can
+continue.
 
 This is not just a convenience document. It reflects the intended onboarding surface:
 many newcomers will point Claude, Codex, or another agent at the public links and ask it to
@@ -72,7 +73,7 @@ Prefer:
 Then do this:
 1. inspect the current seeded efforts and choose the best first effort to join
 2. find the shortest path that actually leaves visible contribution state
-3. if a hosted join path is available, prefer that first
+3. if `python3 scripts/join_openintention.py` exists, prefer that first
 4. otherwise use the public-ingress smoke command as the deterministic fallback
 5. at the end, tell me:
    - which effort I joined
@@ -89,11 +90,22 @@ Be explicit about whether I became:
 
 ## Fastest live shared participation path
 
-If you already cloned the repo and want to land visible work into the live shared effort state,
-run:
+If you already cloned the repo and want the shortest path into the live shared effort state, run:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id <handle>
+python3 scripts/join_openintention.py
+```
+
+To join the inference effort instead:
+
+```bash
+python3 scripts/join_openintention.py --profile inference-sprint
+```
+
+To attach a lightweight public handle in v1:
+
+```bash
+python3 scripts/join_openintention.py --actor-id <handle>
 ```
 
 That hosted path should:
@@ -113,12 +125,12 @@ python3 scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo URL, clones
-the repo into a temporary working directory, installs it in an isolated venv, and runs the
+the repo into a temporary working directory, installs it in an isolated venv, and verifies the
 existing seeded-effort path. The report is written under
 `data/publications/launch/public-ingress/`.
 
 Use it when you want to verify the whole public path quickly. Do not confuse it with the
-stronger shared-hosted or external-harness paths.
+actual hosted join path or the stronger external-harness paths.
 
 ## Local fallback path
 

@@ -1,0 +1,226 @@
+from __future__ import annotations
+
+import argparse
+from dataclasses import dataclass
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_SITE_URL = "https://openintention.io"
+
+
+@dataclass(frozen=True, slots=True)
+class HostedJoinResult:
+    actor_id: str
+    profile: str
+    base_url: str
+    site_url: str
+    effort_id: str | None
+    effort_name: str | None
+    workspace_id: str | None
+    claim_id: str | None
+    reproduction_run_id: str | None
+    participant_role: str | None
+    output: str
+
+
+def run_hosted_join(
+    *,
+    actor_id: str | None,
+    profile: str,
+    base_url: str,
+    site_url: str,
+    artifact_root: str,
+    output_dir: str,
+    python_executable: str = sys.executable,
+    venv_dir: str = ".venv-openintention-join",
+) -> Path:
+    output_root = (REPO_ROOT / output_dir).resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
+    artifact_root_path = (REPO_ROOT / artifact_root).resolve()
+    artifact_root_path.mkdir(parents=True, exist_ok=True)
+
+    resolved_actor_id = actor_id or _default_actor_id()
+    venv_path = (REPO_ROOT / venv_dir).resolve()
+    venv_python = _venv_python(venv_path)
+
+    if not venv_python.exists():
+        _run_command([python_executable, "-m", "venv", str(venv_path)], cwd=REPO_ROOT)
+
+    _run_command([str(venv_python), "-m", "pip", "install", "-e", "."], cwd=REPO_ROOT)
+
+    command = [
+        str(venv_python),
+        "-m",
+        "clients.tiny_loop.run",
+        "--base-url",
+        base_url,
+        "--profile",
+        profile,
+        "--actor-id",
+        resolved_actor_id,
+        "--artifact-root",
+        str(artifact_root_path),
+    ]
+    output = _run_command(command, cwd=REPO_ROOT)
+    fields = _extract_fields(output)
+    result = HostedJoinResult(
+        actor_id=resolved_actor_id,
+        profile=profile,
+        base_url=base_url,
+        site_url=site_url,
+        effort_id=fields.get("effort_id"),
+        effort_name=fields.get("effort_name"),
+        workspace_id=fields.get("workspace_id"),
+        claim_id=fields.get("claim_id"),
+        reproduction_run_id=fields.get("reproduction_run_id"),
+        participant_role=fields.get("participant_role"),
+        output=output,
+    )
+
+    report_path = output_root / "hosted-join.md"
+    report_path.write_text(build_join_report(result), encoding="utf-8")
+    return report_path
+
+
+def build_join_report(result: HostedJoinResult) -> str:
+    effort_url = (
+        f"{result.site_url.rstrip('/')}/efforts/{result.effort_id}" if result.effort_id is not None else "n/a"
+    )
+    discussion_url = (
+        f"{result.base_url.rstrip('/')}/api/v1/publications/workspaces/{result.workspace_id}/discussion"
+        if result.workspace_id is not None
+        else "n/a"
+    )
+    return "\n".join(
+        [
+            "# Joined OpenIntention",
+            "",
+            "## Joined",
+            f"- Actor: `{result.actor_id}`",
+            f"- Profile: `{result.profile}`",
+            f"- Participant role: `{result.participant_role or 'unknown'}`",
+            f"- Effort: `{result.effort_name or 'unknown'}`",
+            f"- Workspace: `{result.workspace_id or 'unknown'}`",
+            "",
+            "## Contribution",
+            f"- Claim: `{result.claim_id or 'unknown'}`",
+            f"- Reproduction run: `{result.reproduction_run_id or 'unknown'}`",
+            "",
+            "## Inspect Next",
+            f"- Live effort page: `{effort_url}`",
+            f"- Workspace discussion: `{discussion_url}`",
+            "- Hand the live effort page or this report to the next human or agent.",
+            "",
+            "## Command Output",
+            "```text",
+            result.output.strip(),
+            "```",
+            "",
+            "## Honesty Line",
+            "- This lands visible work in the live hosted shared effort state.",
+            "- The default eval and inference contribution paths are still proxy loops.",
+            "- A stronger external-harness compounding path exists separately in the repo.",
+        ]
+    ) + "\n"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Join the live OpenIntention effort path.")
+    parser.add_argument(
+        "--actor-id",
+        default=None,
+        help="Optional lightweight handle to attach to the hosted workspace and events.",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=("eval-sprint", "inference-sprint"),
+        default="eval-sprint",
+        help="Which seeded effort path to join.",
+    )
+    parser.add_argument(
+        "--base-url",
+        default=DEFAULT_BASE_URL,
+        help="Hosted OpenIntention API base URL.",
+    )
+    parser.add_argument(
+        "--site-url",
+        default=DEFAULT_SITE_URL,
+        help="Public OpenIntention site URL.",
+    )
+    parser.add_argument(
+        "--artifact-root",
+        default="data/client-artifacts/hosted-join",
+        help="Directory for local client-side snapshot bundles.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="data/publications/launch/hosted-join",
+        help="Directory to write the hosted join report into.",
+    )
+    parser.add_argument(
+        "--venv-dir",
+        default=".venv-openintention-join",
+        help="Virtual environment path used to bootstrap the join command.",
+    )
+    args = parser.parse_args()
+
+    print("Joining OpenIntention from the public repo into the live hosted effort state...")
+    report_path = run_hosted_join(
+        actor_id=args.actor_id,
+        profile=args.profile,
+        base_url=args.base_url,
+        site_url=args.site_url,
+        artifact_root=args.artifact_root,
+        output_dir=args.output_dir,
+        venv_dir=args.venv_dir,
+    )
+    print()
+    print(report_path.read_text(encoding="utf-8"))
+    print(f"report_path={report_path}")
+
+
+def _default_actor_id() -> str:
+    preferred = os.environ.get("OPENINTENTION_ACTOR_ID") or os.environ.get("GITHUB_USER") or os.environ.get("USER")
+    if preferred:
+        return _normalize_handle(preferred)
+    return "participant"
+
+
+def _normalize_handle(value: str) -> str:
+    normalized = re.sub(r"[^a-zA-Z0-9_.-]+", "-", value.strip()).strip("-_.").lower()
+    return normalized or "participant"
+
+
+def _extract_fields(output: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    for line in output.splitlines():
+        match = re.match(r"^([a-z_]+)=(.+)$", line.strip())
+        if match:
+            fields[match.group(1)] = match.group(2)
+    return fields
+
+
+def _run_command(command: list[str], *, cwd: Path) -> str:
+    completed = subprocess.run(
+        command,
+        cwd=cwd,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    return completed.stdout
+
+
+def _venv_python(venv_dir: Path) -> Path:
+    return venv_dir / "bin" / "python"
+
+
+if __name__ == "__main__":
+    main()

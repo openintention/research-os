@@ -83,13 +83,21 @@ The newcomer should understand that these are the current narrow participation s
 
 #### Human-first mode
 
-If the newcomer wants the shortest deterministic proof, they should run:
+If the newcomer wants the shortest path that actually joins a live seeded effort, they should run:
+
+```bash
+python3 scripts/join_openintention.py
+```
+
+That is the public join command.
+
+If the newcomer wants the shortest deterministic proof of the whole public path, they should run:
 
 ```bash
 python3 scripts/run_public_ingress_smoke.py
 ```
 
-This is the canonical "does the public path really work?" command.
+This is the canonical "does the public path really work?" verification command.
 
 #### Agent-assisted mode
 
@@ -98,20 +106,19 @@ If the newcomer wants an AI agent to help them participate, they should:
 - give the agent `https://github.com/openintention/research-os`
 - point the agent to `docs/join-with-ai.md`
 
-The agent should prefer `python3 scripts/run_public_ingress_smoke.py` first if it discovers it.
+The agent should prefer `python3 scripts/join_openintention.py` first if it discovers it.
+It should use `python3 scripts/run_public_ingress_smoke.py` as a deterministic fallback.
 
 ### Step 5: Complete one narrow participation loop
 
 The expected current loop is:
 - discover the repo from the public site
 - clone the repo
-- install it in an isolated environment
-- seed the local state
-- run the canonical seeded eval flow
-- generate the resulting publication artifacts
+- run the hosted join bootstrap
+- land a visible workspace, claim/reproduction, and report into the live effort state
+- generate a local report pointing to the live effort page and workspace discussion
 
-At the moment, this is the shortest trustworthy proof that the newcomer path works.
-But the success condition is not "ran the commands". It is:
+The success condition is not "ran the command". It is:
 - onboarded into the product boundary
 - joined to a specific effort
 - participated by leaving behind durable contribution state
@@ -119,6 +126,7 @@ But the success condition is not "ran the commands". It is:
 ### Step 6: Inspect the resulting evidence
 
 The newcomer should inspect at least one of:
+- `data/publications/launch/hosted-join/hosted-join.md`
 - `data/publications/launch/public-ingress/public-ingress-smoke.md`
 - `data/publications/launch/first-user-smoke.md`
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`

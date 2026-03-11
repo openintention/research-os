@@ -27,11 +27,20 @@ Current seeded efforts:
 Verify the actual public ingress path first:
 
 ```bash
+python3 scripts/join_openintention.py
+```
+
+That is the current public join command. It bootstraps the repo locally, targets the live hosted
+seeded effort path, and writes a report under `data/publications/launch/hosted-join/`.
+
+Verify the deterministic public-ingress path next:
+
+```bash
 python3 scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo, clones it,
-and runs the canonical seeded-effort smoke flow through a fresh local checkout. The durable
+and verifies the canonical seeded-effort path through a fresh local checkout. The durable
 report lands under `data/publications/launch/public-ingress/`.
 
 Verify shared participation next, once a hosted API exists:
@@ -111,7 +120,7 @@ Use a short post structure:
 1. one sentence on the effort
 2. one sentence on the contribution loop
 3. one artifact excerpt or screenshot from the exported brief
-4. one exact command someone can run locally
+4. one exact join command someone can run locally
 5. one sentence on what is real today versus what is still proxy behavior
 
 Recommended anchor:
