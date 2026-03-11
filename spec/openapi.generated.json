@@ -1307,6 +1307,17 @@
             ],
             "title": "Workspace Id"
           },
+          "target_claim_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Claim Id"
+          },
           "limit": {
             "type": "integer",
             "maximum": 20.0,

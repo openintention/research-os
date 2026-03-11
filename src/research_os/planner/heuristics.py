@@ -23,9 +23,35 @@ def recommend_next(events: Iterable[EventEnvelope], request: RecommendNextReques
     best_member = frontier.members[0] if frontier.members else None
 
     recommendations: list[Recommendation] = []
+    targeted_claim_id: str | None = None
+
+    if request.target_claim_id:
+        targeted_claim = next((claim for claim in claims if claim.claim_id == request.target_claim_id), None)
+        if targeted_claim is not None:
+            frontier_proximity = _frontier_proximity(
+                policy,
+                frontier_by_snapshot=frontier_by_snapshot,
+                best_member=best_member,
+                claim=targeted_claim,
+            )
+            recommendations.append(
+                _build_reproduce_claim_recommendation(
+                    claim=targeted_claim,
+                    priority=95,
+                    frontier_proximity=frontier_proximity,
+                    reason=(
+                        "This claim was explicitly targeted for verifier work. Keep the reproduction "
+                        "focused on the requested claim even if other pending claims currently rank higher."
+                    ),
+                    targeted=True,
+                )
+            )
+            targeted_claim_id = targeted_claim.claim_id
 
     scored_claims = []
     for claim in claims:
+        if targeted_claim_id is not None and claim.claim_id == targeted_claim_id:
+            continue
         reproducibility_gap = _reproducibility_gap(claim)
         if reproducibility_gap <= 0:
             continue
@@ -45,20 +71,14 @@ def recommend_next(events: Iterable[EventEnvelope], request: RecommendNextReques
         if len(recommendations) >= request.limit:
             break
         recommendations.append(
-            Recommendation(
-                action="reproduce_claim",
+            _build_reproduce_claim_recommendation(
+                claim=claim,
                 priority=priority,
+                frontier_proximity=frontier_proximity,
                 reason=(
                     "This claim still has a reproducibility gap and enough frontier relevance to "
                     "justify more evidence collection."
                 ),
-                inputs={
-                    "claim_id": claim.claim_id,
-                    "snapshot_id": claim.candidate_snapshot_id,
-                    "workspace_id": claim.workspace_id,
-                    "frontier_proximity": round(frontier_proximity, 3),
-                    "reproducibility_gap": _reproducibility_gap(claim),
-                },
             )
         )
 
@@ -172,6 +192,29 @@ def recommend_next(events: Iterable[EventEnvelope], request: RecommendNextReques
 def _reproducibility_gap(claim: ClaimSummary) -> int:
     target_support = 2
     return max(target_support - claim.support_count, 0) + claim.contradiction_count
+
+
+def _build_reproduce_claim_recommendation(
+    *,
+    claim: ClaimSummary,
+    priority: int,
+    frontier_proximity: float,
+    reason: str,
+    targeted: bool = False,
+) -> Recommendation:
+    return Recommendation(
+        action="reproduce_claim",
+        priority=priority,
+        reason=reason,
+        inputs={
+            "claim_id": claim.claim_id,
+            "snapshot_id": claim.candidate_snapshot_id,
+            "workspace_id": claim.workspace_id,
+            "frontier_proximity": round(frontier_proximity, 3),
+            "reproducibility_gap": _reproducibility_gap(claim),
+            "targeted": targeted,
+        },
+    )
 
 
 def _frontier_proximity(

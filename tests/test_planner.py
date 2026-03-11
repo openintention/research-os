@@ -127,6 +127,62 @@ def test_planner_prefers_unreproduced_claim(tmp_path):
     assert response.recommendations[0].inputs["claim_id"] == "claim-1"
 
 
+def test_planner_can_target_one_explicit_claim_on_a_busy_effort(tmp_path):
+    store = SQLiteEventStore(str(tmp_path / "planner-targeted.db"))
+    service = ResearchOSService(store)
+
+    _start_workspace(service, workspace_id="ws-target", objective="val_bpb")
+    _start_workspace(service, workspace_id="ws-distractor", objective="val_bpb")
+    _append_run(
+        service,
+        workspace_id="ws-target",
+        run_id="run-target",
+        snapshot_id="claim-target-snapshot",
+        objective="val_bpb",
+        metric_value=1.35,
+    )
+    _append_run(
+        service,
+        workspace_id="ws-distractor",
+        run_id="run-distractor",
+        snapshot_id="claim-distractor-snapshot",
+        objective="val_bpb",
+        metric_value=1.21,
+    )
+    _append_claim(
+        service,
+        workspace_id="ws-target",
+        claim_id="claim-target",
+        objective="val_bpb",
+        delta=-0.01,
+    )
+    _append_claim(
+        service,
+        workspace_id="ws-distractor",
+        claim_id="claim-distractor",
+        objective="val_bpb",
+        delta=-0.03,
+    )
+
+    global_response = service.recommend_next(
+        RecommendNextRequest(objective="val_bpb", platform="A100", budget_seconds=300, limit=1)
+    )
+    assert global_response.recommendations[0].inputs["claim_id"] == "claim-distractor"
+
+    targeted_response = service.recommend_next(
+        RecommendNextRequest(
+            objective="val_bpb",
+            platform="A100",
+            budget_seconds=300,
+            target_claim_id="claim-target",
+            limit=1,
+        )
+    )
+    assert targeted_response.recommendations[0].action == "reproduce_claim"
+    assert targeted_response.recommendations[0].inputs["claim_id"] == "claim-target"
+    assert targeted_response.recommendations[0].inputs["targeted"] is True
+
+
 def test_planner_prioritizes_larger_reproducibility_gap(tmp_path):
     store = SQLiteEventStore(str(tmp_path / "planner-gap.db"))
     service = ResearchOSService(store)

@@ -96,6 +96,7 @@ class RecommendNextRequest(BaseModel):
     platform: str
     budget_seconds: int = Field(default=300, ge=1)
     workspace_id: str | None = None
+    target_claim_id: str | None = None
     limit: int = Field(default=3, ge=1, le=20)
     worker_capabilities: CapabilityDescriptor = Field(default_factory=CapabilityDescriptor)
 

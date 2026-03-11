@@ -310,12 +310,17 @@ def run_tiny_loop_experiment(
             api,
             profile=profile,
             workspace_id=workspace_id,
+            target_claim_id=claim_id_to_reproduce,
         )
         expected_claim_id = claim_id_to_reproduce
         recommended_claim_id = recommendation["inputs"].get("claim_id")
         claim_id = expected_claim_id or recommended_claim_id
         if claim_id is None:
             raise RuntimeError("verifier flow could not resolve a claim to reproduce")
+        if expected_claim_id is not None and recommended_claim_id != expected_claim_id:
+            raise RuntimeError(
+                f"expected targeted reproduction for claim {expected_claim_id}, got {recommended_claim_id}"
+            )
         api.append_event(
             {
                 "kind": "claim.reproduced",
@@ -549,15 +554,19 @@ def _recommend_reproduction(
     *,
     profile: ExperimentProfile,
     workspace_id: str,
+    target_claim_id: str | None = None,
 ) -> dict[str, object]:
+    request: dict[str, object] = {
+        "objective": profile.objective,
+        "platform": profile.platform,
+        "budget_seconds": profile.budget_seconds,
+        "workspace_id": workspace_id,
+        "limit": 1,
+    }
+    if target_claim_id is not None:
+        request["target_claim_id"] = target_claim_id
     recommendation = api.recommend_next(
-        {
-            "objective": profile.objective,
-            "platform": profile.platform,
-            "budget_seconds": profile.budget_seconds,
-            "workspace_id": workspace_id,
-            "limit": 1,
-        }
+        request
     )["recommendations"][0]
     if recommendation["action"] != "reproduce_claim":
         raise RuntimeError(f"expected reproduce_claim, got {recommendation['action']}")

@@ -184,7 +184,7 @@ def test_tiny_loop_client_can_target_seeded_inference_effort(tmp_path):
     assert directions == {"max"}
 
 
-def test_tiny_loop_client_can_land_contributor_and_verifier_into_same_seeded_effort(tmp_path):
+def test_tiny_loop_client_can_keep_verifier_target_stable_on_a_busy_seeded_effort(tmp_path):
     settings = Settings(
         db_path=str(tmp_path / "client-loop-shared.db"),
         artifact_root=str(tmp_path / "service-artifacts"),
@@ -212,6 +212,14 @@ def test_tiny_loop_client_can_land_contributor_and_verifier_into_same_seeded_eff
         workspace_suffix="contributor",
         auto_reproduce=False,
     )
+    distractor = run_tiny_loop_experiment(
+        ClientApiHarness(client),
+        artifact_root=Path(tmp_path / "client-artifacts" / "distractor"),
+        profile=EVAL_SPRINT_PROFILE,
+        actor_id="participant-distractor",
+        workspace_suffix="distractor",
+        auto_reproduce=False,
+    )
     verifier = run_verifier_reproduction(
         ClientApiHarness(client),
         artifact_root=Path(tmp_path / "client-artifacts" / "verifier"),
@@ -228,10 +236,13 @@ def test_tiny_loop_client_can_land_contributor_and_verifier_into_same_seeded_eff
     assert verifier.participant_role == ParticipantRole.VERIFIER
     assert contributor.reproduction_run_id is None
     assert verifier.reproduction_run_id is not None
+    assert distractor.claim_id != contributor.claim_id
+    assert verifier.claim_id == contributor.claim_id
 
     workspaces = client.get(f"/api/v1/workspaces?effort_id={effort_id}").json()
     assert {workspace["actor_id"] for workspace in workspaces} >= {
         "participant-contributor",
+        "participant-distractor",
         "participant-verifier",
     }
     assert {workspace["participant_role"] for workspace in workspaces} >= {
@@ -251,4 +262,6 @@ def test_tiny_loop_client_can_land_contributor_and_verifier_into_same_seeded_eff
         f"/api/v1/claims?objective={EVAL_SPRINT_PROFILE.objective}&platform={EVAL_SPRINT_PROFILE.platform}"
     ).json()
     reproduced_claim = next(claim for claim in claims if claim["claim_id"] == contributor.claim_id)
+    distractor_claim = next(claim for claim in claims if claim["claim_id"] == distractor.claim_id)
     assert reproduced_claim["support_count"] == 1
+    assert distractor_claim["support_count"] == 0
