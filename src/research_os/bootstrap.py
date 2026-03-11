@@ -26,7 +26,13 @@ SEEDED_EFFORTS: tuple[SeededEffortDefinition, ...] = (
             "Seeded eval / benchmark effort for short A100 loops that improve validation "
             "loss without broadening scope."
         ),
-        tags={"effort_type": "eval", "seeded": "true"},
+        tags={
+            "effort_type": "eval",
+            "seeded": "true",
+            "public_proof": "true",
+            "proof_series": "eval-a100-300",
+            "proof_version": "1",
+        },
     ),
     SeededEffortDefinition(
         name="Inference Sprint: improve flash-path throughput on H100",
@@ -37,7 +43,13 @@ SEEDED_EFFORTS: tuple[SeededEffortDefinition, ...] = (
             "Seeded inference optimization effort for faster H100 decode paths with clear "
             "hardware-aware contribution boundaries."
         ),
-        tags={"effort_type": "inference", "seeded": "true"},
+        tags={
+            "effort_type": "inference",
+            "seeded": "true",
+            "public_proof": "true",
+            "proof_series": "inference-h100-300",
+            "proof_version": "1",
+        },
     ),
 )
 

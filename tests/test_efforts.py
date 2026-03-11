@@ -97,3 +97,68 @@ def test_list_workspaces_can_filter_by_effort_id(tmp_path):
     assert len(filtered_workspaces) == 1
     assert filtered_workspaces[0]["workspace_id"] == first_workspace_id
     assert filtered_workspaces[0]["effort_id"] == first_effort_id
+
+
+def test_effort_rollover_marks_source_historical_and_links_successor(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "effort-rollover.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    source_effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Eval Sprint: improve validation loss under fixed budget",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "tags": {
+                "effort_type": "eval",
+                "public_proof": "true",
+                "proof_series": "eval-a100-300",
+                "proof_version": "1",
+            },
+        },
+    ).json()["effort_id"]
+    successor_effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Eval Sprint: improve validation loss under fixed budget (proof v2)",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "tags": {
+                "effort_type": "eval",
+                "public_proof": "true",
+                "proof_series": "eval-a100-300",
+                "proof_version": "2",
+            },
+        },
+    ).json()["effort_id"]
+
+    response = client.post(
+        "/api/v1/events",
+        json={
+            "kind": "effort.rolled_over",
+            "aggregate_id": source_effort_id,
+            "aggregate_kind": "effort",
+            "payload": {
+                "effort_id": source_effort_id,
+                "successor_effort_id": successor_effort_id,
+            },
+            "tags": {
+                "public_proof": "true",
+                "proof_series": "eval-a100-300",
+                "proof_version": "1",
+                "proof_status": "historical",
+            },
+        },
+    )
+    assert response.status_code == 201
+
+    efforts = {effort["effort_id"]: effort for effort in client.get("/api/v1/efforts").json()}
+    assert efforts[source_effort_id]["successor_effort_id"] == successor_effort_id
+    assert efforts[source_effort_id]["tags"]["proof_status"] == "historical"
+    assert efforts[successor_effort_id]["successor_effort_id"] is None

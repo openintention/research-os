@@ -108,6 +108,25 @@ This should produce:
 - `data/publications/launch/production-smoke/public-ingress/public-ingress-smoke.md`
 - `data/publications/launch/production-smoke/shared-participation/shared-participation-smoke.md`
 
+## Proof effort rollover
+
+Long-lived public proof efforts should be rolled forward, not reset in place.
+
+Operator command:
+
+```bash
+python3 scripts/rollover_proof_effort.py \
+  --base-url https://openintention-api-production.up.railway.app \
+  --effort-name "Eval Sprint: improve validation loss under fixed budget"
+```
+
+Rehearsal path:
+
+```bash
+python3 scripts/run_proof_effort_rollover_smoke.py \
+  --base-url http://127.0.0.1:8000
+```
+
 ## Backup
 
 ### Local or attached runtime state
@@ -158,4 +177,4 @@ destructive restore against the live production volume.
 ## Residual risks
 
 - the production volume is single-region and single-node today
-- proof efforts are append-only, so long-running public efforts still need a rollover/reset policy
+- proof efforts are append-only, so operators still need judgment about when to roll to a fresh proof window

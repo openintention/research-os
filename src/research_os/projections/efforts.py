@@ -19,8 +19,24 @@ def build_effort_views(events: Iterable[EventEnvelope]) -> list[EffortView]:
                 budget_seconds=int(payload["budget_seconds"]),
                 summary=payload.get("summary"),
                 tags=payload.get("tags", {}) or event.tags,
+                successor_effort_id=None,
                 updated_at=event.occurred_at,
             )
+            continue
+
+        if event.kind == EventKind.EFFORT_ROLLED_OVER:
+            effort_id = event.aggregate_id or event.payload.get("effort_id")
+            if not effort_id:
+                continue
+            effort = efforts.get(effort_id)
+            if effort is None:
+                continue
+            effort.successor_effort_id = event.payload.get("successor_effort_id")
+            effort.tags = {
+                **effort.tags,
+                **{str(key): str(value) for key, value in event.tags.items()},
+            }
+            effort.updated_at = event.occurred_at
             continue
 
         if event.kind != EventKind.WORKSPACE_STARTED or not event.workspace_id:

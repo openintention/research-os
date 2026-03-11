@@ -463,3 +463,72 @@ def test_effort_overview_publication_infers_autoresearch_brief_for_legacy_effort
     assert "README.md#external-harness-compounding-proof" in body
     assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in body
     assert "docs/seeded-efforts.md" not in body
+
+
+def test_effort_overview_publication_marks_historical_proof_runs(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-historical-proof.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "summary": "Historical proof run.",
+            "tags": {
+                "external_harness": "autoresearch-mlx",
+                "public_proof": "true",
+                "proof_series": "autoresearch-mlx-apple-silicon-300",
+                "proof_version": "1",
+            },
+        },
+    ).json()["effort_id"]
+    successor_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon (proof v2)",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "summary": "Current proof run.",
+            "tags": {
+                "external_harness": "autoresearch-mlx",
+                "public_proof": "true",
+                "proof_series": "autoresearch-mlx-apple-silicon-300",
+                "proof_version": "2",
+            },
+        },
+    ).json()["effort_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "effort.rolled_over",
+                "aggregate_id": effort_id,
+                "aggregate_kind": "effort",
+                "payload": {
+                    "effort_id": effort_id,
+                    "successor_effort_id": successor_id,
+                },
+                "tags": {
+                    "public_proof": "true",
+                    "proof_series": "autoresearch-mlx-apple-silicon-300",
+                    "proof_version": "1",
+                    "proof_status": "historical",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "Proof state: `historical`" in body
+    assert successor_id in body

@@ -14,6 +14,7 @@ def utcnow() -> datetime:
 
 class EventKind(StrEnum):
     EFFORT_REGISTERED = "effort.registered"
+    EFFORT_ROLLED_OVER = "effort.rolled_over"
     WORKSPACE_STARTED = "workspace.started"
     SNAPSHOT_PUBLISHED = "snapshot.published"
     RUN_COMPLETED = "run.completed"
@@ -82,6 +83,7 @@ class EffortView(BaseModel):
     summary: str | None = None
     tags: dict[str, str] = Field(default_factory=dict)
     workspace_ids: list[str] = Field(default_factory=list)
+    successor_effort_id: str | None = None
     updated_at: datetime
 
 

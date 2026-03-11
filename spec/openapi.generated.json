@@ -998,6 +998,17 @@
             "type": "array",
             "title": "Workspace Ids"
           },
+          "successor_effort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Successor Effort Id"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -1096,6 +1107,7 @@
         "type": "string",
         "enum": [
           "effort.registered",
+          "effort.rolled_over",
           "workspace.started",
           "snapshot.published",
           "run.completed",

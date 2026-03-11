@@ -236,6 +236,9 @@ def _ensure_effort(api: HttpResearchOSApi, *, base_url: str) -> dict[str, object
                 "effort_type": "autoresearch_mlx",
                 "external_harness": "autoresearch-mlx",
                 "seeded": "true",
+                "public_proof": "true",
+                "proof_series": "autoresearch-mlx-apple-silicon-300",
+                "proof_version": "1",
                 "join_brief_path": "README.md#external-harness-compounding-proof",
                 "join_command": (
                     "python3 scripts/run_autoresearch_mlx_compounding_smoke.py "

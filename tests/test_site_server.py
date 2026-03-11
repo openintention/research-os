@@ -57,6 +57,8 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
                 "budget_seconds": 300,
                 "workspace_ids": ["workspace-1"],
                 "tags": {"effort_type": "eval", "seeded": "true"},
+                "successor_effort_id": None,
+                "updated_at": "2026-03-11T15:00:00Z",
             },
             {
                 "effort_id": "effort-2",
@@ -66,6 +68,8 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
                 "budget_seconds": 300,
                 "workspace_ids": ["workspace-2", "workspace-3"],
                 "tags": {"external_harness": "autoresearch-mlx"},
+                "successor_effort_id": None,
+                "updated_at": "2026-03-11T16:00:00Z",
             },
         ]
 
@@ -112,6 +116,8 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                         "external_harness": "autoresearch-mlx",
                         "join_command": "python3 scripts/run_autoresearch_mlx_compounding_smoke.py --repo-path /tmp/autoresearch-mlx --base-url https://api.example.com",
                     },
+                    "successor_effort_id": None,
+                    "updated_at": "2026-03-11T16:00:00Z",
                 }
             ]
         if path == "/api/v1/workspaces":
@@ -214,6 +220,8 @@ def test_site_server_prefers_private_fetch_base_without_leaking_it(monkeypatch, 
                     "budget_seconds": 300,
                     "workspace_ids": ["workspace-1"],
                     "tags": {"effort_type": "eval"},
+                    "successor_effort_id": None,
+                    "updated_at": "2026-03-11T15:00:00Z",
                 }
             ]
         if path == "/api/v1/workspaces":
@@ -235,3 +243,68 @@ def test_site_server_prefers_private_fetch_base_without_leaking_it(monkeypatch, 
     assert all(base == "http://api.internal:8080" for base, _, _ in calls)
     assert "python3 -m clients.tiny_loop.run --base-url https://api.example.com" in response.text
     assert "api.internal" not in response.text
+
+
+def test_site_server_splits_current_and_historical_proof_efforts(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    def fake_fetch_json(api_base_url: str, path: str, *, query=None):
+        assert api_base_url == "http://api.internal:8080"
+        assert path == "/api/v1/efforts"
+        return [
+            {
+                "effort_id": "effort-current",
+                "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon (proof v2)",
+                "objective": "val_bpb",
+                "platform": "Apple-Silicon-MLX",
+                "budget_seconds": 300,
+                "workspace_ids": ["workspace-2"],
+                "tags": {
+                    "external_harness": "autoresearch-mlx",
+                    "public_proof": "true",
+                    "proof_series": "autoresearch-mlx-apple-silicon-300",
+                    "proof_version": "2",
+                },
+                "successor_effort_id": None,
+                "updated_at": "2026-03-11T16:00:00Z",
+            },
+            {
+                "effort_id": "effort-old",
+                "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+                "objective": "val_bpb",
+                "platform": "Apple-Silicon-MLX",
+                "budget_seconds": 300,
+                "workspace_ids": ["workspace-1"],
+                "tags": {
+                    "external_harness": "autoresearch-mlx",
+                    "public_proof": "true",
+                    "proof_series": "autoresearch-mlx-apple-silicon-300",
+                    "proof_version": "1",
+                    "proof_status": "historical",
+                },
+                "successor_effort_id": "effort-current",
+                "updated_at": "2026-03-11T15:00:00Z",
+            },
+        ]
+
+    monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
+    client = TestClient(
+        create_site_app(
+            dist_dir,
+            api_base_url="https://api.example.com",
+            api_fetch_base_url="http://api.internal:8080",
+        )
+    )
+
+    response = client.get("/efforts")
+    assert response.status_code == 200
+    assert "Historical proof runs" in response.text
+    assert "Historical proof run" in response.text
+    assert "Current successor: <code>effort-current</code>" in response.text

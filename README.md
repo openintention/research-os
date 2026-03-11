@@ -201,6 +201,26 @@ make export-effort-briefs
 
 By default the files are written to `data/publications/efforts/`.
 
+## Proof effort lifecycle
+
+Public proof efforts are immutable. When a public proof window becomes noisy or stale, do not reset
+or rewrite it in place. Roll it forward into a successor effort instead.
+
+The operator path is:
+
+```bash
+python3 scripts/rollover_proof_effort.py \
+  --base-url http://127.0.0.1:8000 \
+  --effort-name "Eval Sprint: improve validation loss under fixed budget"
+```
+
+That keeps the old effort visible as a historical proof run and creates a new successor effort for
+the next proof window.
+
+For the full policy and a rehearsal command, see:
+- `docs/proof-effort-lifecycle.md`
+- `python3 scripts/run_proof_effort_rollover_smoke.py --base-url http://127.0.0.1:8000`
+
 ## Hosted effort explorer
 
 The public site can now render live effort explorer pages from the hosted control plane instead of

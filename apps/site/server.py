@@ -10,6 +10,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from research_os.effort_lifecycle import is_historical_proof_effort
+from research_os.effort_lifecycle import is_public_proof_effort
+from research_os.effort_lifecycle import proof_version
+from research_os.effort_lifecycle import split_current_and_historical_efforts
+
 DEFAULT_API_BASE_URL = "https://openintention-api-production.up.railway.app"
 
 
@@ -115,10 +120,27 @@ def _fetch_json(
 
 
 def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, object]]) -> str:
+    from research_os.domain.models import EffortView
+
+    effort_models = [EffortView.model_validate(effort) for effort in efforts]
+    current_efforts, historical_efforts = split_current_and_historical_efforts(effort_models)
     cards = "\n".join(
-        _render_effort_index_card(public_api_base_url=public_api_base_url, effort=effort)
-        for effort in efforts
+        _render_effort_index_card(public_api_base_url=public_api_base_url, effort=effort.model_dump(mode="json"))
+        for effort in current_efforts
     )
+    historical_cards = "\n".join(
+        _render_effort_index_card(public_api_base_url=public_api_base_url, effort=effort.model_dump(mode="json"))
+        for effort in historical_efforts
+    )
+    historical_section = ""
+    if historical_cards:
+        historical_section = f"""
+        <section class="panel">
+          <h2>Historical proof runs</h2>
+          <p class="footer-note">Older proof windows stay visible and inspectable, but new proof work should continue on the current successor effort.</p>
+          <section class="efforts">{historical_cards}</section>
+        </section>
+        """
     return _page_html(
         "Live Efforts",
         """
@@ -135,25 +157,30 @@ def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, obje
         </section>
         """
         + f'<section class="efforts">{cards or "<p>No efforts found.</p>"}</section>'
+        + historical_section
     )
 
 
 def _render_effort_index_card(*, public_api_base_url: str, effort: dict[str, object]) -> str:
-    state = _effort_state_label(effort)
+    from research_os.domain.models import EffortView
+
+    effort_model = EffortView.model_validate(effort)
+    state = _effort_state_label(effort_model)
     return f"""
     <article class="effort-card">
       <div class="effort-type">{escape(state["label"])}</div>
-      <h2>{escape(str(effort["name"]))}</h2>
+      <h2>{escape(str(effort_model.name))}</h2>
       <p>{escape(state["description"])}</p>
       <ul class="link-list">
-        <li>Objective: <code>{escape(str(effort["objective"]))}</code></li>
-        <li>Platform: <code>{escape(str(effort["platform"]))}</code></li>
-        <li>Budget seconds: <code>{escape(str(effort["budget_seconds"]))}</code></li>
-        <li>Attached workspaces: <code>{len(effort.get("workspace_ids", []))}</code></li>
+        <li>Objective: <code>{escape(str(effort_model.objective))}</code></li>
+        <li>Platform: <code>{escape(str(effort_model.platform))}</code></li>
+        <li>Budget seconds: <code>{escape(str(effort_model.budget_seconds))}</code></li>
+        <li>Attached workspaces: <code>{len(effort_model.workspace_ids)}</code></li>
+        {f'<li>Current successor: <code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
       </ul>
       <div class="hero-actions">
-        <a class="button primary" href="/efforts/{escape(str(effort['effort_id']))}">Open live effort page</a>
-        <a class="button secondary" href="{escape(public_api_base_url)}/api/v1/publications/efforts/{escape(str(effort['effort_id']))}">Open markdown mirror</a>
+        <a class="button primary" href="/efforts/{escape(str(effort_model.effort_id))}">Open live effort page</a>
+        <a class="button secondary" href="{escape(public_api_base_url)}/api/v1/publications/efforts/{escape(str(effort_model.effort_id))}">Open markdown mirror</a>
       </div>
     </article>
     """
@@ -167,7 +194,10 @@ def _effort_detail_html(
     claims: list[dict[str, object]],
     frontier: dict[str, object],
 ) -> str:
-    state = _effort_state_label(effort)
+    from research_os.domain.models import EffortView
+
+    effort_model = EffortView.model_validate(effort)
+    state = _effort_state_label(effort_model)
     join_command = _join_command(effort, api_base_url=public_api_base_url)
     join_brief = _join_brief(effort)
     recent_workspaces = "\n".join(_render_workspace_item(workspace) for workspace in workspaces[:6])
@@ -178,7 +208,7 @@ def _effort_detail_html(
         f"""
         <section class="hero">
           <div class="eyebrow">{escape(state["label"])}</div>
-          <h1>{escape(str(effort["name"]))}</h1>
+          <h1>{escape(str(effort_model.name))}</h1>
           <p class="lede">{escape(state["description"])}</p>
           <div class="hero-actions">
             <a class="button primary" href="/">Back to OpenIntention</a>
@@ -191,11 +221,14 @@ def _effort_detail_html(
             <h2>Current state</h2>
             <ul>
               <li>Objective: <code>{escape(str(effort["objective"]))}</code></li>
-              <li>Platform: <code>{escape(str(effort["platform"]))}</code></li>
-              <li>Budget seconds: <code>{escape(str(effort["budget_seconds"]))}</code></li>
+              <li>Platform: <code>{escape(str(effort_model.platform))}</code></li>
+              <li>Budget seconds: <code>{escape(str(effort_model.budget_seconds))}</code></li>
               <li>Attached workspaces: <code>{len(workspaces)}</code></li>
               <li>Claims in effort scope: <code>{len(claims)}</code></li>
               <li>Frontier members: <code>{len(frontier.get("members", []))}</code></li>
+              {'<li>Lifecycle: <code>historical proof run</code></li>' if is_historical_proof_effort(effort_model) else ''}
+              {f'<li>Current successor: <code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
+              {f'<li>Proof version: <code>{escape(str(proof_version(effort_model)))}</code></li>' if is_public_proof_effort(effort_model) else ''}
             </ul>
             <p class="footer-note">This page is rendered from live hosted control-plane state.</p>
           </div>
@@ -298,8 +331,13 @@ def _join_brief(effort: dict[str, object]) -> str:
     return "docs/seeded-efforts.md"
 
 
-def _effort_state_label(effort: dict[str, object]) -> dict[str, str]:
-    tags = effort.get("tags", {})
+def _effort_state_label(effort) -> dict[str, str]:
+    tags = effort.tags if hasattr(effort, "tags") else effort.get("tags", {})
+    if is_historical_proof_effort(effort):
+        return {
+            "label": "Historical proof run",
+            "description": "This proof window remains inspectable in the immutable event log, but new proof work should continue on its successor effort.",
+        }
     if tags.get("external_harness") == "autoresearch-mlx":
         return {
             "label": "Live external-harness proof",

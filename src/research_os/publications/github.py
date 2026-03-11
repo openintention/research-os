@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import shlex
 
+from research_os.effort_lifecycle import is_historical_proof_effort
+from research_os.effort_lifecycle import is_public_proof_effort
+from research_os.effort_lifecycle import proof_version
 from research_os.domain.models import ClaimSummary, EffortView, EventEnvelope, FrontierView, PublicationView, WorkspaceView
 
 
@@ -150,6 +153,7 @@ def render_effort_overview(
             f"- Platform: `{effort.platform}`",
             f"- Budget seconds: `{effort.budget_seconds}`",
             *(["- Summary: " + effort.summary] if effort.summary else []),
+            *_render_effort_lifecycle_lines(effort),
             "",
             "## Current State",
             f"- Attached workspaces: {len(workspaces)}",
@@ -248,6 +252,27 @@ def _render_effort_join_brief(effort: EffortView) -> str:
     if effort.tags.get("external_harness") == "autoresearch-mlx":
         return "README.md#external-harness-compounding-proof"
     return "docs/seeded-efforts.md"
+
+
+def _render_effort_lifecycle_lines(effort: EffortView) -> list[str]:
+    if not is_public_proof_effort(effort):
+        return []
+    if is_historical_proof_effort(effort):
+        lines = [
+            "",
+            "## Lifecycle",
+            f"- Proof version: `{proof_version(effort)}`",
+            "- Proof state: `historical`",
+        ]
+        if effort.successor_effort_id:
+            lines.append(f"- Current successor effort: `{effort.successor_effort_id}`")
+        return lines
+    return [
+        "",
+        "## Lifecycle",
+        f"- Proof version: `{proof_version(effort)}`",
+        "- Proof state: `current`",
+    ]
 
 
 def _render_artifact_reference(payload: dict[str, object]) -> str:
