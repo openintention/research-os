@@ -258,9 +258,23 @@ def _import_contribution(
     candidate: AutoresearchResult,
     repo_url: str,
 ) -> ImportedContribution:
+    workspace_label = f"{workspace_name}-{candidate.commit}"
+    if existing_workspace := _find_existing_workspace(
+        api.list_workspaces(effort_id=effort_id),
+        name=workspace_label,
+        actor_id=actor_id,
+    ):
+        return _build_imported_contribution_from_workspace(
+            existing_workspace,
+            actor_id=actor_id,
+            workspace_name=workspace_name,
+            baseline=baseline,
+            candidate=candidate,
+        )
+
     workspace = api.create_workspace(
         {
-            "name": f"{workspace_name}-{candidate.commit}",
+            "name": workspace_label,
             "objective": EFFORT_OBJECTIVE,
             "platform": EFFORT_PLATFORM,
             "budget_seconds": EFFORT_BUDGET_SECONDS,
@@ -387,6 +401,21 @@ def _record_adoption(
     to_contribution: ImportedContribution,
 ) -> str:
     event_id = f"{to_contribution.workspace_id.split('-', maxsplit=1)[0]}-adopt-{from_contribution.claim_id}"
+    existing_events = _get_json(
+        f"{api.base_url}/api/v1/events?workspace_id={to_contribution.workspace_id}"
+        f"&kind={EventKind.ADOPTION_RECORDED.value}&limit=1000"
+    )
+    matching_event = next(
+        (
+            event
+            for event in existing_events
+            if event["payload"].get("subject_id") == from_contribution.claim_id
+        ),
+        None,
+    )
+    if matching_event is not None:
+        return str(matching_event["event_id"])
+
     api.append_event(
         {
             "kind": EventKind.ADOPTION_RECORDED,
@@ -419,6 +448,45 @@ def _require_commit(results: list[AutoresearchResult], commit: str) -> Autoresea
 
 def _excerpt(body: str, *, lines: int) -> str:
     return "\n".join(body.splitlines()[:lines]).strip()
+
+
+def _find_existing_workspace(
+    workspaces: list[dict[str, object]],
+    *,
+    name: str,
+    actor_id: str,
+) -> dict[str, object] | None:
+    return next(
+        (
+            workspace
+            for workspace in workspaces
+            if workspace.get("name") == name and workspace.get("actor_id") == actor_id
+        ),
+        None,
+    )
+
+
+def _build_imported_contribution_from_workspace(
+    workspace: dict[str, object],
+    *,
+    actor_id: str,
+    workspace_name: str,
+    baseline: AutoresearchResult,
+    candidate: AutoresearchResult,
+) -> ImportedContribution:
+    workspace_id = str(workspace["workspace_id"])
+    scope = workspace_id.split("-", maxsplit=1)[0]
+    return ImportedContribution(
+        actor_id=actor_id,
+        workspace_id=workspace_id,
+        workspace_name=workspace_name,
+        baseline_commit=baseline.commit,
+        candidate_commit=candidate.commit,
+        claim_id=f"{scope}-claim-{candidate.commit}",
+        run_id=f"{scope}-run-{candidate.commit}",
+        metric_value=candidate.val_bpb,
+        delta=candidate.val_bpb - baseline.val_bpb,
+    )
 
 
 def _get_json(url: str) -> dict[str, object] | list[dict[str, object]]:
