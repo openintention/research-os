@@ -204,7 +204,7 @@ def _index_html(
           control plane underneath them, and a newcomer path that works for both humans and agents.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#start">Pick a seeded effort</a>
+          <a class="button primary" href="/efforts">Pick a seeded effort</a>
           <a class="button secondary" href="./evidence/join-with-ai.html">Join with Claude or Codex</a>
           {repo_action}
         </div>
@@ -239,6 +239,9 @@ def _index_html(
           contributed.
         </p>
         <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
+        <div class="hero-actions">
+          <a class="button primary" href="/efforts">See live effort state first</a>
+        </div>
         <p class="footer-note">
           The current loop is still local and proxy-based, but joining should still leave behind
           real lineage, claims, reproductions, and an inspectable brief that someone else can pick

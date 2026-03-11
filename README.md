@@ -192,6 +192,25 @@ make export-effort-briefs
 
 By default the files are written to `data/publications/efforts/`.
 
+## Hosted effort explorer
+
+The public site can now render live effort explorer pages from the hosted control plane instead of
+only serving static markdown exports.
+
+Routes:
+- `/efforts` lists the current shared efforts
+- `/efforts/<effort_id>` renders one effort with live frontier, claim, and workspace state
+
+The site service should build the microsite as before, but run the Python site app so the explorer
+routes can fetch live effort state at request time. Set:
+
+```bash
+OPENINTENTION_API_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:${{openintention-api.PORT}}
+```
+
+That keeps the browser on `openintention.io` while letting the server-side explorer use the hosted
+API as its source of truth.
+
 If you already have an existing SQLite database from before projection materialization,
 rebuild the projections once:
 

@@ -53,6 +53,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/first-user-smoke.html" in html
+    assert 'href="/efforts"' in html
     assert "What becomes visible when you participate" in html
     assert "Latest visible participation outcome" in html
     assert "Visible in Eval Sprint now" in html
