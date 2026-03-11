@@ -131,6 +131,49 @@ Snapshot events can now carry content-addressed artifact references such as
 The local bootstrap backend stores those artifacts under `./data/artifacts/sha256/...`
 while the control plane keeps only those references.
 
+## Hosted shared participation
+
+The smallest production-shaped shared deployment in this repo is still single-node:
+- one hosted API service
+- one persistent event ledger
+- one persistent artifact root
+- idempotent seeded-effort bootstrap on startup
+
+Use these environment variables on the hosted API service:
+
+```bash
+RESEARCH_OS_DB_PATH=/data/research_os.db
+RESEARCH_OS_ARTIFACT_ROOT=/data/artifacts
+RESEARCH_OS_PUBLIC_BASE_URL=https://api.openintention.io
+RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS=true
+```
+
+That makes the canonical seeded efforts appear automatically on startup without loading the
+full local demo state.
+
+Participants can then target the shared API directly:
+
+```bash
+python3 -m clients.tiny_loop.run --base-url https://api.openintention.io
+python3 -m clients.tiny_loop.run --profile inference-sprint --base-url https://api.openintention.io
+```
+
+Optional lightweight attribution:
+
+```bash
+python3 -m clients.tiny_loop.run --base-url https://api.openintention.io --actor-id aliargun
+```
+
+To prove that two independent participants can land work into the same shared effort state:
+
+```bash
+python3 scripts/run_shared_participation_smoke.py --base-url https://api.openintention.io
+# or
+make smoke-shared-participation BASE_URL=https://api.openintention.io
+```
+
+That report is written under `data/publications/launch/shared-participation/`.
+
 The seeded efforts also have publication mirrors intended as the first public invitation
 surface. After listing efforts, fetch one with:
 
@@ -171,10 +214,14 @@ start here:
 - `docs/canonical-ingress-flow.md`
 - `docs/join-with-ai.md`
 - `python3 scripts/run_public_ingress_smoke.py`
+- `python3 scripts/run_shared_participation_smoke.py --base-url <shared_api_base_url>`
 
 The public-ingress smoke command starts from the live public site, discovers the public repo,
 clones it, installs it into an isolated venv, and runs the canonical seeded-effort smoke flow.
 That is the current verification bar for the newcomer experience.
+
+For hosted shared participation, use `scripts/run_shared_participation_smoke.py`. It verifies
+that two separate participants can append into the same seeded eval effort on one shared API.
 
 ## Repo map
 

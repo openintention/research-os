@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException, Query
 
 from research_os.artifacts.local import LocalArtifactRegistry
+from research_os.bootstrap import ensure_seeded_efforts
 from research_os.domain.models import (
     ClaimSummary,
     CreateEffortRequest,
@@ -28,7 +29,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings.ensure_directories()
 
     store = SQLiteEventStore(settings.db_path)
-    service = ResearchOSService(store, default_frontier_size=settings.default_frontier_size)
+    service = ResearchOSService(
+        store,
+        default_frontier_size=settings.default_frontier_size,
+        public_base_url=settings.public_base_url,
+    )
+    if settings.bootstrap_seeded_efforts:
+        ensure_seeded_efforts(service, actor_id=settings.bootstrap_actor_id)
 
     app = FastAPI(
         title=settings.app_name,
@@ -55,8 +62,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return service.list_efforts()
 
     @app.get("/api/v1/workspaces", response_model=list[WorkspaceView])
-    def list_workspaces() -> list[WorkspaceView]:
-        return service.list_workspaces()
+    def list_workspaces(effort_id: str | None = Query(default=None)) -> list[WorkspaceView]:
+        return service.list_workspaces(effort_id=effort_id)
 
     @app.get("/api/v1/workspaces/{workspace_id}", response_model=WorkspaceView)
     def get_workspace(workspace_id: str) -> WorkspaceView:

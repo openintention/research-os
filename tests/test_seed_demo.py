@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
+
+from apps.api.main import create_app
 from research_os.ledger.sqlite import SQLiteEventStore
 from research_os.service import ResearchOSService
+from research_os.settings import Settings
 from scripts import seed_demo
 
 
@@ -46,3 +50,23 @@ def test_seed_demo_creates_canonical_eval_and_inference_efforts(tmp_path, monkey
         "novel-arch-a100",
     }
     assert inference_workspaces == {"flash-path-h100"}
+
+
+def test_bootstrap_seeded_efforts_populates_only_canonical_efforts_on_startup(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "bootstrapped.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+        bootstrap_seeded_efforts=True,
+        public_base_url="https://api.openintention.io",
+    )
+
+    first_client = TestClient(create_app(settings))
+    first_efforts = first_client.get("/api/v1/efforts").json()
+    assert {effort["name"] for effort in first_efforts} == {
+        "Eval Sprint: improve validation loss under fixed budget",
+        "Inference Sprint: improve flash-path throughput on H100",
+    }
+
+    second_client = TestClient(create_app(settings))
+    second_efforts = second_client.get("/api/v1/efforts").json()
+    assert len(second_efforts) == 2

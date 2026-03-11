@@ -244,6 +244,7 @@ def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path
             "platform": "A100",
             "budget_seconds": 300,
             "effort_id": effort_id,
+            "actor_id": "participant-alpha",
         },
     ).json()["workspace_id"]
     assert (
@@ -299,6 +300,7 @@ def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path
     assert "claim-effort-1" in body
     assert "docs/seeded-efforts.md" in body
     assert "/Users/aliargun/Documents/GitHub/research-os/docs/seeded-efforts.md" not in body
+    assert "actor=participant-alpha" in body
     assert "python3 -m clients.tiny_loop.run" in body
 
 
@@ -362,3 +364,31 @@ def test_inference_effort_overview_publication_uses_inference_join_profile(tmp_p
     assert "inference-participant" in body
     assert "tokens_per_second" in body
     assert "python3 -m clients.tiny_loop.run --profile inference-sprint" in body
+
+
+def test_effort_overview_publication_uses_configured_public_base_url(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-public-base-url.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+        public_base_url="https://api.openintention.io",
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Eval Sprint: improve validation loss under fixed budget",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "summary": "Seeded eval effort for hosted participation.",
+            "tags": {"effort_type": "eval", "seeded": "true"},
+        },
+    ).json()["effort_id"]
+
+    response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "--base-url https://api.openintention.io" in body
+    assert "--actor-id <handle>" in body

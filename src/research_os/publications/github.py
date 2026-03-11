@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import shlex
+
 from research_os.domain.models import ClaimSummary, EffortView, EventEnvelope, FrontierView, PublicationView, WorkspaceView
 
 
@@ -20,6 +22,7 @@ def render_workspace_discussion(
             f"# Discussion: {workspace.name}",
             "",
             "## Workspace",
+            *( [f"- Started by: `{workspace.actor_id}`"] if workspace.actor_id else [] ),
             f"- Objective: `{workspace.objective}`",
             f"- Platform: `{workspace.platform}`",
             f"- Budget seconds: `{workspace.budget_seconds}`",
@@ -109,11 +112,13 @@ def render_effort_overview(
     workspaces: list[WorkspaceView],
     claims: list[ClaimSummary],
     frontier: FrontierView,
+    public_base_url: str | None = None,
 ) -> PublicationView:
     ordered_workspaces = sorted(workspaces, key=lambda workspace: workspace.updated_at, reverse=True)
     workspace_lines = [
         (
             f"- `{workspace.name}` ({workspace.workspace_id}) "
+            f"actor={workspace.actor_id or 'unknown'}, "
             f"runs={len(workspace.run_ids)}, claims={len(workspace.claim_ids)}, "
             f"updated={workspace.updated_at.isoformat()}"
         )
@@ -130,7 +135,7 @@ def render_effort_overview(
     ] or ["- No frontier members recorded yet."]
 
     claim_lines = _render_claim_lines(claims)
-    join_command = _render_effort_join_command(effort)
+    join_command = _render_effort_join_command(effort, public_base_url=public_base_url)
     body = "\n".join(
         [
             f"# Effort: {effort.name}",
@@ -158,6 +163,7 @@ def render_effort_overview(
             "",
             "## Join",
             "- Read the effort brief in `docs/seeded-efforts.md`.",
+            "- Optional: add `--actor-id <handle>` to make lightweight participant attribution visible.",
             f"- Run `{join_command}`",
         ]
     )
@@ -216,13 +222,16 @@ def _is_better_run(candidate: EventEnvelope, existing: EventEnvelope) -> bool:
     return float(candidate_payload["metric_value"]) > float(existing_payload["metric_value"])
 
 
-def _render_effort_join_command(effort: EffortView) -> str:
+def _render_effort_join_command(effort: EffortView, *, public_base_url: str | None = None) -> str:
     effort_type = effort.tags.get("effort_type")
+    command = "python3 -m clients.tiny_loop.run"
     if effort_type == "inference":
-        return "python3 -m clients.tiny_loop.run --profile inference-sprint"
-    if effort_type == "eval":
-        return "python3 -m clients.tiny_loop.run"
-    return "python3 -m clients.tiny_loop.run --profile standalone"
+        command = f"{command} --profile inference-sprint"
+    elif effort_type != "eval":
+        command = f"{command} --profile standalone"
+    if public_base_url:
+        command = f"{command} --base-url {shlex.quote(public_base_url)}"
+    return command
 
 
 def _render_artifact_reference(payload: dict[str, object]) -> str:

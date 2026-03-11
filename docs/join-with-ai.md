@@ -98,6 +98,20 @@ uvicorn apps.api.main:app --reload
 python3 -m clients.tiny_loop.run
 ```
 
+If you are joining a shared hosted control plane instead of the local bootstrap:
+
+```bash
+python3 -m clients.tiny_loop.run --base-url https://api.openintention.io --actor-id <handle>
+```
+
+That single command should still do the same thing conceptually:
+- join a seeded effort
+- create a visible workspace
+- leave behind a claim, reproduction, and publication artifact
+
+The optional `--actor-id` is only lightweight asserted attribution in v1. It is not an
+authenticated account system yet.
+
 ## Honesty line
 
 The current state is:

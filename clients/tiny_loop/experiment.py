@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import random
 from statistics import mean
+from uuid import uuid4
 
 from clients.tiny_loop.api import ResearchOSApi
 
@@ -47,6 +49,7 @@ class RunResult:
 
 @dataclass(frozen=True, slots=True)
 class ExperimentResult:
+    actor_id: str
     workspace_id: str
     effort_id: str | None
     effort_name: str | None
@@ -154,35 +157,41 @@ def run_tiny_loop_experiment(
     *,
     artifact_root: str | Path,
     profile: ExperimentProfile = STANDALONE_PROFILE,
+    actor_id: str | None = None,
+    workspace_suffix: str | None = None,
 ) -> ExperimentResult:
     artifact_root_path = Path(artifact_root)
     artifact_root_path.mkdir(parents=True, exist_ok=True)
+    resolved_actor_id = actor_id or _default_actor_id()
 
     effort = _lookup_effort(api, effort_name=profile.effort_name)
     _validate_effort_profile(effort=effort, profile=profile)
+    workspace_name = _resolve_workspace_name(profile.workspace_name, workspace_suffix=workspace_suffix)
 
     workspace = api.create_workspace(
         {
-            "name": profile.workspace_name,
+            "name": workspace_name,
             "objective": profile.objective,
             "platform": profile.platform,
             "budget_seconds": profile.budget_seconds,
             "effort_id": effort["effort_id"] if effort is not None else None,
             "description": profile.description,
             "tags": profile.workspace_tags,
+            "actor_id": resolved_actor_id,
         }
     )
     workspace_id = workspace["workspace_id"]
+    scope = _workspace_scope(workspace_id)
 
     baseline = SnapshotConfig(
-        snapshot_id="snap-linear-baseline",
+        snapshot_id=_scoped_identifier(scope, "snap-linear-baseline"),
         feature_mode="linear",
         learning_rate=0.05,
         steps=80,
         notes="Linear feature baseline on the synthetic regression task.",
     )
     candidate = SnapshotConfig(
-        snapshot_id="snap-quadratic-candidate",
+        snapshot_id=_scoped_identifier(scope, "snap-quadratic-candidate"),
         feature_mode="quadratic",
         learning_rate=0.05,
         steps=80,
@@ -195,6 +204,7 @@ def run_tiny_loop_experiment(
         config=baseline,
         artifact_root=artifact_root_path,
         profile=profile,
+        actor_id=resolved_actor_id,
     )
     _publish_snapshot(
         api,
@@ -202,38 +212,40 @@ def run_tiny_loop_experiment(
         config=candidate,
         artifact_root=artifact_root_path,
         profile=profile,
+        actor_id=resolved_actor_id,
     )
 
     baseline_run = _run_snapshot(
         api,
         workspace_id=workspace_id,
         config=baseline,
-        run_id="run-baseline-001",
+        run_id=_scoped_identifier(scope, "run-baseline-001"),
         seed=7,
         profile=profile,
+        actor_id=resolved_actor_id,
     )
     candidate_run = _run_snapshot(
         api,
         workspace_id=workspace_id,
         config=candidate,
-        run_id="run-candidate-001",
+        run_id=_scoped_identifier(scope, "run-candidate-001"),
         seed=11,
         profile=profile,
+        actor_id=resolved_actor_id,
     )
 
     delta = candidate_run.metric_value - baseline_run.metric_value
-    claim_id = "claim-quadratic-001"
+    claim_id = _scoped_identifier(scope, "claim-quadratic-001")
     api.append_event(
         {
             "kind": "claim.asserted",
             "workspace_id": workspace_id,
             "aggregate_id": claim_id,
             "aggregate_kind": "claim",
+            "actor_id": resolved_actor_id,
             "payload": {
                 "claim_id": claim_id,
-                "statement": (
-                    profile.claim_statement
-                ),
+                "statement": profile.claim_statement,
                 "claim_type": "improvement",
                 "candidate_snapshot_id": candidate.snapshot_id,
                 "baseline_snapshot_id": baseline.snapshot_id,
@@ -265,9 +277,10 @@ def run_tiny_loop_experiment(
         api,
         workspace_id=workspace_id,
         config=candidate,
-        run_id="run-candidate-repro-001",
+        run_id=_scoped_identifier(scope, "run-candidate-repro-001"),
         seed=23,
         profile=profile,
+        actor_id=resolved_actor_id,
     )
     api.append_event(
         {
@@ -275,6 +288,7 @@ def run_tiny_loop_experiment(
             "workspace_id": workspace_id,
             "aggregate_id": claim_id,
             "aggregate_kind": "claim",
+            "actor_id": resolved_actor_id,
             "payload": {
                 "claim_id": claim_id,
                 "evidence_run_id": reproduction_run.run_id,
@@ -287,6 +301,7 @@ def run_tiny_loop_experiment(
     discussion = api.get_workspace_discussion(workspace_id)
     pull_request = api.get_snapshot_pull_request(workspace_id, candidate.snapshot_id)
     return ExperimentResult(
+        actor_id=resolved_actor_id,
         workspace_id=workspace_id,
         effort_id=effort["effort_id"] if effort is not None else None,
         effort_name=effort["name"] if effort is not None else None,
@@ -307,6 +322,7 @@ def _publish_snapshot(
     config: SnapshotConfig,
     artifact_root: Path,
     profile: ExperimentProfile,
+    actor_id: str,
 ) -> None:
     bundle = {
         "snapshot_id": config.snapshot_id,
@@ -328,6 +344,7 @@ def _publish_snapshot(
             "workspace_id": workspace_id,
             "aggregate_id": config.snapshot_id,
             "aggregate_kind": "snapshot",
+            "actor_id": actor_id,
             "payload": {
                 "snapshot_id": config.snapshot_id,
                 "artifact_uri": bundle_path.resolve().as_uri(),
@@ -348,6 +365,7 @@ def _run_snapshot(
     run_id: str,
     seed: int,
     profile: ExperimentProfile,
+    actor_id: str,
 ) -> RunResult:
     metric_value = _train_and_evaluate(config, seed=seed)
     api.append_event(
@@ -356,6 +374,7 @@ def _run_snapshot(
             "workspace_id": workspace_id,
             "aggregate_id": run_id,
             "aggregate_kind": "run",
+            "actor_id": actor_id,
             "payload": {
                 "run_id": run_id,
                 "snapshot_id": config.snapshot_id,
@@ -464,3 +483,24 @@ def _validate_effort_profile(
         raise RuntimeError(
             f"profile '{profile.name}' does not match effort '{effort['name']}': {', '.join(mismatches)}"
         )
+
+
+def _default_actor_id() -> str:
+    configured_actor = os.getenv("OPENINTENTION_ACTOR_ID") or os.getenv("RESEARCH_OS_ACTOR_ID")
+    if configured_actor:
+        return configured_actor
+    return f"participant-{uuid4().hex[:8]}"
+
+
+def _resolve_workspace_name(base_name: str, *, workspace_suffix: str | None) -> str:
+    if workspace_suffix is None:
+        return base_name
+    return f"{base_name}-{workspace_suffix}"
+
+
+def _workspace_scope(workspace_id: str) -> str:
+    return workspace_id.split("-", maxsplit=1)[0]
+
+
+def _scoped_identifier(scope: str, suffix: str) -> str:
+    return f"{scope}-{suffix}"

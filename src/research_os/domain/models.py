@@ -165,6 +165,7 @@ class ClaimSummary(BaseModel):
 class WorkspaceView(BaseModel):
     workspace_id: str
     name: str
+    actor_id: str | None = None
     objective: str
     platform: str
     budget_seconds: int

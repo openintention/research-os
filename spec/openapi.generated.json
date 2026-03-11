@@ -29,38 +29,18 @@
       }
     },
     "/api/v1/workspaces": {
-      "get": {
-        "summary": "List Workspaces",
-        "operationId": "list_workspaces_api_v1_workspaces_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/WorkspaceView"
-                  },
-                  "type": "array",
-                  "title": "Response List Workspaces Api V1 Workspaces Get"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "summary": "Create Workspace",
         "operationId": "create_workspace_api_v1_workspaces_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateWorkspaceRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -69,6 +49,54 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WorkspaceCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Workspaces",
+        "operationId": "list_workspaces_api_v1_workspaces_get",
+        "parameters": [
+          {
+            "name": "effort_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Effort Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceView"
+                  },
+                  "title": "Response List Workspaces Api V1 Workspaces Get"
                 }
               }
             }
@@ -1396,6 +1424,17 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
           },
           "objective": {
             "type": "string",

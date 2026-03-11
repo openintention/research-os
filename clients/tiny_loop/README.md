@@ -42,29 +42,36 @@ its events as proxy contributions with a `max` objective direction.
 Start the API first:
 
 ```bash
-python scripts/seed_demo.py --reset
+python3 scripts/seed_demo.py --reset
 uvicorn apps.api.main:app --reload
 ```
 
 Then run the client:
 
 ```bash
-python -m clients.tiny_loop.run
+python3 -m clients.tiny_loop.run
 ```
 
 Or run the isolated standalone profile:
 
 ```bash
-python -m clients.tiny_loop.run --profile standalone
+python3 -m clients.tiny_loop.run --profile standalone
 ```
 
 Or target the seeded inference effort:
 
 ```bash
-python -m clients.tiny_loop.run --profile inference-sprint
+python3 -m clients.tiny_loop.run --profile inference-sprint
+```
+
+To target a hosted shared control plane:
+
+```bash
+python3 -m clients.tiny_loop.run --base-url https://api.openintention.io --actor-id <handle>
 ```
 
 The client prints:
+- actor id
 - effort name and effort id when it joins a seeded effort
 - workspace id
 - planner action taken

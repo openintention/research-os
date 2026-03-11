@@ -34,6 +34,15 @@ That command starts from `https://openintention.io`, discovers the public repo, 
 and runs the canonical seeded-effort smoke flow through a fresh local checkout. The durable
 report lands under `data/publications/launch/public-ingress/`.
 
+Verify shared participation next, once a hosted API exists:
+
+```bash
+python3 scripts/run_shared_participation_smoke.py --base-url https://api.openintention.io
+```
+
+That command is the minimal proof that two separate participants can land into the same
+seeded eval effort on one shared control plane.
+
 Seed the current local state:
 
 ```bash

@@ -27,6 +27,7 @@ Expected contribution types:
 
 Local bootstrap path:
 - `python3 -m clients.tiny_loop.run`
+- hosted path: `python3 -m clients.tiny_loop.run --base-url <shared_api_base_url> --actor-id <handle>`
 - effort overview mirror: `/api/v1/publications/efforts/<eval_effort_id>`
 - exported brief: `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 
@@ -53,6 +54,7 @@ Expected contribution types:
 
 Local bootstrap path:
 - `python3 -m clients.tiny_loop.run --profile inference-sprint`
+- hosted path: `python3 -m clients.tiny_loop.run --profile inference-sprint --base-url <shared_api_base_url> --actor-id <handle>`
 - effort overview mirror: `/api/v1/publications/efforts/<inference_effort_id>`
 - exported brief: `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
 

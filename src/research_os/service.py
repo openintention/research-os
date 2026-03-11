@@ -25,9 +25,16 @@ from research_os.publications.github import render_effort_overview, render_snaps
 
 
 class ResearchOSService:
-    def __init__(self, store: EventStore, *, default_frontier_size: int = 10) -> None:
+    def __init__(
+        self,
+        store: EventStore,
+        *,
+        default_frontier_size: int = 10,
+        public_base_url: str | None = None,
+    ) -> None:
         self.store = store
         self.default_frontier_size = default_frontier_size
+        self.public_base_url = public_base_url
         self.store.init_schema()
 
     def create_workspace(self, request: CreateWorkspaceRequest) -> WorkspaceCreated:
@@ -86,14 +93,20 @@ class ResearchOSService:
     ) -> list[EventEnvelope]:
         return self.store.list(workspace_id=workspace_id, kind=kind, limit=limit)
 
-    def list_workspaces(self) -> list[WorkspaceView]:
-        return build_workspace_views(self.store.list(limit=10_000))
+    def list_workspaces(self, *, effort_id: str | None = None) -> list[WorkspaceView]:
+        workspaces = build_workspace_views(self.store.list(limit=10_000))
+        if effort_id is None:
+            return workspaces
+        return [workspace for workspace in workspaces if workspace.effort_id == effort_id]
 
     def list_efforts(self) -> list[EffortView]:
         return build_effort_views(self.store.list(limit=10_000))
 
     def get_effort(self, effort_id: str) -> EffortView | None:
         return next((effort for effort in self.list_efforts() if effort.effort_id == effort_id), None)
+
+    def get_effort_by_name(self, name: str) -> EffortView | None:
+        return next((effort for effort in self.list_efforts() if effort.name == name), None)
 
     def get_workspace(self, workspace_id: str) -> WorkspaceView | None:
         events = self.store.list(workspace_id=workspace_id, limit=10_000)
@@ -149,7 +162,7 @@ class ResearchOSService:
         if effort is None:
             return None
 
-        workspaces = [workspace for workspace in self.list_workspaces() if workspace.effort_id == effort_id]
+        workspaces = self.list_workspaces(effort_id=effort_id)
         workspace_ids = {workspace.workspace_id for workspace in workspaces}
         claims = [
             claim
@@ -162,7 +175,13 @@ class ResearchOSService:
             budget_seconds=effort.budget_seconds,
             limit=self.default_frontier_size,
         )
-        return render_effort_overview(effort, workspaces=workspaces, claims=claims, frontier=frontier)
+        return render_effort_overview(
+            effort,
+            workspaces=workspaces,
+            claims=claims,
+            frontier=frontier,
+            public_base_url=self.public_base_url,
+        )
 
     def render_snapshot_pull_request(self, workspace_id: str, snapshot_id: str) -> PublicationView | None:
         workspace = self.get_workspace(workspace_id)

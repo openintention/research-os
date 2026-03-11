@@ -17,6 +17,7 @@ def build_workspace_views(events: Iterable[EventEnvelope]) -> list[WorkspaceView
             workspaces[event.workspace_id] = WorkspaceView(
                 workspace_id=event.workspace_id,
                 name=payload["name"],
+                actor_id=event.actor_id,
                 objective=payload["objective"],
                 platform=payload["platform"],
                 budget_seconds=int(payload["budget_seconds"]),
@@ -32,6 +33,8 @@ def build_workspace_views(events: Iterable[EventEnvelope]) -> list[WorkspaceView
 
         workspace.event_count += 1
         workspace.updated_at = event.occurred_at
+        if workspace.actor_id is None and event.actor_id is not None:
+            workspace.actor_id = event.actor_id
 
         if event.kind == EventKind.SNAPSHOT_PUBLISHED:
             snapshot_id = event.payload["snapshot_id"]

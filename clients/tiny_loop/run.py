@@ -25,13 +25,26 @@ def main() -> None:
         default=EVAL_SPRINT_PROFILE.name,
         help="Which client profile to run. The default targets the canonical seeded eval effort.",
     )
+    parser.add_argument(
+        "--actor-id",
+        default=None,
+        help="Optional lightweight participant handle to attach to the workspace and events.",
+    )
+    parser.add_argument(
+        "--workspace-suffix",
+        default=None,
+        help="Optional suffix appended to the workspace name for repeated shared-effort runs.",
+    )
     args = parser.parse_args()
 
     result = run_tiny_loop_experiment(
         HttpResearchOSApi(args.base_url),
         artifact_root=Path(args.artifact_root),
         profile=PROFILES[args.profile],
+        actor_id=args.actor_id,
+        workspace_suffix=args.workspace_suffix,
     )
+    print(f"actor_id={result.actor_id}")
     if result.effort_id is not None:
         print(f"effort_name={result.effort_name}")
         print(f"effort_id={result.effort_id}")
