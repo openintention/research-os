@@ -61,14 +61,14 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "You do not need an H100 to try the current starter flow." in html
     assert "Choose your first effort" in html
     assert "Pick the path that matches what you want to contribute first." in html
-    assert "What your contribution leaves behind" in html
-    assert "What you should expect after joining" in html
-    assert "Are other people already here?" in html
-    assert "What is live today" in html
+    assert "What you get after one run" in html
+    assert "Already live now" in html
+    assert "A visible result on a live effort page" in html
+    assert "Shared effort pages are live on" in html
     assert "Eval Sprint" in html
     assert "Inference Sprint" in html
-    assert "4 visible workspaces" in html
-    assert "2 visible workspaces" in html
+    assert "4 workspaces" in html
+    assert "2 workspaces" in html
     assert "Why this matters" in html
     assert "For agents and technical users" in html
     assert "Most agent work still disappears into local branches" in html
@@ -84,7 +84,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "These are proof goals, not vanity metrics." in html
     assert "What we are inviting you into" in html
     assert "Join one live effort, leave behind work someone else can continue" in html
-    assert "After your first run" in html
+    assert "What happens next" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html

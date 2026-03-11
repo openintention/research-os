@@ -387,42 +387,31 @@ def _index_html(
         </div>
       </section>
 
-      <section class="panel grid two">
-        <div>
-          <h2>What your contribution leaves behind</h2>
-          <ul>
-            <li>A visible place in a live effort instead of another local-only run.</li>
-            <li>A result the next person or agent can inspect without asking you for context.</li>
-            <li>A report and effort page you can hand forward.</li>
-            <li>A better starting point for the next iteration than a blank slate.</li>
-          </ul>
-        </div>
-        <div>
-          <h2>What you should expect after joining</h2>
-          <pre>{escape(hero_participation_excerpt)}</pre>
-        </div>
-      </section>
-
-      <section class="panel grid two">
-        <div>
-          <h2>Are other people already here?</h2>
-          <p>
-            Yes. The seeded efforts already have visible work, current frontier entries, and
-            contribution history that new participants can continue from.
-          </p>
-          <ul>
-            <li><strong>{escape(eval_effort.title)}</strong>: {escape(eval_effort.attached_workspaces)} visible workspaces, {escape(eval_effort.claims_in_scope)} claim signals, {escape(eval_effort.frontier_members)} frontier entries.</li>
-            <li><strong>{escape(inference_effort.title)}</strong>: {escape(inference_effort.attached_workspaces)} visible workspaces, {escape(inference_effort.claims_in_scope)} claim signals, {escape(inference_effort.frontier_members)} frontier entries.</li>
-          </ul>
-        </div>
-        <div>
-          <h2>What is live today</h2>
-          <ul>
-            <li>Hosted effort pages on <code>openintention.io</code>.</li>
-            <li>Shared effort state you can inspect before joining.</li>
-            <li>A default join path that leaves behind visible results.</li>
-            <li>A stronger external-harness proof in the repo for the deeper path.</li>
-          </ul>
+      <section class="panel">
+        <div class="grid two">
+          <div>
+            <h2>What you get after one run</h2>
+            <ul>
+              <li>A visible result on a live effort page instead of another local-only run.</li>
+              <li>A short report the next person or agent can inspect without asking you for context.</li>
+              <li>A better starting point for the next iteration than a blank slate.</li>
+            </ul>
+          </div>
+          <div>
+            <h2>Already live now</h2>
+            <p>
+              Yes. Both seeded efforts already have visible work and shared history that new
+              participants can continue from.
+            </p>
+            <ul>
+              <li><strong>{escape(eval_effort.title)}</strong>: {escape(eval_effort.attached_workspaces)} workspaces, {escape(eval_effort.claims_in_scope)} claim signals, {escape(eval_effort.frontier_members)} frontier entries.</li>
+              <li><strong>{escape(inference_effort.title)}</strong>: {escape(inference_effort.attached_workspaces)} workspaces, {escape(inference_effort.claims_in_scope)} claim signals, {escape(inference_effort.frontier_members)} frontier entries.</li>
+            </ul>
+            <p class="footer-note">
+              Shared effort pages are live on <code>openintention.io</code>. The default join path
+              is real, and the deeper external-harness proof is in the repo.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -487,11 +476,10 @@ def _index_html(
       </section>
 
       <section class="panel">
-        <h2>After your first run</h2>
+        <h2>What happens next</h2>
         <p>
           Check the live effort page, inspect the report your run produced, and hand that forward
-          to the next human or agent. That is the first small version of the larger network effect
-          this project is trying to create.
+          to the next human or agent. That is how one small run starts becoming shared progress.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
