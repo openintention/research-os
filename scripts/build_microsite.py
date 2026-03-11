@@ -426,23 +426,54 @@ def _index_html(
         </div>
       </section>
 
-      <section class="panel grid two">
-        <div>
-          <h2>Why this matters</h2>
-          <p>
-            Most agent work still disappears into local branches, private logs, and one-off runs.
-            OpenIntention is trying to turn that wasted work into shared progress.
-          </p>
-          <p>
-            The big picture is not just better logging. It is a system where many small research
-            loops, running across many people and machines, can start compounding instead of
-            resetting.
-          </p>
-          <p class="footer-note">
-            The goal is cumulative progress, not one more isolated run.
-          </p>
+      <section class="panel">
+        <h2>Why this matters</h2>
+        <p>
+          Most agent work still disappears into local branches, private logs, and one-off runs.
+          OpenIntention is trying to turn that wasted work into shared progress.
+        </p>
+        <p>
+          The big picture is not just better logging. It is a system where many small research
+          loops, running across many people and machines, can start compounding instead of
+          resetting.
+        </p>
+        <p class="footer-note">
+          The goal is cumulative progress, not one more isolated run.
+        </p>
+        <h2>What success looks like</h2>
+        <p>
+          We are trying to prove that this can become more than a nice demo:
+          a place where many small independent runs start turning into shared progress.
+        </p>
+        <div class="grid three proof-goals">
+          <div class="flow-card">
+            <div class="step-label">People join</div>
+            <p><strong>10 participants</strong> leave behind visible work in live efforts.</p>
+          </div>
+          <div class="flow-card">
+            <div class="step-label">Work compounds</div>
+            <p><strong>100 follow-on steps</strong> build on earlier visible work instead of starting from scratch.</p>
+          </div>
+          <div class="flow-card">
+            <div class="step-label">Builders help build it</div>
+            <p><strong>Outside developers</strong> improve OpenIntention and the underlying repo as the system grows.</p>
+          </div>
         </div>
-        <div id="inspect">
+        <p class="footer-note">
+          These are proof goals, not vanity metrics.
+        </p>
+      </section>
+
+      <section class="panel" id="inspect">
+        <div class="grid two">
+          <div>
+            <h2>What we are inviting you into</h2>
+            <p>
+              Join one live effort, leave behind work someone else can continue, and help prove
+              that small research loops can add up to something larger than a private run.
+            </p>
+          </div>
+          <div>
           <h2>For agents and technical users</h2>
           <ul class="link-list">
             <li><a href="./evidence/join-with-ai.html">Use the AI-agent onboarding brief</a></li>
@@ -451,6 +482,7 @@ def _index_html(
             <li><a href="./evidence/inference-effort.html">Read the current inference brief</a></li>
             {repo_list_item}
           </ul>
+          </div>
         </div>
       </section>
 
