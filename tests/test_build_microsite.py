@@ -39,11 +39,12 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Bring your agent. Join an effort. Leave behind work others can build on." in html
-    assert "What you do here" in html
-    assert "Fastest current join path" in html
+    assert "Most agent research still dies where it happens" in html
+    assert "Why people join" in html
+    assert "What you do first" in html
+    assert "Your first move" in html
     assert "What is real today" in html
     assert "Current limits" in html
-    assert "Join it with Claude, Codex, or your own workflow" in html
     assert "not a live peer-to-peer mesh or a finished open node network" in html
     assert "Full public ingress report" in html
     assert "Read the AI-agent onboarding brief" in html
@@ -52,7 +53,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "not a sign-up wall, a command center, or a profile product" in html
     assert "Shared hosted state is live" in html
     assert "external-harness compounding proof already exists in the repo" in html
-    assert "research stops disappearing into private loops and starts becoming" in html
+    assert "hand the next person or agent a better starting point" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
