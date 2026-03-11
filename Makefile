@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-autoresearch-mlx build-microsite
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-autoresearch-mlx smoke-production backup-runtime restore-runtime backup-production build-microsite
 
 PYTHON ?= python3
 
@@ -43,6 +43,18 @@ smoke-shared-participation:
 
 smoke-autoresearch-mlx:
 	$(PYTHON) scripts/run_autoresearch_mlx_compounding_smoke.py --base-url $(BASE_URL) --repo-path $(REPO_PATH)
+
+smoke-production:
+	$(PYTHON) scripts/run_production_smoke.py --site-url $(SITE_URL) --api-base-url $(BASE_URL)
+
+backup-runtime:
+	$(PYTHON) scripts/backup_runtime_state.py --output-path $(OUTPUT_PATH)
+
+restore-runtime:
+	$(PYTHON) scripts/restore_runtime_state.py --archive-path $(ARCHIVE_PATH) --force
+
+backup-production:
+	$(PYTHON) scripts/backup_railway_volume.py --service $(SERVICE) --output-path $(OUTPUT_PATH)
 
 build-microsite:
 	$(PYTHON) scripts/build_microsite.py

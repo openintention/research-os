@@ -5,6 +5,8 @@ __pycache__/
 *.pyc
 .env
 data/*.db
+data/backups/
+data/publications/launch/production-smoke/
 dist/
 build/
 *.egg-info/

@@ -206,11 +206,12 @@ routes can fetch live effort state at request time. On Railway, use the `DOCKERF
 `docker/site.Dockerfile`, then set:
 
 ```bash
-OPENINTENTION_API_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:${{openintention-api.PORT}}
+OPENINTENTION_API_BASE_URL=https://openintention-api-production.up.railway.app
 ```
 
 That keeps the browser on `openintention.io` while letting the server-side explorer use the hosted
-API as its source of truth.
+API as its current source of truth. Private Railway service-to-service networking for the explorer
+path is still a follow-up hardening item, not the current production baseline.
 
 If you already have an existing SQLite database from before projection materialization,
 rebuild the projections once:
@@ -243,6 +244,17 @@ That is the current verification bar for the newcomer experience.
 For hosted shared participation, use `scripts/run_shared_participation_smoke.py`. It verifies
 that two separate participants can append into the same seeded eval effort on one shared API.
 
+For the current hosted production floor, use:
+
+```bash
+python3 scripts/run_production_smoke.py \
+  --site-url https://openintention.io \
+  --api-base-url https://openintention-api-production.up.railway.app
+```
+
+That combines the public-ingress smoke, the hosted shared-participation smoke, and a live effort
+explorer check into one report under `data/publications/launch/production-smoke/`.
+
 ## External Harness Compounding Proof
 
 The stronger post-v1 proof is not just multi-party shared state. It is compounding progress
@@ -267,6 +279,32 @@ This is intentionally not the default onboarding flow. It is the first stronger 
 real external autoresearch-class harness can publish into the shared control plane and leave
 behind work that later participants can adopt and extend.
 
+## Production Hardening
+
+The current v1 production floor is intentionally small:
+- one hosted API service with a persistent `/data` volume
+- one hosted site service that reads live effort state from the API
+- one production smoke command that exercises the public ingress and shared participation path
+- one tested backup/restore archive format for the runtime SQLite database and artifact root
+
+Local runtime backup and restore:
+
+```bash
+python3 scripts/backup_runtime_state.py --output-path data/backups/runtime-state.tar.gz
+python3 scripts/restore_runtime_state.py --archive-path data/backups/runtime-state.tar.gz --force
+```
+
+Production volume capture from Railway:
+
+```bash
+python3 scripts/backup_railway_volume.py \
+  --service openintention-api \
+  --output-path data/backups/openintention-production-data.tar.gz
+```
+
+The full operator flow now lives in:
+- `docs/production-runbook.md`
+
 ## Repo map
 
 ```text
@@ -274,6 +312,7 @@ AGENTS.md                   # instructions for coding agents / Codex
 ARCHITECTURE.md             # product shape and control-plane design
 docs/adr/                   # early architecture decisions
 docs/launch-package/        # announcement drafts, evidence pointers, and launch checklist
+docs/production-runbook.md  # current production operator runbook for Railway
 docs/product-notes/         # product vision, hypotheses, and strategy notes
 docs/public-launch-runbook.md # current narrow build-in-public operator flow
 docs/join-with-ai.md         # newcomer-facing AI-agent participation brief
