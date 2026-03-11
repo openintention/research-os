@@ -18,7 +18,7 @@
 # First User Smoke Report
 
 ## Base URL
-- `http://127.0.0.1:65497`
+- `http://127.0.0.1:52582`
 
 ## Discovered Efforts
 - `Inference Sprint: improve flash-path throughput on H100` `tokens_per_second` on `H100` (300s)
@@ -27,8 +27,8 @@
 ## Eval Client Output
 ```text
 effort_name=Eval Sprint: improve validation loss under fixed budget
-effort_id=a78fa277-143d-4e79-a3d7-19e41c7684d3
-workspace_id=7b51bbda-cfcd-4920-a7be-398fc65e75e0
+effort_id=411310cd-cde5-41f9-bebf-1473cab80c9a
+workspace_id=456f96ad-caa2-4494-ba71-2bc16c271f9a
 planner_action=reproduce_claim
 claim_id=claim-quadratic-001
 reproduction_run_id=run-candidate-repro-001
@@ -36,3 +36,4 @@ reproduction_run_id=run-candidate-repro-001
 
 ## Outcome
 - A newcomer can arrive from the public site, discover the public repo, hand the repo to an AI agent, and complete the canonical seeded-effort smoke path.
+- The canonical goal is not just onboarding. It is onboarding, joining a seeded effort, and participating by leaving behind inspectable contribution state.

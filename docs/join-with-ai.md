@@ -8,6 +8,9 @@ many newcomers will point Claude, Codex, or another agent at the public links an
 help them participate. Agents are part of the target user surface here, not only back-end
 actors inside the system.
 
+For the full newcomer path and success criteria, see:
+- `docs/canonical-ingress-flow.md`
+
 ## What OpenIntention is and is not
 
 OpenIntention is:
@@ -40,12 +43,17 @@ Start from the public site and repo. Read:
 3. docs/public-launch-runbook.md
 
 Be explicit about what is real today versus what is still proxy behavior.
+Use the definitions in `docs/canonical-ingress-flow.md` for:
+- onboarded
+- joined
+- participated
 
 Then do the narrow canonical participation path:
 1. seed the local state
 2. run the canonical seeded eval effort join flow
 3. fetch the resulting publication output
-4. summarize what happened, what claim was touched, and what I should inspect next
+4. summarize whether I became onboarded, joined, and participated
+5. summarize what claim was touched and what I should inspect next
 
 If the repo already contains a public-ingress smoke command, prefer that command first.
 ```
@@ -81,4 +89,5 @@ The current state is:
 - the current tiny loop is still a proxy contribution path, not a production A100 or H100 benchmark harness
 - OpenIntention connects to local agent workflows; it does not replace local orchestration tools
 
-That distinction should stay visible in any agent-generated summary.
+That distinction, and the difference between onboarding and actual participation, should stay
+visible in any agent-generated summary.

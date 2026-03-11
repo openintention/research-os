@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import subprocess
 import sys
@@ -124,6 +125,17 @@ def build_smoke_report(result: SmokeResult) -> str:
         for effort in result.efforts
     ] or ["- No efforts discovered."]
     exported_lines = [f"- `{path}`" for path in result.exported_brief_paths] or ["- No exported briefs recorded."]
+    eval_fields = _extract_fields(result.eval_client_output)
+    inference_fields = _extract_fields(result.inference_client_output)
+
+    joined_lines = [
+        _joined_line("Eval", eval_fields),
+        _joined_line("Inference", inference_fields),
+    ]
+    participation_lines = [
+        _participated_line("Eval", eval_fields),
+        _participated_line("Inference", inference_fields),
+    ]
 
     return "\n".join(
         [
@@ -134,6 +146,11 @@ def build_smoke_report(result: SmokeResult) -> str:
             "",
             "## Discovered Efforts",
             *effort_lines,
+            "",
+            "## Participation Outcome",
+            "- Onboarded: the newcomer discovered the public repo and seeded effort path from the public surface.",
+            *joined_lines,
+            *participation_lines,
             "",
             "## Eval Client Output",
             "```text",
@@ -149,6 +166,37 @@ def build_smoke_report(result: SmokeResult) -> str:
             *exported_lines,
         ]
     ) + "\n"
+
+
+def _extract_fields(output: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    for line in output.splitlines():
+        match = re.match(r"^([a-z_]+)=(.+)$", line.strip())
+        if match:
+            fields[match.group(1)] = match.group(2)
+    return fields
+
+
+def _joined_line(label: str, fields: dict[str, str]) -> str:
+    effort = fields.get("effort_name")
+    workspace = fields.get("workspace_id")
+    if effort and workspace:
+        return f"- Joined ({label}): workspace `{workspace}` attached to effort `{effort}`."
+    if workspace:
+        return f"- Joined ({label}): workspace `{workspace}` created."
+    return f"- Joined ({label}): not proven from client output."
+
+
+def _participated_line(label: str, fields: dict[str, str]) -> str:
+    claim = fields.get("claim_id")
+    reproduction = fields.get("reproduction_run_id")
+    workspace = fields.get("workspace_id")
+    if workspace and claim and reproduction:
+        return (
+            f"- Participated ({label}): workspace `{workspace}` left behind claim "
+            f"`{claim}` and reproduction run `{reproduction}`."
+        )
+    return f"- Participated ({label}): durable contribution state not fully proven from client output."
 
 
 def main() -> None:

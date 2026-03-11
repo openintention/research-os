@@ -4,10 +4,19 @@ This is the current narrow public-build flow for seeded efforts.
 
 Use it to produce artifacts that are honest, inspectable, and derived from machine state.
 
+Canonical newcomer path:
+- `docs/canonical-ingress-flow.md`
+
 ## Goal
 
 Show one believable loop around shared efforts without overclaiming what the system already
 proves.
+
+The goal is not only that a newcomer can run commands.
+The goal is that a newcomer can:
+- become onboarded into the product boundary
+- join a specific effort
+- participate by leaving behind durable shared research state
 
 Current seeded efforts:
 - `Eval Sprint: improve validation loss under fixed budget`
@@ -77,6 +86,15 @@ Be explicit about the current proxy contribution loops:
 - the current proxy runs are not the same thing as real A100 or H100 benchmarking evidence
 
 This distinction should appear anywhere the current client experiment is shown publicly.
+
+## Participation completion
+
+Do not call the flow successful just because a command returned zero.
+
+For launch, success means:
+- onboarded: the newcomer understands what OpenIntention is, what it is not, and what is real today
+- joined: the newcomer is attached to a specific seeded effort via a visible workspace
+- participated: the newcomer leaves behind durable contribution state and at least one inspectable artifact
 
 ## Recommended public post shape
 

@@ -42,3 +42,4 @@ def test_build_public_ingress_report_includes_public_entry_and_outcome():
     assert "https://github.com/openintention/research-os" in report
     assert "docs/join-with-ai.md" in report
     assert "A newcomer can arrive from the public site" in report
+    assert "not just onboarding" in report

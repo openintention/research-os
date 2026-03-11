@@ -168,6 +168,7 @@ version or checksum is outdated, the SQLite bootstrap store rebuilds it from the
 If you arrived from `openintention.io` or a social post and want to hand this to an AI agent,
 start here:
 
+- `docs/canonical-ingress-flow.md`
 - `docs/join-with-ai.md`
 - `python3 scripts/run_public_ingress_smoke.py`
 

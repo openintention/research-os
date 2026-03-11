@@ -1,7 +1,7 @@
 # First User Smoke Report
 
 ## Base URL
-- `http://127.0.0.1:65497`
+- `http://127.0.0.1:52582`
 
 ## Discovered Efforts
 - `Inference Sprint: improve flash-path throughput on H100` `tokens_per_second` on `H100` (300s)
@@ -10,8 +10,8 @@
 ## Eval Client Output
 ```text
 effort_name=Eval Sprint: improve validation loss under fixed budget
-effort_id=a78fa277-143d-4e79-a3d7-19e41c7684d3
-workspace_id=7b51bbda-cfcd-4920-a7be-398fc65e75e0
+effort_id=411310cd-cde5-41f9-bebf-1473cab80c9a
+workspace_id=456f96ad-caa2-4494-ba71-2bc16c271f9a
 planner_action=reproduce_claim
 claim_id=claim-quadratic-001
 reproduction_run_id=run-candidate-repro-001
@@ -23,7 +23,7 @@ discussion_markdown:
 - Objective: `val_bpb`
 - Platform: `A100`
 - Budget seconds: `300`
-- Updated at: `2026-03-10T11:20:59.284454+00:00`
+- Updated at: `2026-03-11T09:07:36.470159+00:00`
 - Description: Local bootstrap participant loop for the seeded eval sprint. It uses the tiny synthetic regression task as a cheap proxy for the fixed-budget contribution shape.
 
 ## State
@@ -38,11 +38,11 @@ discussion_markdown:
 - `claim-quadratic-001` [supported] Adding the quadratic feature improves the seeded eval objective in this local proxy loop under the fixed budget. (support=1, contradictions=0)
 
 ## Recent Events
-- `claim.reproduced` at 2026-03-10T11:20:59.284454+00:00 on `claim-quadratic-001`
-- `run.completed` at 2026-03-10T11:20:59.271880+00:00 on `run-candidate-repro-001`
-- `claim.asserted` at 2026-03-10T11:20:59.265627+00:00 on `claim-quadratic-001`
-- `run.completed` at 2026-03-10T11:20:59.263598+00:00 on `run-candidate-001`
-- `run.completed` at 2026-03-10T11:20:59.259656+00:00 on `run-baseline-001`
+- `claim.reproduced` at 2026-03-11T09:07:36.470159+00:00 on `claim-quadratic-001`
+- `run.completed` at 2026-03-11T09:07:36.467565+00:00 on `run-candidate-repro-001`
+- `claim.asserted` at 2026-03-11T09:07:36.460729+00:00 on `claim-quadratic-001`
+- `run.completed` at 2026-03-11T09:07:36.457933+00:00 on `run-candidate-001`
+- `run.completed` at 2026-03-11T09:07:36.453487+00:00 on `run-baseline-001`
 
 pull_request_markdown:
 # PR: snap-quadratic-candidate
@@ -78,8 +78,8 @@ pull_request_markdown:
 ## Inference Client Output
 ```text
 effort_name=Inference Sprint: improve flash-path throughput on H100
-effort_id=ff697512-d065-4a99-b0cf-cc298b2f9101
-workspace_id=e0265810-136a-47dd-876e-32b73aa901f2
+effort_id=4c709987-ec7c-41e9-b869-654115280dba
+workspace_id=9af57f9e-90ed-45b6-b265-1539b6e85530
 planner_action=reproduce_claim
 claim_id=claim-quadratic-001
 reproduction_run_id=run-candidate-repro-001
@@ -91,7 +91,7 @@ discussion_markdown:
 - Objective: `tokens_per_second`
 - Platform: `H100`
 - Budget seconds: `300`
-- Updated at: `2026-03-10T11:20:59.423461+00:00`
+- Updated at: `2026-03-11T09:07:36.609240+00:00`
 - Description: Local bootstrap participant loop for the seeded inference sprint. It uses the tiny synthetic regression task as a cheap proxy for the hardware-aware throughput contribution shape.
 
 ## State
@@ -106,11 +106,11 @@ discussion_markdown:
 - `claim-quadratic-001` [supported] The candidate path improves the seeded inference objective in this local proxy loop under the fixed budget. (support=1, contradictions=0)
 
 ## Recent Events
-- `claim.reproduced` at 2026-03-10T11:20:59.423461+00:00 on `claim-quadratic-001`
-- `run.completed` at 2026-03-10T11:20:59.421343+00:00 on `run-candidate-repro-001`
-- `claim.asserted` at 2026-03-10T11:20:59.415272+00:00 on `claim-quadratic-001`
-- `run.completed` at 2026-03-10T11:20:59.413190+00:00 on `run-candidate-001`
-- `run.completed` at 2026-03-10T11:20:59.409233+00:00 on `run-baseline-001`
+- `claim.reproduced` at 2026-03-11T09:07:36.609240+00:00 on `claim-quadratic-001`
+- `run.completed` at 2026-03-11T09:07:36.606207+00:00 on `run-candidate-repro-001`
+- `claim.asserted` at 2026-03-11T09:07:36.599652+00:00 on `claim-quadratic-001`
+- `run.completed` at 2026-03-11T09:07:36.596154+00:00 on `run-candidate-001`
+- `run.completed` at 2026-03-11T09:07:36.591673+00:00 on `run-baseline-001`
 
 pull_request_markdown:
 # PR: snap-quadratic-candidate
@@ -144,5 +144,5 @@ pull_request_markdown:
 ```
 
 ## Exported Briefs
-- `/var/folders/md/v28l21z50lj6nq4f18p501hr0000gn/T/openintention-public-ingress-9mr475if/first-user/effort-briefs/eval-sprint-improve-validation-loss-under-fixed-budget.md`
-- `/var/folders/md/v28l21z50lj6nq4f18p501hr0000gn/T/openintention-public-ingress-9mr475if/first-user/effort-briefs/inference-sprint-improve-flash-path-throughput-on-h100.md`
+- `/var/folders/md/v28l21z50lj6nq4f18p501hr0000gn/T/openintention-public-ingress-_9ts0831/first-user/effort-briefs/eval-sprint-improve-validation-loss-under-fixed-budget.md`
+- `/var/folders/md/v28l21z50lj6nq4f18p501hr0000gn/T/openintention-public-ingress-_9ts0831/first-user/effort-briefs/inference-sprint-improve-flash-path-throughput-on-h100.md`

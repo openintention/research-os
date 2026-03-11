@@ -119,6 +119,7 @@ def build_public_ingress_report(result: PublicIngressResult) -> str:
             "",
             "## Outcome",
             "- A newcomer can arrive from the public site, discover the public repo, hand the repo to an AI agent, and complete the canonical seeded-effort smoke path.",
+            "- The canonical goal is not just onboarding. It is onboarding, joining a seeded effort, and participating by leaving behind inspectable contribution state.",
         ]
     ) + "\n"
 

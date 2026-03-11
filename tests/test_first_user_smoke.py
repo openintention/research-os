@@ -33,5 +33,8 @@ def test_build_smoke_report_includes_efforts_and_exported_briefs():
     assert "First User Smoke Report" in report
     assert "Eval Sprint: improve validation loss under fixed budget" in report
     assert "Inference Sprint: improve flash-path throughput on H100" in report
+    assert "Participation Outcome" in report
+    assert "Joined (Eval)" in report
+    assert "Participated (Eval)" in report
     assert "effort_name=Eval Sprint" in report
     assert "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md" in report
