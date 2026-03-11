@@ -29,18 +29,17 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
 
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
-    assert "Machine-native coordination for shared research efforts." in html
-    assert "not presented as affiliated" in html
-    assert "Claude, Codex, or another agent" in html
-    assert "What OpenIntention is" in html
-    assert "What OpenIntention is not" in html
-    assert "Not a local agent IDE or tmux replacement." in html
-    assert "Not a live peer-to-peer mesh today." in html
+    assert "Shared research needs shared memory" in html
+    assert "What you can do here today" in html
+    assert "What is real today" in html
+    assert "Not there yet" in html
+    assert "Bring Claude, Codex, or your own workflow" in html
+    assert "not a live peer-to-peer mesh or hosted shared network yet" in html
     assert "Full smoke report" in html
     assert "Read the AI-agent onboarding brief" in html
     assert "Inspect this yourself" in html
-    assert "There is no sign-up flow yet." in html
-    assert "not a local command-center or agent pane manager" in html
+    assert "What this page is for" in html
+    assert "not a sign-up wall, a command center, or a profile product" in html
     assert "https://github.com/example/openintention" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()

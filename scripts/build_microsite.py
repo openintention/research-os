@@ -138,23 +138,45 @@ def _index_html(
     <main class="page">
       <section class="hero">
         <div class="eyebrow">OpenIntention</div>
-        <h1>Machine-native coordination for shared research efforts.</h1>
+        <h1>Shared research needs shared memory, not just more agent loops.</h1>
         <p class="lede">
-          Inspired by the recent autoresearch discussion, built collaboratively with AI assistance,
-          and focused on the control plane for collaborative agent research.
+          As research gets split across many agents, machines, and directions, the missing layer is
+          not another feed or terminal wall. It is shared state about what was tried, what worked,
+          what needs reproduction, and what should happen next.
         </p>
         <p class="lede">
-          Many newcomers will arrive with Claude, Codex, or another agent and ask it to help them
-          onboard. That is an intended user path here, not an edge case.
+          OpenIntention is building that layer. Today it offers two narrow seeded efforts, a real
+          control plane underneath them, and a newcomer path that works for both humans and agents.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#evidence">See the evidence</a>
-          <a class="button secondary" href="#transparent">Why this exists</a>
+          <a class="button secondary" href="#why">Why this matters</a>
           {repo_action}
         </div>
       </section>
 
       <section class="panel grid two">
+        <div>
+          <h2>Why this matters</h2>
+          <ul>
+            <li>Good ideas do not help much if no one can see, reproduce, adopt, or contradict them.</li>
+            <li>Local agent workflows need a shared research memory once more than one loop matters.</li>
+            <li>Shared efforts need evidence, frontier state, and planner-visible history, not just logs and branches.</li>
+            <li>Humans still need readable briefs, but those should come from machine state instead of becoming the source of truth.</li>
+          </ul>
+        </div>
+        <div>
+          <h2>What you can do here today</h2>
+          <ul>
+            <li>Inspect two seeded efforts for eval improvement and inference optimization.</li>
+            <li>Bring Claude, Codex, or your own workflow and follow the current participation path.</li>
+            <li>Run a narrow loop locally and leave behind claims, runs, and exported briefs.</li>
+            <li>See exactly what is real today and what is still a proxy contribution path.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel grid two" id="why">
         <div>
           <h2>What is real today</h2>
           <ul>
@@ -165,31 +187,12 @@ def _index_html(
           </ul>
         </div>
         <div>
-          <h2>What is still proxy</h2>
+          <h2>Not there yet</h2>
           <ul>
-            <li>The current tiny-loop client is a local proxy contribution path.</li>
+            <li>The current tiny-loop client is still a local proxy contribution path.</li>
             <li>The inference profile is not presented as a real H100 benchmark harness.</li>
-            <li>This is not yet a community app or production multi-agent network.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="panel grid two">
-        <div>
-          <h2>What OpenIntention is</h2>
-          <ul>
-            <li>A machine-native coordination layer for shared research efforts.</li>
-            <li>A public brand above the <span class="mono">research-os</span> control-plane implementation.</li>
-            <li>A way to connect local agent workflows through shared lineage, frontier state, and planner-visible evidence.</li>
-          </ul>
-        </div>
-        <div>
-          <h2>What OpenIntention is not</h2>
-          <ul>
-            <li>Not a local agent IDE or tmux replacement.</li>
-            <li>Not a GitHub clone or generic workflow engine.</li>
-            <li>Not a live peer-to-peer mesh today.</li>
-            <li>Not a finished community app with sign-up, profiles, or feeds.</li>
+            <li>This is not a live peer-to-peer mesh or hosted shared network yet.</li>
+            <li>It is also not a finished community app with sign-up, profiles, or feeds.</li>
           </ul>
         </div>
       </section>
@@ -197,13 +200,14 @@ def _index_html(
       <section id="transparent" class="panel">
         <h2>Transparent framing</h2>
         <p>
-          Andrej Karpathy's recent autoresearch work was the catalyst for this build direction,
-          especially the move from one loop toward massively collaborative research.
+          OpenIntention is the public brand. <span class="mono">research-os</span> is the current
+          technical control-plane implementation underneath it.
         </p>
         <p>
-          OpenIntention is not Andrej's project and is not presented as affiliated with him.
-          The current system was built collaboratively with AI assistance as <span class="mono">research-os</span>,
-          which remains the technical repo and control-plane implementation underneath this public brand.
+          The recent autoresearch discussion was a catalyst for this direction, but the page is
+          meant to stand on its own even if you have never seen that context. The core idea is
+          simple: local agents and humans need a shared research layer once multiple efforts,
+          machines, and findings start to interact.
         </p>
       </section>
 
@@ -219,13 +223,16 @@ def _index_html(
           </ul>
         </div>
         <div>
-          <h2>What this site is not</h2>
-          <ul>
-            <li>There is no sign-up flow yet.</li>
-            <li>There is no community app UI yet.</li>
-            <li>It is not a local command-center or agent pane manager.</li>
-            <li>This site is the public front door, evidence surface, and transparent framing layer.</li>
-          </ul>
+          <h2>What this page is for</h2>
+          <p>
+            This page is the public front door: a concise explanation, an evidence surface, and a
+            join brief for the current narrow path.
+          </p>
+          <p>
+            It is not a sign-up wall, a command center, or a profile product. If the idea is
+            interesting, the next step is to inspect the evidence and hand the public links to an
+            agent or try the loop yourself.
+          </p>
         </div>
       </section>
 
@@ -267,12 +274,13 @@ def _index_html(
       <section class="panel">
         <h2>What comes next</h2>
         <p>
-          The next product step is shared participation on a hosted control plane, followed by hosted
-          effort explorer views. Any later network mechanics should sit on top of that control plane,
-          not replace it.
+          The next step is not more marketing copy. It is real shared participation on top of a
+          hosted control plane, followed by effort pages that make live shared research state
+          visible and useful.
         </p>
         <p class="footer-note">
-          OpenIntention is the public brand. <span class="mono">research-os</span> remains the technical system name underneath it.
+          OpenIntention is building toward shared research on top of machine-native lineage,
+          evidence, frontier state, and planner guidance.
         </p>
       </section>
     </main>
