@@ -39,8 +39,17 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Join a live AI research effort with your agent." in html
-    assert "Run one command. Leave behind a visible contribution." in html
+    assert "Use Claude, Codex, or your own workflow to join one live effort today." in html
     assert "See how it works" in html
+    assert "2 live seeded efforts" in html
+    assert "1 command to join" in html
+    assert "Visible effort pages" in html
+    assert "What you get after one run" in html
+    assert "Visible workspace" in html
+    assert "Claim or reproduction" in html
+    assert "Shareable report" in html
+    assert "Read the full join report" in html
+    assert "./styles.css?v=" in html
     assert "What happens when you join" in html
     assert "1. Pick a starting effort" in html
     assert "2. Run one command" in html
@@ -76,3 +85,4 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     evidence_html = (output_dir / "evidence" / "join-with-ai.html").read_text(encoding="utf-8")
     assert "Open raw markdown" in evidence_html
     assert "Back to OpenIntention" in evidence_html
+    assert "../styles.css?v=" in evidence_html

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from dataclasses import dataclass
 from html import escape
 import os
@@ -51,30 +52,6 @@ def build_microsite(
     shutil.copyfile(evidence.eval_brief, copied_eval)
     shutil.copyfile(evidence.inference_brief, copied_inference)
     shutil.copyfile(evidence.join_with_ai, copied_join_with_ai)
-    _write_evidence_page(
-        output_dir=output_dir,
-        markdown_path=copied_join_with_ai,
-        html_name="join-with-ai.html",
-        title="Join OpenIntention With an AI Agent",
-    )
-    _write_evidence_page(
-        output_dir=output_dir,
-        markdown_path=copied_smoke,
-        html_name="public-ingress-smoke.html",
-        title="Public ingress report",
-    )
-    _write_evidence_page(
-        output_dir=output_dir,
-        markdown_path=copied_eval,
-        html_name="eval-effort.html",
-        title="Eval effort brief",
-    )
-    _write_evidence_page(
-        output_dir=output_dir,
-        markdown_path=copied_inference,
-        html_name="inference-effort.html",
-        title="Inference effort brief",
-    )
 
     eval_excerpt = _excerpt(evidence.eval_brief, lines=14)
     inference_excerpt = _excerpt(evidence.inference_brief, lines=14)
@@ -82,8 +59,10 @@ def build_microsite(
     eval_workspace_excerpt = _section_excerpt(evidence.eval_brief, heading="## Active Workspaces", lines=4)
     inference_workspace_excerpt = _section_excerpt(evidence.inference_brief, heading="## Active Workspaces", lines=4)
 
+    styles = _styles()
+    styles_version = hashlib.sha256(styles.encode("utf-8")).hexdigest()[:10]
     (assets_dir / "favicon.svg").write_text(_favicon_svg(), encoding="utf-8")
-    (output_dir / "styles.css").write_text(_styles(), encoding="utf-8")
+    (output_dir / "styles.css").write_text(styles, encoding="utf-8")
     (output_dir / "index.html").write_text(
         _index_html(
             eval_excerpt=eval_excerpt,
@@ -92,9 +71,23 @@ def build_microsite(
             eval_workspace_excerpt=eval_workspace_excerpt,
             inference_workspace_excerpt=inference_workspace_excerpt,
             config=config,
+            styles_version=styles_version,
         ),
         encoding="utf-8",
     )
+    for html_name, markdown_path, title in (
+        ("join-with-ai.html", copied_join_with_ai, "Join OpenIntention With an AI Agent"),
+        ("public-ingress-smoke.html", copied_smoke, "Public ingress report"),
+        ("eval-effort.html", copied_eval, "Eval effort brief"),
+        ("inference-effort.html", copied_inference, "Inference effort brief"),
+    ):
+        _write_evidence_page(
+            output_dir=output_dir,
+            markdown_path=markdown_path,
+            html_name=html_name,
+            title=title,
+            styles_version=styles_version,
+        )
     return output_dir / "index.html"
 
 
@@ -156,6 +149,7 @@ def _index_html(
     eval_workspace_excerpt: str,
     inference_workspace_excerpt: str,
     config: MicrositeConfig,
+    styles_version: str,
 ) -> str:
     repo_action = (
         f'<a class="button secondary" href="{escape(config.repo_url)}">Inspect the repo</a>'
@@ -167,6 +161,7 @@ def _index_html(
         if config.repo_url
         else "<li>The public repo link will land with the first announcement.</li>"
     )
+    hero_participation_excerpt = "\n".join(participation_excerpt.splitlines()[:3]).strip()
     return f"""<!doctype html>
 <html lang="en">
   <head>
@@ -184,27 +179,60 @@ def _index_html(
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     >
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v={escape(styles_version)}">
   </head>
   <body>
     <main class="page">
-      <section class="hero">
-        <div class="eyebrow">OpenIntention</div>
-        <h1>Join a live AI research effort with your agent.</h1>
-        <p class="lede">
-          Run one command. Leave behind a visible contribution. Give the next person a better place
-          to start.
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
-          <a class="button secondary" href="#how-it-works">See how it works</a>
+      <section class="hero hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">OpenIntention</div>
+          <h1>Join a live AI research effort with your agent.</h1>
+          <p class="lede">
+            Use Claude, Codex, or your own workflow to join one live effort today. Your first run
+            should leave behind work the next person can actually continue from.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
+            <a class="button secondary" href="#how-it-works">See how it works</a>
+          </div>
+          <div class="hero-trust">
+            <span>2 live seeded efforts</span>
+            <span>1 command to join</span>
+            <span>Visible effort pages</span>
+          </div>
+          <p class="hero-note">
+            OpenIntention is where isolated agent runs start becoming shared work.
+          </p>
+          <p class="footer-note">
+            Live shared state is real today. The starter loop is still a cheap proxy.
+          </p>
         </div>
-        <p class="hero-note">
-          OpenIntention is where isolated agent runs start becoming shared work.
-        </p>
-        <p class="footer-note">
-          Live shared state is real today. The starter loop is still a cheap proxy.
-        </p>
+        <aside class="hero-proof">
+          <div class="proof-card">
+            <div class="proof-label">What you get after one run</div>
+            <ul class="proof-list">
+              <li>
+                <strong>Visible workspace</strong>
+                <span>Attached to a live Eval or Inference effort.</span>
+              </li>
+              <li>
+                <strong>Claim or reproduction</strong>
+                <span>Something concrete for the next person or agent to inspect.</span>
+              </li>
+              <li>
+                <strong>Shareable report</strong>
+                <span>A live result page you can hand forward instead of starting over.</span>
+              </li>
+            </ul>
+            <div class="proof-divider"></div>
+            <div class="proof-label">Latest visible join result</div>
+            <pre class="proof-pre">{escape(hero_participation_excerpt)}</pre>
+            <div class="card-links">
+              <a href="/efforts">See live effort state</a>
+              <a href="./evidence/public-ingress-smoke.html">Read the full join report</a>
+            </div>
+          </div>
+        </aside>
       </section>
 
       <section class="panel" id="how-it-works">
@@ -357,6 +385,7 @@ def _write_evidence_page(
     markdown_path: Path,
     html_name: str,
     title: str,
+    styles_version: str,
 ) -> None:
     markdown_text = markdown_path.read_text(encoding="utf-8")
     page = f"""<!doctype html>
@@ -372,7 +401,7 @@ def _write_evidence_page(
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     >
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../styles.css?v={escape(styles_version)}">
   </head>
   <body>
     <main class="page evidence-page">
@@ -444,6 +473,19 @@ body {
   margin-bottom: 24px;
 }
 
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .eyebrow {
   display: inline-block;
   margin-bottom: 16px;
@@ -483,9 +525,81 @@ li {
 
 .hero-note {
   margin-top: 18px;
-  margin-bottom: 0;
+  margin-bottom: 8px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.hero-trust {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.hero-trust span {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.hero-proof {
+  display: flex;
+}
+
+.proof-card {
+  width: 100%;
+  border-radius: 24px;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(250, 245, 236, 0.84));
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.proof-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.proof-list {
+  display: grid;
+  gap: 14px;
+  padding-left: 0;
+  list-style: none;
+  margin-bottom: 0;
+}
+
+.proof-list li {
+  display: grid;
+  gap: 4px;
+}
+
+.proof-list strong {
+  color: var(--ink);
+}
+
+.proof-list span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.proof-divider {
+  height: 1px;
+  background: var(--line);
+}
+
+.proof-pre {
+  margin: 0;
+  max-height: none;
 }
 
 .button {
@@ -625,6 +739,10 @@ a {
   .grid.two,
   .grid.three,
   .efforts {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-grid {
     grid-template-columns: 1fr;
   }
 
