@@ -14,7 +14,7 @@ def test_site_server_serves_generated_index_and_evidence(tmp_path):
     (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
     (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
     (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
-    (evidence_dir / "first-user-smoke.md").write_text("# smoke", encoding="utf-8")
+    (evidence_dir / "public-ingress-smoke.md").write_text("# smoke", encoding="utf-8")
 
     client = TestClient(create_site_app(dist_dir))
 
@@ -28,7 +28,7 @@ def test_site_server_serves_generated_index_and_evidence(tmp_path):
     asset_response = client.get("/assets/favicon.svg")
     assert asset_response.status_code == 200
 
-    evidence_response = client.get("/evidence/first-user-smoke.md")
+    evidence_response = client.get("/evidence/public-ingress-smoke.md")
     assert evidence_response.status_code == 200
     assert evidence_response.headers["content-type"].startswith("text/markdown")
     assert "# smoke" in evidence_response.text

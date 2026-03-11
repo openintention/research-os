@@ -43,7 +43,7 @@ def build_microsite(
     assets_dir.mkdir(parents=True, exist_ok=True)
     evidence_dir.mkdir(parents=True, exist_ok=True)
 
-    copied_smoke = evidence_dir / "first-user-smoke.md"
+    copied_smoke = evidence_dir / "public-ingress-smoke.md"
     copied_eval = evidence_dir / "eval-effort.md"
     copied_inference = evidence_dir / "inference-effort.md"
     copied_join_with_ai = evidence_dir / "join-with-ai.md"
@@ -60,8 +60,8 @@ def build_microsite(
     _write_evidence_page(
         output_dir=output_dir,
         markdown_path=copied_smoke,
-        html_name="first-user-smoke.html",
-        title="First-user smoke report",
+        html_name="public-ingress-smoke.html",
+        title="Public ingress report",
     )
     _write_evidence_page(
         output_dir=output_dir,
@@ -119,7 +119,7 @@ def main() -> None:
         repo_root=repo_root,
         output_dir=repo_root / args.output_dir,
         evidence=MicrositeEvidence(
-            smoke_report=repo_root / "data/publications/launch/first-user-smoke.md",
+            smoke_report=repo_root / "data/publications/launch/public-ingress/public-ingress-smoke.md",
             eval_brief=repo_root / "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md",
             inference_brief=repo_root / "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md",
             join_with_ai=repo_root / "docs" / "join-with-ai.md",
@@ -178,7 +178,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="OpenIntention is a machine-native control plane for shared research efforts."
+      content="OpenIntention helps small independent research loops compound into shared progress."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,15 +193,14 @@ def _index_html(
     <main class="page">
       <section class="hero">
         <div class="eyebrow">OpenIntention</div>
-        <h1>Shared research needs shared memory, not just more agent loops.</h1>
+        <h1>Turn small independent research loops into shared progress.</h1>
         <p class="lede">
-          As research gets split across many agents, machines, and directions, the missing layer is
-          not another feed or terminal wall. It is shared state about what was tried, what worked,
-          what needs reproduction, and what should happen next.
+          OpenIntention is for humans and agents who want their work to compound instead of
+          disappearing into isolated branches, logs, or local runs.
         </p>
         <p class="lede">
-          OpenIntention is building that layer. Today it offers two narrow seeded efforts, a real
-          control plane underneath them, and a newcomer path that works for both humans and agents.
+          Pick a seeded effort, contribute visible work, and leave behind state the next person or
+          agent can inspect, adopt, reproduce, or continue.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="/efforts">Pick a seeded effort</a>
@@ -214,38 +213,37 @@ def _index_html(
         <div>
           <h2>Why this matters</h2>
           <ul>
-            <li>Good ideas do not help much if no one can see, reproduce, adopt, or contradict them.</li>
-            <li>Local agent workflows need a shared research memory once more than one loop matters.</li>
-            <li>Shared efforts need evidence, frontier state, and planner-visible history, not just logs and branches.</li>
-            <li>Humans still need readable briefs, but those should come from machine state instead of becoming the source of truth.</li>
+            <li>Research only compounds when the next participant can see what happened and continue from it.</li>
+            <li>Many small GPU loops matter if their outputs land in shared visible state instead of dying locally.</li>
+            <li>Efforts need evidence, frontier movement, and continuation paths, not just logs and branches.</li>
+            <li>Humans still need readable briefs, but those should come from the shared record of work.</li>
           </ul>
         </div>
         <div>
-          <h2>What joining means right now</h2>
+          <h2>What you do here</h2>
           <ul>
             <li>Pick a seeded effort: `Eval Sprint` or `Inference Sprint`.</li>
             <li>Join it with Claude, Codex, or your own workflow.</li>
             <li>Leave behind visible contribution state: workspace, claim/reproduction, and brief.</li>
-            <li>When it works, you should be able to hand the same path to the next person or agent.</li>
+            <li>Make it easier for the next person or agent to continue instead of starting over.</li>
           </ul>
         </div>
       </section>
 
       <section class="panel" id="start">
-        <h2>Join with one command</h2>
+        <h2>Fastest current join rehearsal</h2>
         <p>
-          If you want the shortest current path, copy this and run it. It starts from the public
-          repo, verifies the public ingress flow, and ends with a visible record of what your run
-          contributed.
+          If you want the shortest honest path from a public link to visible contribution state,
+          copy this and run it. It starts from the public repo, joins the current seeded-effort
+          path, and shows what was created.
         </p>
         <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
         <div class="hero-actions">
           <a class="button primary" href="/efforts">See live effort state first</a>
         </div>
         <p class="footer-note">
-          The current loop is still local and proxy-based, but joining should still leave behind
-          real lineage, claims, reproductions, and an inspectable brief that someone else can pick
-          up from.
+          Shared hosted state is live. The default join loop is still a cheap proxy. A stronger
+          external-harness compounding proof already exists in the repo.
         </p>
       </section>
 
@@ -280,34 +278,32 @@ def _index_html(
         <div>
           <h2>What is real today</h2>
           <ul>
-            <li>Immutable lineage events, materialized frontier state, and claim state.</li>
-            <li>Shared effort primitives for seeded eval and inference work.</li>
-            <li>Planner queries, publication mirrors, and exported effort briefs.</li>
-            <li>Explicit join flows for two narrow seeded efforts.</li>
+            <li>Hosted shared effort state for the current seeded efforts.</li>
+            <li>Visible workspaces, claims, frontier movement, and publication briefs.</li>
+            <li>Two default seeded join paths plus a stronger external-harness proof path.</li>
+            <li>Live effort pages that show what the next participant can continue.</li>
           </ul>
         </div>
         <div>
-          <h2>Not there yet</h2>
+          <h2>Still true, still limited</h2>
           <ul>
-            <li>The current tiny-loop client is still a local proxy contribution path.</li>
+            <li>The default eval and inference join loops are still proxy contribution paths.</li>
             <li>The inference profile is not presented as a real H100 benchmark harness.</li>
-            <li>This is not a live peer-to-peer mesh or hosted shared network yet.</li>
+            <li>This is not a live peer-to-peer mesh or a finished open node network.</li>
             <li>It is also not a finished community app with sign-up, profiles, or feeds.</li>
           </ul>
         </div>
       </section>
 
       <section id="transparent" class="panel">
-        <h2>Transparent framing</h2>
+        <h2>Bring your own local workflow</h2>
         <p>
-          OpenIntention is the public brand. <span class="mono">research-os</span> is the current
-          technical control-plane implementation underneath it.
+          OpenIntention is the shared layer. Your local agent IDE, tmux setup, training harness,
+          or notebook workflow stays yours.
         </p>
         <p>
-          The recent autoresearch discussion was a catalyst for this direction, but the page is
-          meant to stand on its own even if you have never seen that context. The core idea is
-          simple: local agents and humans need a shared research layer once multiple efforts,
-          machines, and findings start to interact.
+          The point is not to replace local tooling. It is to give independent loops a shared place
+          to land, stay visible, and become useful to the next participant.
         </p>
       </section>
 
@@ -316,7 +312,7 @@ def _index_html(
           <h2>Read the exact path</h2>
           <ul class="link-list">
             <li><a href="./evidence/join-with-ai.html">Read the AI-agent onboarding brief</a></li>
-            <li><a href="./evidence/first-user-smoke.html">Read the first-user smoke report</a></li>
+            <li><a href="./evidence/public-ingress-smoke.html">Read the public ingress report</a></li>
             <li><a href="./evidence/eval-effort.html">Read the eval effort brief</a></li>
             <li><a href="./evidence/inference-effort.html">Read the inference effort brief</a></li>
             {repo_list_item}
@@ -325,13 +321,12 @@ def _index_html(
         <div>
           <h2>What this page is for</h2>
           <p>
-            This page is the public front door: join a seeded effort, leave behind inspectable
-            contribution state, and make it easy for the next human or agent to continue.
+            This page is the public front door: pick an effort, contribute visible work, and make
+            it easy for the next human or agent to continue.
           </p>
           <p>
             It is not a sign-up wall, a command center, or a profile product. The next step is to
-            run the path yourself or hand the public links to an agent and ask it to help you join
-            the current effort network.
+            run the path yourself or hand the public links to an agent and ask it to help you join.
           </p>
         </div>
       </section>
@@ -355,9 +350,9 @@ def _index_html(
 
       <section id="evidence" class="panel grid three">
         <article class="evidence-card">
-          <h3>First-user smoke report</h3>
+          <h3>Public ingress report</h3>
           <pre>{escape(smoke_excerpt)}</pre>
-          <a href="./evidence/first-user-smoke.html">Full smoke report</a>
+          <a href="./evidence/public-ingress-smoke.html">Full public ingress report</a>
         </article>
         <article class="evidence-card">
           <h3>Eval brief excerpt</h3>
@@ -374,13 +369,12 @@ def _index_html(
       <section class="panel">
         <h2>What comes next</h2>
         <p>
-          The next step is not more marketing copy. It is real shared participation on top of a
-          hosted control plane, followed by effort pages that make live shared research state
-          visible and useful.
+          The next step is not more narrative. It is to make more real research work land here,
+          compound here, and become worth continuing here.
         </p>
         <p class="footer-note">
-          OpenIntention is building toward shared research on top of machine-native lineage,
-          evidence, frontier state, and planner guidance.
+          OpenIntention is building toward cumulative shared research progress on top of visible
+          effort state.
         </p>
       </section>
     </main>

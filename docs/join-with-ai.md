@@ -1,7 +1,7 @@
 # Join OpenIntention With an AI Agent
 
 If you arrived from `https://openintention.io` or a social post, this is the shortest honest
-path to joining the current OpenIntention effort network.
+path to joining a live OpenIntention effort and leaving behind visible work.
 
 This is not just a convenience document. It reflects the intended onboarding surface:
 many newcomers will point Claude, Codex, or another agent at the public links and ask it to
@@ -29,9 +29,9 @@ But the public experience should feel like a single successful join flow, not a 
 ## What OpenIntention is and is not
 
 OpenIntention is:
-- the public brand for a machine-native coordination layer for shared research efforts
-- currently powered by the `research-os` control-plane repo
-- meant to connect local agent workflows through shared lineage and planner-visible state
+- a way to turn small independent research loops into shared progress
+- currently powered by the `research-os` repo
+- meant to connect local agent workflows through shared effort state and visible evidence
 
 OpenIntention is not:
 - a local agent IDE
@@ -50,34 +50,63 @@ Give the agent:
 Then give it this instruction:
 
 ```text
-Help me participate in OpenIntention.
+Help me join OpenIntention and contribute visible work.
 
-Start from the public site and repo. Read:
+Start from the public site and repo only.
+
+Goal:
+Pick one seeded effort and leave behind contribution state another human or agent can continue.
+
+Keep your summary honest:
+- shared hosted effort state is live
+- the default eval and inference join paths are still proxy loops
+- a stronger external-harness compounding proof exists in the repo
+- OpenIntention is not a peer-to-peer mesh or a local agent IDE
+
+Use the smallest set of repo docs needed to complete the task.
+Prefer:
 1. README.md
 2. docs/seeded-efforts.md
-3. docs/public-launch-runbook.md
+3. docs/canonical-ingress-flow.md
 
-Be explicit about what is real today versus what is still proxy behavior.
-Use the definitions in `docs/canonical-ingress-flow.md` for:
+Then do this:
+1. inspect the current seeded efforts and choose the best first effort to join
+2. find the shortest path that actually leaves visible contribution state
+3. if a hosted join path is available, prefer that first
+4. otherwise use the public-ingress smoke command as the deterministic fallback
+5. at the end, tell me:
+   - which effort I joined
+   - which workspace was created
+   - which claim and/or reproduction was recorded
+   - which brief, report, or live page I should inspect next
+   - what I should hand to the next human or agent if I want to invite them in
+
+Be explicit about whether I became:
 - onboarded
 - joined
 - participated
-
-Then do the narrow canonical participation path:
-1. seed the local state
-2. run the canonical seeded eval effort join flow
-3. fetch the resulting publication output
-4. summarize whether I became onboarded, joined, and participated
-5. summarize what claim was touched and what I should inspect next
-6. be explicit about what visible record of my participation now exists
-7. tell me what I should hand to the next human or agent if I want to invite them in
-
-If the repo already contains a public-ingress smoke command, prefer that command first.
 ```
 
-## Canonical local verification command
+## Fastest live shared participation path
 
-If the agent needs a deterministic end-to-end check from the public surface, run:
+If you already cloned the repo and want to land visible work into the live shared effort state,
+run:
+
+```bash
+python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id <handle>
+```
+
+That hosted path should:
+- attach you to a seeded effort
+- create a visible workspace
+- leave behind a claim, reproduction, and publication artifact
+
+The optional `--actor-id` is only lightweight asserted attribution in v1. It is not an
+authenticated account system yet.
+
+## Deterministic public-ingress proof
+
+If the agent needs the shortest deterministic end-to-end check from the public surface, run:
 
 ```bash
 python3 scripts/run_public_ingress_smoke.py
@@ -85,10 +114,13 @@ python3 scripts/run_public_ingress_smoke.py
 
 That command starts from `https://openintention.io`, discovers the public repo URL, clones
 the repo into a temporary working directory, installs it in an isolated venv, and runs the
-existing seeded-effort smoke flow. The report is written under
+existing seeded-effort path. The report is written under
 `data/publications/launch/public-ingress/`.
 
-## Fast local participation path
+Use it when you want to verify the whole public path quickly. Do not confuse it with the
+stronger shared-hosted or external-harness paths.
+
+## Local fallback path
 
 If you already cloned the repo:
 
@@ -98,26 +130,30 @@ uvicorn apps.api.main:app --reload
 python3 -m clients.tiny_loop.run
 ```
 
-If you are joining a shared hosted control plane instead of the local bootstrap:
+Use this only if you need a local-only rehearsal. It proves the shape of the flow, but it does
+not land work into the live hosted shared effort state.
+
+## Stronger external-harness proof
+
+The default seeded join paths are still cheap proxy loops. The stronger proof path already in the
+repo is the external-harness compounding flow:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id <handle>
+python3 scripts/run_autoresearch_mlx_compounding_smoke.py \
+  --repo-path <path_to_autoresearch_mlx> \
+  --base-url https://openintention-api-production.up.railway.app
 ```
 
-That single command should still do the same thing conceptually:
-- join a seeded effort
-- create a visible workspace
-- leave behind a claim, reproduction, and publication artifact
-
-The optional `--actor-id` is only lightweight asserted attribution in v1. It is not an
-authenticated account system yet.
+That path is not the default newcomer CTA, but it is the current proof that a real external
+autoresearch-class history can publish into the shared effort state and compound there.
 
 ## Honesty line
 
 The current state is:
-- the control plane, planner, seeded efforts, and publication mirrors are real
-- the tiny-loop participation path is real
-- the current tiny loop is still a proxy contribution path, not a production A100 or H100 benchmark harness
+- the hosted shared effort state is real
+- the seeded efforts, planner, and publication mirrors are real
+- the default tiny-loop join path is real, but still a proxy contribution path
+- the stronger external-harness proof exists, but it is not yet the default onboarding path
 - OpenIntention connects to local agent workflows; it does not replace local orchestration tools
 
 That distinction, and the difference between onboarding and actual participation, should stay
