@@ -299,28 +299,45 @@ def _index_html(
 
       <section class="panel" id="how-it-works">
         <h2>What happens when you join</h2>
-        <div class="grid three flow-grid">
-          <div class="flow-card">
+        <p class="section-lede">
+          The first run should feel simple: pick a starting effort, run one command, and watch
+          your work show up somewhere the next person can continue from.
+        </p>
+        <div class="flow-steps">
+          <div class="step-card">
             <div class="step-label">1. Pick a starting effort</div>
             <p>
               Start with Eval Sprint if you want the easiest first path. Choose Inference Sprint if
               you care more about performance work.
             </p>
           </div>
-          <div class="flow-card">
+          <div class="step-card">
             <div class="step-label">2. Run one command</div>
             <p>
-              Clone the repo and run the hosted join path yourself, or hand the same command to
-              Claude or Codex.
+              Run the hosted join path yourself, or paste the same command into Claude or Codex.
             </p>
-            <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
           </div>
-          <div class="flow-card">
+          <div class="step-card">
             <div class="step-label">3. Your work appears</div>
             <p>
-              You should end up with a visible workspace, a claim or reproduction, and a report
-              linked back to the live effort.
+              You should end up with a visible workspace, a claim or reproduction, and a short
+              report linked back to the live effort.
             </p>
+          </div>
+        </div>
+        <div class="join-action-card">
+          <div class="join-action-copy">
+            <div class="effort-type">Best first path</div>
+            <h3>Start with Eval Sprint</h3>
+            <p>
+              Use this command yourself or hand it directly to Claude or Codex.
+              If you want the performance path instead, add
+              <code>--profile inference-sprint</code>.
+            </p>
+          </div>
+          <div class="join-command-stack">
+            <div class="proof-label">Join command</div>
+            <p class="command command-hero">{escape(DEFAULT_JOIN_COMMAND)}</p>
           </div>
         </div>
       </section>
@@ -756,10 +773,6 @@ li {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.flow-grid {
-  margin-top: 18px;
-}
-
 .panel {
   border-radius: 24px;
   padding: 28px;
@@ -795,6 +808,51 @@ li {
 .flow-card {
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid var(--line);
+}
+
+.flow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0 20px;
+}
+
+.step-card {
+  min-height: 0;
+  border-radius: 22px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
+}
+
+.join-action-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+  align-items: center;
+  border-radius: 24px;
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(247, 239, 227, 0.78));
+  border: 1px solid var(--line);
+}
+
+.join-action-copy h3 {
+  margin-bottom: 10px;
+}
+
+.join-command-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.command-hero {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.65;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(31, 27, 22, 0.05);
 }
 
 .effort-type {
@@ -861,7 +919,9 @@ a {
 @media (max-width: 900px) {
   .grid.two,
   .grid.three,
-  .efforts {
+  .efforts,
+  .flow-steps,
+  .join-action-card {
     grid-template-columns: 1fr;
   }
 

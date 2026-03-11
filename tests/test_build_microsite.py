@@ -52,9 +52,11 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Read the full join report" in html
     assert "./styles.css?v=" in html
     assert "What happens when you join" in html
+    assert "The first run should feel simple" in html
     assert "1. Pick a starting effort" in html
     assert "2. Run one command" in html
     assert "3. Your work appears" in html
+    assert "Use this command yourself or hand it directly to Claude or Codex." in html
     assert "What an effort is" in html
     assert "An effort is one shared research objective" in html
     assert "The easiest first path." in html
