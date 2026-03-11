@@ -11,4 +11,4 @@ COPY apps ./apps
 
 RUN pip install --no-cache-dir .
 
-CMD ["sh", "-c", "python -m uvicorn apps.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["python", "-m", "research_os.api_server"]
