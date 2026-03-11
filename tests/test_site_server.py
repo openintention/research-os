@@ -30,4 +30,5 @@ def test_site_server_serves_generated_index_and_evidence(tmp_path):
 
     evidence_response = client.get("/evidence/first-user-smoke.md")
     assert evidence_response.status_code == 200
+    assert evidence_response.headers["content-type"].startswith("text/markdown")
     assert "# smoke" in evidence_response.text

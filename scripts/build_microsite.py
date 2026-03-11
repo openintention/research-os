@@ -46,6 +46,30 @@ def build_microsite(
     shutil.copyfile(evidence.eval_brief, copied_eval)
     shutil.copyfile(evidence.inference_brief, copied_inference)
     shutil.copyfile(evidence.join_with_ai, copied_join_with_ai)
+    _write_evidence_page(
+        output_dir=output_dir,
+        markdown_path=copied_join_with_ai,
+        html_name="join-with-ai.html",
+        title="Join OpenIntention With an AI Agent",
+    )
+    _write_evidence_page(
+        output_dir=output_dir,
+        markdown_path=copied_smoke,
+        html_name="first-user-smoke.html",
+        title="First-user smoke report",
+    )
+    _write_evidence_page(
+        output_dir=output_dir,
+        markdown_path=copied_eval,
+        html_name="eval-effort.html",
+        title="Eval effort brief",
+    )
+    _write_evidence_page(
+        output_dir=output_dir,
+        markdown_path=copied_inference,
+        html_name="inference-effort.html",
+        title="Inference effort brief",
+    )
 
     smoke_excerpt = _excerpt(evidence.smoke_report, lines=18)
     eval_excerpt = _excerpt(evidence.eval_brief, lines=14)
@@ -215,10 +239,10 @@ def _index_html(
         <div>
           <h2>Inspect this yourself</h2>
           <ul class="link-list">
-            <li><a href="./evidence/join-with-ai.md">Read the AI-agent onboarding brief</a></li>
-            <li><a href="./evidence/first-user-smoke.md">Read the first-user smoke report</a></li>
-            <li><a href="./evidence/eval-effort.md">Read the eval effort brief</a></li>
-            <li><a href="./evidence/inference-effort.md">Read the inference effort brief</a></li>
+            <li><a href="./evidence/join-with-ai.html">Read the AI-agent onboarding brief</a></li>
+            <li><a href="./evidence/first-user-smoke.html">Read the first-user smoke report</a></li>
+            <li><a href="./evidence/eval-effort.html">Read the eval effort brief</a></li>
+            <li><a href="./evidence/inference-effort.html">Read the inference effort brief</a></li>
             {repo_list_item}
           </ul>
         </div>
@@ -242,14 +266,14 @@ def _index_html(
           <h3>Eval Sprint: improve validation loss under fixed budget</h3>
           <p>Objective <span class="mono">val_bpb</span>, platform <span class="mono">A100</span>, budget <span class="mono">300s</span>.</p>
           <p class="command">python3 -m clients.tiny_loop.run</p>
-          <a href="./evidence/eval-effort.md">Open exported brief</a>
+          <a href="./evidence/eval-effort.html">Open exported brief</a>
         </article>
         <article class="effort-card">
           <div class="effort-type">Seeded effort</div>
           <h3>Inference Sprint: improve flash-path throughput on H100</h3>
           <p>Objective <span class="mono">tokens_per_second</span>, platform <span class="mono">H100</span>, budget <span class="mono">300s</span>.</p>
           <p class="command">python3 -m clients.tiny_loop.run --profile inference-sprint</p>
-          <a href="./evidence/inference-effort.md">Open exported brief</a>
+          <a href="./evidence/inference-effort.html">Open exported brief</a>
         </article>
       </section>
 
@@ -257,17 +281,17 @@ def _index_html(
         <article class="evidence-card">
           <h3>First-user smoke report</h3>
           <pre>{escape(smoke_excerpt)}</pre>
-          <a href="./evidence/first-user-smoke.md">Full smoke report</a>
+          <a href="./evidence/first-user-smoke.html">Full smoke report</a>
         </article>
         <article class="evidence-card">
           <h3>Eval brief excerpt</h3>
           <pre>{escape(eval_excerpt)}</pre>
-          <a href="./evidence/eval-effort.md">Eval effort brief</a>
+          <a href="./evidence/eval-effort.html">Eval effort brief</a>
         </article>
         <article class="evidence-card">
           <h3>Inference brief excerpt</h3>
           <pre>{escape(inference_excerpt)}</pre>
-          <a href="./evidence/inference-effort.md">Inference effort brief</a>
+          <a href="./evidence/inference-effort.html">Inference effort brief</a>
         </article>
       </section>
 
@@ -296,6 +320,53 @@ def _favicon_svg() -> str:
   <path d="M48 20c11 0 20 9 20 20 0 10-7 18-16 20v16h-8V40h8c4 0 8-4 8-8 0-7-5-12-12-12s-12 5-12 12h-8c0-11 9-20 20-20Z" fill="#b73a2f"/>
 </svg>
 """
+
+
+def _write_evidence_page(
+    *,
+    output_dir: Path,
+    markdown_path: Path,
+    html_name: str,
+    title: str,
+) -> None:
+    markdown_text = markdown_path.read_text(encoding="utf-8")
+    page = f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{escape(title)} · OpenIntention</title>
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body>
+    <main class="page evidence-page">
+      <section class="hero">
+        <div class="eyebrow">OpenIntention evidence</div>
+        <h1>{escape(title)}</h1>
+        <p class="lede">
+          This is a public evidence artifact from the current narrow contribution path. It is
+          rendered for humans here, with the raw markdown kept alongside it for agents and scripts.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="../">Back to OpenIntention</a>
+          <a class="button secondary" href="./{escape(markdown_path.name)}">Open raw markdown</a>
+        </div>
+      </section>
+      <section class="panel">
+        <pre>{escape(markdown_text)}</pre>
+      </section>
+    </main>
+  </body>
+</html>
+"""
+    (output_dir / "evidence" / html_name).write_text(page, encoding="utf-8")
 
 
 def _styles() -> str:

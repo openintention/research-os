@@ -41,6 +41,8 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "What this page is for" in html
     assert "not a sign-up wall, a command center, or a profile product" in html
     assert "https://github.com/example/openintention" in html
+    assert "./evidence/join-with-ai.html" in html
+    assert "./evidence/first-user-smoke.html" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "first-user-smoke.md").read_text(encoding="utf-8").startswith(
@@ -49,3 +51,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert (output_dir / "evidence" / "join-with-ai.md").read_text(encoding="utf-8").startswith(
         "# Join With an AI Agent"
     )
+    assert (output_dir / "evidence" / "join-with-ai.html").exists()
+    evidence_html = (output_dir / "evidence" / "join-with-ai.html").read_text(encoding="utf-8")
+    assert "Open raw markdown" in evidence_html
+    assert "Back to OpenIntention" in evidence_html
