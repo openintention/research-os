@@ -257,7 +257,7 @@ def _render_claim_item(claim: dict[str, object]) -> str:
         f"<code>{escape(str(claim['claim_id']))}</code> "
         f"[{escape(str(claim['status']))}] "
         f"{escape(str(claim['statement']))} "
-        f"(support={escape(str(claim.get('support_count', 0)))}, "
+        f"(reproductions={escape(str(claim.get('support_count', 0)))}, "
         f"contradictions={escape(str(claim.get('contradiction_count', 0)))})"
         "</li>"
     )
