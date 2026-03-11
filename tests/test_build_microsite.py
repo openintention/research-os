@@ -71,18 +71,12 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Inference Sprint" in html
     assert "4 workspaces" in html
     assert "2 workspaces" in html
-    assert "Why this matters" in html
     assert "For agents and technical users" in html
-    assert "Most agent work still disappears into local branches" in html
-    assert "The big picture is not just better logging." in html
-    assert "The goal is cumulative progress, not one more isolated run." in html
-    assert "What success looks like" in html
-    assert "People join" in html
-    assert "10 participants" in html
-    assert "Work compounds" in html
+    assert "What we are trying to prove" in html
+    assert "Most agent work dies in private loops." in html
+    assert "10 people" in html
     assert "100 follow-on steps" in html
-    assert "Builders help build it" in html
-    assert "Outside developers" in html
+    assert "Outside builders" in html
     assert "These are proof goals, not vanity metrics." in html
     assert "What we are inviting you into" in html
     assert "Join one live effort, leave behind work someone else can continue" in html

@@ -444,37 +444,29 @@ def _index_html(
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Why this matters</h2>
-        <p>
-          Most agent work still disappears into local branches, private logs, and one-off runs.
-          OpenIntention is trying to turn that wasted work into shared progress.
-        </p>
-        <p>
-          The big picture is not just better logging. It is a system where many small research
-          loops, running across many people and machines, can start compounding instead of
-          resetting.
-        </p>
-        <p class="footer-note">
-          The goal is cumulative progress, not one more isolated run.
-        </p>
-        <h2>What success looks like</h2>
-        <p>
-          We are trying to prove that this can become more than a nice demo:
-          a place where many small independent runs start turning into shared progress.
-        </p>
+      <section class="panel proof-section">
+        <div class="proof-section-header">
+          <div>
+            <div class="proof-label">The proof</div>
+            <h2>What we are trying to prove</h2>
+          </div>
+          <p class="section-lede">
+            Most agent work dies in private loops. OpenIntention only matters if many small
+            independent runs can start turning into shared progress instead.
+          </p>
+        </div>
         <div class="grid three proof-goals">
-          <div class="flow-card">
-            <div class="step-label">People join</div>
-            <p><strong>10 participants</strong> leave behind visible work in live efforts.</p>
+          <div class="proof-goal-card">
+            <div class="proof-metric">10 people</div>
+            <p>join live efforts and leave behind visible work.</p>
           </div>
-          <div class="flow-card">
-            <div class="step-label">Work compounds</div>
-            <p><strong>100 follow-on steps</strong> build on earlier visible work instead of starting from scratch.</p>
+          <div class="proof-goal-card">
+            <div class="proof-metric">100 follow-on steps</div>
+            <p>build on earlier work instead of starting from scratch.</p>
           </div>
-          <div class="flow-card">
-            <div class="step-label">Builders help build it</div>
-            <p><strong>Outside developers</strong> improve OpenIntention and the underlying repo as the system grows.</p>
+          <div class="proof-goal-card">
+            <div class="proof-metric">Outside builders</div>
+            <p>help improve OpenIntention and the repo itself.</p>
           </div>
         </div>
         <p class="footer-note">
@@ -934,6 +926,18 @@ li {
     0 18px 48px rgba(0, 0, 0, 0.25);
 }
 
+.proof-section {
+  display: grid;
+  gap: 20px;
+}
+
+.proof-section-header {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 20px;
+  align-items: end;
+}
+
 .join-action-copy h3 {
   margin-bottom: 10px;
 }
@@ -973,6 +977,21 @@ li {
   margin-bottom: 12px;
   font-weight: 700;
   font-family: "IBM Plex Mono", monospace;
+}
+
+.proof-goal-card {
+  border-radius: 20px;
+  padding: 22px;
+  background: rgba(14, 24, 37, 0.82);
+  border: 1px solid var(--line);
+}
+
+.proof-metric {
+  color: #eef8ff;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 
 .card-links {
@@ -1025,7 +1044,8 @@ a {
   .grid.three,
   .efforts,
   .flow-steps,
-  .join-action-card {
+  .join-action-card,
+  .proof-section-header {
     grid-template-columns: 1fr;
   }
 
