@@ -429,3 +429,35 @@ def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
     assert "README.md#external-harness-compounding-proof" in body
     assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in body
     assert "clients.tiny_loop.run" not in body
+
+
+def test_effort_overview_publication_infers_autoresearch_brief_for_legacy_efforts(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-legacy-autoresearch.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Legacy Autoresearch Effort",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "summary": "Legacy effort missing a brief override tag.",
+            "tags": {
+                "effort_type": "autoresearch_mlx",
+                "external_harness": "autoresearch-mlx",
+                "join_command": "python3 scripts/run_autoresearch_mlx_compounding_smoke.py --repo-path /tmp/autoresearch-mlx --base-url http://testserver",
+            },
+        },
+    ).json()["effort_id"]
+
+    response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "README.md#external-harness-compounding-proof" in body
+    assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in body
+    assert "docs/seeded-efforts.md" not in body

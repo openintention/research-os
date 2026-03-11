@@ -136,7 +136,7 @@ def render_effort_overview(
 
     claim_lines = _render_claim_lines(claims)
     join_command = _render_effort_join_command(effort, public_base_url=public_base_url)
-    join_brief = effort.tags.get("join_brief_path", "docs/seeded-efforts.md")
+    join_brief = _render_effort_join_brief(effort)
     body = "\n".join(
         [
             f"# Effort: {effort.name}",
@@ -236,6 +236,14 @@ def _render_effort_join_command(effort: EffortView, *, public_base_url: str | No
     if public_base_url:
         command = f"{command} --base-url {shlex.quote(public_base_url)}"
     return command
+
+
+def _render_effort_join_brief(effort: EffortView) -> str:
+    if explicit_brief := effort.tags.get("join_brief_path"):
+        return explicit_brief
+    if effort.tags.get("external_harness") == "autoresearch-mlx":
+        return "README.md#external-harness-compounding-proof"
+    return "docs/seeded-efforts.md"
 
 
 def _render_artifact_reference(payload: dict[str, object]) -> str:
