@@ -101,7 +101,7 @@ python3 -m clients.tiny_loop.run
 If you are joining a shared hosted control plane instead of the local bootstrap:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://api.openintention.io --actor-id <handle>
+python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id <handle>
 ```
 
 That single command should still do the same thing conceptually:

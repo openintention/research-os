@@ -144,7 +144,7 @@ Use these environment variables on the hosted API service:
 ```bash
 RESEARCH_OS_DB_PATH=/data/research_os.db
 RESEARCH_OS_ARTIFACT_ROOT=/data/artifacts
-RESEARCH_OS_PUBLIC_BASE_URL=https://api.openintention.io
+RESEARCH_OS_PUBLIC_BASE_URL=https://openintention-api-production.up.railway.app
 RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS=true
 ```
 
@@ -154,22 +154,22 @@ full local demo state.
 Participants can then target the shared API directly:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://api.openintention.io
-python3 -m clients.tiny_loop.run --profile inference-sprint --base-url https://api.openintention.io
+python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app
+python3 -m clients.tiny_loop.run --profile inference-sprint --base-url https://openintention-api-production.up.railway.app
 ```
 
 Optional lightweight attribution:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://api.openintention.io --actor-id aliargun
+python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id aliargun
 ```
 
 To prove that two independent participants can land work into the same shared effort state:
 
 ```bash
-python3 scripts/run_shared_participation_smoke.py --base-url https://api.openintention.io
+python3 scripts/run_shared_participation_smoke.py --base-url https://openintention-api-production.up.railway.app
 # or
-make smoke-shared-participation BASE_URL=https://api.openintention.io
+make smoke-shared-participation BASE_URL=https://openintention-api-production.up.railway.app
 ```
 
 That report is written under `data/publications/launch/shared-participation/`.

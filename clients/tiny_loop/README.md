@@ -67,7 +67,7 @@ python3 -m clients.tiny_loop.run --profile inference-sprint
 To target a hosted shared control plane:
 
 ```bash
-python3 -m clients.tiny_loop.run --base-url https://api.openintention.io --actor-id <handle>
+python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id <handle>
 ```
 
 The client prints:
