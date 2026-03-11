@@ -10,15 +10,15 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     inference_brief = repo_root / "inference.md"
     join_with_ai = repo_root / "join-with-ai.md"
     smoke_report.write_text(
-        "# First User Smoke Report\n\n## Participation Outcome\n- Joined: workspace-1\n- Participated: claim-1\n",
+        "# First User Smoke Report\n\n## Participation Outcome\n- Joined (Eval): workspace-1\n- Participated (Eval): claim-1\n",
         encoding="utf-8",
     )
     eval_brief.write_text(
-        "# Effort: Eval Sprint\n\n## Active Workspaces\n- `eval-workspace`\n",
+        "# Effort: Eval Sprint\n\n## Objective\n- Objective: `val_bpb`\n- Platform: `A100`\n- Budget seconds: `300`\n- Summary: Seeded eval effort.\n\n## Current State\n- Attached workspaces: 4\n- Claims in effort scope: 3\n- Frontier members: 5\n\n## Active Workspaces\n- `eval-workspace`\n",
         encoding="utf-8",
     )
     inference_brief.write_text(
-        "# Effort: Inference Sprint\n\n## Active Workspaces\n- `inference-workspace`\n",
+        "# Effort: Inference Sprint\n\n## Objective\n- Objective: `tokens_per_second`\n- Platform: `H100`\n- Budget seconds: `300`\n- Summary: Seeded inference effort.\n\n## Current State\n- Attached workspaces: 2\n- Claims in effort scope: 1\n- Frontier members: 3\n\n## Active Workspaces\n- `inference-workspace`\n",
         encoding="utf-8",
     )
     join_with_ai.write_text("# Join With an AI Agent\nline\n", encoding="utf-8")
@@ -39,30 +39,40 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Join a live AI research effort with your agent." in html
-    assert "Use Claude, Codex, or your own workflow to join one live effort today." in html
-    assert "See how it works" in html
     assert "2 live seeded efforts" in html
     assert "1 command to join" in html
     assert "Visible effort pages" in html
-    assert "What you get after one run" in html
-    assert "Visible workspace" in html
-    assert "Claim or reproduction" in html
-    assert "Shareable report" in html
+    assert "For ML engineers, benchmark tinkerers, and agent-native builders" in html
+    assert "Live today on openintention.io" in html
+    assert "See how it works" in html
+    assert "What “live effort” means here" in html
+    assert "One shared objective" in html
+    assert "Visible contributions" in html
+    assert "Continuable work" in html
     assert "Read the full join report" in html
     assert "./styles.css?v=" in html
     assert "What happens when you join" in html
     assert "1. Pick a starting effort" in html
     assert "2. Run one command" in html
     assert "3. Your work appears" in html
+    assert "What an effort is" in html
+    assert "An effort is one shared research objective" in html
+    assert "The easiest first path." in html
+    assert "You do not need an H100 to try the current starter flow." in html
     assert "Choose your first effort" in html
-    assert "You do not need to understand the whole system first." in html
+    assert "Pick the path that matches what you want to contribute first." in html
     assert "What your contribution leaves behind" in html
-    assert "Latest visible join result" in html
-    assert "Work already visible in Eval Sprint" in html
-    assert "Work already visible in Inference Sprint" in html
+    assert "What you should expect after joining" in html
+    assert "Are other people already here?" in html
+    assert "What is live today" in html
+    assert "Eval Sprint" in html
+    assert "Inference Sprint" in html
+    assert "4 visible workspaces" in html
+    assert "2 visible workspaces" in html
     assert "Why this matters" in html
     assert "For agents and technical users" in html
-    assert "Most agent work still disappears into private loops" in html
+    assert "Most agent work still disappears into local branches" in html
+    assert "The big picture is not just better logging." in html
     assert "The goal is cumulative progress, not one more isolated run." in html
     assert "After your first run" in html
     assert "https://github.com/example/openintention" in html
@@ -72,7 +82,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "git clone https://github.com/openintention/research-os.git" in html
     assert "python3 scripts/join_openintention.py" in html
     assert "python3 scripts/join_openintention.py --profile inference-sprint" in html
-    assert "If the join path works, you should have something real to inspect" in html
+    assert "Check the live effort page, inspect the report your run produced" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(
