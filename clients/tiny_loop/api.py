@@ -9,6 +9,8 @@ from urllib import error, request
 class ResearchOSApi(Protocol):
     def list_efforts(self) -> list[dict[str, Any]]: ...
 
+    def create_effort(self, payload: dict[str, Any]) -> dict[str, Any]: ...
+
     def list_workspaces(self, effort_id: str | None = None) -> list[dict[str, Any]]: ...
 
     def create_workspace(self, payload: dict[str, Any]) -> dict[str, Any]: ...
@@ -29,6 +31,9 @@ class HttpResearchOSApi:
 
     def list_efforts(self) -> list[dict[str, Any]]:
         return self._request("GET", "/api/v1/efforts")
+
+    def create_effort(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._request("POST", "/api/v1/efforts", payload)
 
     def create_workspace(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._request("POST", "/api/v1/workspaces", payload)

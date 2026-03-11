@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation build-microsite
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-autoresearch-mlx build-microsite
 
 PYTHON ?= python3
 
@@ -40,6 +40,9 @@ smoke-public-ingress:
 
 smoke-shared-participation:
 	$(PYTHON) scripts/run_shared_participation_smoke.py --base-url $(BASE_URL)
+
+smoke-autoresearch-mlx:
+	$(PYTHON) scripts/run_autoresearch_mlx_compounding_smoke.py --base-url $(BASE_URL) --repo-path $(REPO_PATH)
 
 build-microsite:
 	$(PYTHON) scripts/build_microsite.py

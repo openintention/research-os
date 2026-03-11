@@ -392,3 +392,40 @@ def test_effort_overview_publication_uses_configured_public_base_url(tmp_path):
     body = response.json()["body"]
     assert "--base-url https://api.openintention.io" in body
     assert "--actor-id <handle>" in body
+
+
+def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-explicit-join-command.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+        public_base_url="https://openintention-api-production.up.railway.app",
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "summary": "Compounding external harness effort.",
+            "tags": {
+                "effort_type": "autoresearch_mlx",
+                "join_brief_path": "README.md#external-harness-compounding-proof",
+                "join_command": (
+                    "python3 scripts/run_autoresearch_mlx_compounding_smoke.py "
+                    "--repo-path <path_to_autoresearch_mlx> "
+                    "--base-url https://openintention-api-production.up.railway.app"
+                ),
+            },
+        },
+    ).json()["effort_id"]
+
+    response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "README.md#external-harness-compounding-proof" in body
+    assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in body
+    assert "clients.tiny_loop.run" not in body

@@ -136,6 +136,7 @@ def render_effort_overview(
 
     claim_lines = _render_claim_lines(claims)
     join_command = _render_effort_join_command(effort, public_base_url=public_base_url)
+    join_brief = effort.tags.get("join_brief_path", "docs/seeded-efforts.md")
     body = "\n".join(
         [
             f"# Effort: {effort.name}",
@@ -162,7 +163,7 @@ def render_effort_overview(
             *claim_lines,
             "",
             "## Join",
-            "- Read the effort brief in `docs/seeded-efforts.md`.",
+            f"- Read the effort brief in `{join_brief}`.",
             "- Optional: add `--actor-id <handle>` to make lightweight participant attribution visible.",
             f"- Run `{join_command}`",
         ]
@@ -223,6 +224,9 @@ def _is_better_run(candidate: EventEnvelope, existing: EventEnvelope) -> bool:
 
 
 def _render_effort_join_command(effort: EffortView, *, public_base_url: str | None = None) -> str:
+    if explicit_command := effort.tags.get("join_command"):
+        return explicit_command
+
     effort_type = effort.tags.get("effort_type")
     command = "python3 -m clients.tiny_loop.run"
     if effort_type == "inference":

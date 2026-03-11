@@ -223,6 +223,30 @@ That is the current verification bar for the newcomer experience.
 For hosted shared participation, use `scripts/run_shared_participation_smoke.py`. It verifies
 that two separate participants can append into the same seeded eval effort on one shared API.
 
+## External Harness Compounding Proof
+
+The stronger post-v1 proof is not just multi-party shared state. It is compounding progress
+from a real external harness.
+
+This repo now includes a smoke path that imports real kept-history from
+[`trevin-creator/autoresearch-mlx`](https://github.com/trevin-creator/autoresearch-mlx)
+into a dedicated Apple Silicon shared effort, records an explicit adoption edge, and exports a
+markdown report showing what compounded and what the next participant should continue.
+
+```bash
+python3 scripts/run_autoresearch_mlx_compounding_smoke.py \
+  --base-url https://openintention-api-production.up.railway.app \
+  --repo-path /path/to/autoresearch-mlx
+# or
+make smoke-autoresearch-mlx \
+  BASE_URL=https://openintention-api-production.up.railway.app \
+  REPO_PATH=/path/to/autoresearch-mlx
+```
+
+This is intentionally not the default onboarding flow. It is the first stronger proof that a
+real external autoresearch-class harness can publish into the shared control plane and leave
+behind work that later participants can adopt and extend.
+
 ## Repo map
 
 ```text
