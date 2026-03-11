@@ -202,7 +202,8 @@ Routes:
 - `/efforts/<effort_id>` renders one effort with live frontier, claim, and workspace state
 
 The site service should build the microsite as before, but run the Python site app so the explorer
-routes can fetch live effort state at request time. Set:
+routes can fetch live effort state at request time. On Railway, use the `DOCKERFILE` builder with
+`docker/site.Dockerfile`, then set:
 
 ```bash
 OPENINTENTION_API_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:${{openintention-api.PORT}}
