@@ -18,20 +18,21 @@
 # First User Smoke Report
 
 ## Base URL
-- `http://127.0.0.1:52582`
+- `http://127.0.0.1:52750`
 
 ## Discovered Efforts
 - `Inference Sprint: improve flash-path throughput on H100` `tokens_per_second` on `H100` (300s)
 - `Eval Sprint: improve validation loss under fixed budget` `val_bpb` on `A100` (300s)
 
+## Participation Outcome
+- Onboarded: the newcomer discovered the public repo and seeded effort path from the public surface.
+- Joined (Eval): workspace `252563cd-e94f-4953-b184-3f1b7143a707` attached to effort `Eval Sprint: improve validation loss under fixed budget`.
+- Joined (Inference): workspace `079cf355-6f9d-4880-82e9-0dcac03d1bd4` attached to effort `Inference Sprint: improve flash-path throughput on H100`.
+- Participated (Eval): workspace `252563cd-e94f-4953-b184-3f1b7143a707` left behind claim `claim-quadratic-001` and reproduction run `run-candidate-repro-001`.
+- Participated (Inference): workspace `079cf355-6f9d-4880-82e9-0dcac03d1bd4` left behind claim `claim-quadratic-001` and reproduction run `run-candidate-repro-001`.
+
 ## Eval Client Output
 ```text
-effort_name=Eval Sprint: improve validation loss under fixed budget
-effort_id=411310cd-cde5-41f9-bebf-1473cab80c9a
-workspace_id=456f96ad-caa2-4494-ba71-2bc16c271f9a
-planner_action=reproduce_claim
-claim_id=claim-quadratic-001
-reproduction_run_id=run-candidate-repro-001
 ````
 
 ## Outcome
