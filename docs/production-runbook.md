@@ -32,11 +32,13 @@ RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS=true
 
 ```bash
 OPENINTENTION_API_BASE_URL=https://openintention-api-production.up.railway.app
+OPENINTENTION_API_FETCH_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:8080
 OPENINTENTION_REPO_URL=https://github.com/openintention/research-os
 ```
 
-The site currently uses the public API URL. Private Railway service-to-service networking for the
-explorer path is still a follow-up hardening item.
+`OPENINTENTION_API_BASE_URL` is the public URL exposed in user-facing links and join commands.
+`OPENINTENTION_API_FETCH_BASE_URL` is the private Railway service-to-service URL used by the
+server-rendered effort explorer at request time.
 
 ## Deploy
 
@@ -83,6 +85,12 @@ Quick live checks:
 ```bash
 curl -fsSL https://openintention-api-production.up.railway.app/healthz
 curl -fsSL https://openintention.io/efforts | head
+```
+
+Verify the site is wired to the private fetch base:
+
+```bash
+railway variable list --service openintention-site --json | jq '.OPENINTENTION_API_FETCH_BASE_URL'
 ```
 
 ## Production smoke
@@ -149,6 +157,5 @@ destructive restore against the live production volume.
 
 ## Residual risks
 
-- the site explorer currently depends on the public API URL rather than proven private Railway networking
 - the production volume is single-region and single-node today
 - proof efforts are append-only, so long-running public efforts still need a rollover/reset policy

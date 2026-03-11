@@ -17,15 +17,21 @@ def create_site_app(
     dist_dir: Path | None = None,
     *,
     api_base_url: str | None = None,
+    api_fetch_base_url: str | None = None,
 ) -> FastAPI:
     dist_root = dist_dir or Path(__file__).resolve().parent / "dist"
     assets_root = dist_root / "assets"
     evidence_root = dist_root / "evidence"
-    normalized_api_base_url = (
+    normalized_public_api_base_url = (
         api_base_url
         or os.getenv("OPENINTENTION_API_BASE_URL")
         or os.getenv("RESEARCH_OS_PUBLIC_BASE_URL")
         or DEFAULT_API_BASE_URL
+    ).rstrip("/")
+    normalized_fetch_api_base_url = (
+        api_fetch_base_url
+        or os.getenv("OPENINTENTION_API_FETCH_BASE_URL")
+        or normalized_public_api_base_url
     ).rstrip("/")
     assets_root.mkdir(parents=True, exist_ok=True)
     evidence_root.mkdir(parents=True, exist_ok=True)
@@ -50,39 +56,39 @@ def create_site_app(
 
     @app.get("/efforts", include_in_schema=False, response_class=HTMLResponse)
     def effort_index() -> str:
-        efforts = _fetch_json(normalized_api_base_url, "/api/v1/efforts")
+        efforts = _fetch_json(normalized_fetch_api_base_url, "/api/v1/efforts")
         return _effort_index_html(
-            api_base_url=normalized_api_base_url,
+            public_api_base_url=normalized_public_api_base_url,
             efforts=efforts,
         )
 
     @app.get("/efforts/{effort_id}", include_in_schema=False, response_class=HTMLResponse)
     def effort_detail(effort_id: str) -> str:
-        efforts = _fetch_json(normalized_api_base_url, "/api/v1/efforts")
+        efforts = _fetch_json(normalized_fetch_api_base_url, "/api/v1/efforts")
         effort = next((item for item in efforts if item["effort_id"] == effort_id), None)
         if effort is None:
             raise HTTPException(status_code=404, detail="effort not found")
 
         workspaces = _fetch_json(
-            normalized_api_base_url,
+            normalized_fetch_api_base_url,
             "/api/v1/workspaces",
             query={"effort_id": effort_id},
         )
         claims = _fetch_json(
-            normalized_api_base_url,
+            normalized_fetch_api_base_url,
             "/api/v1/claims",
             query={"objective": effort["objective"], "platform": effort["platform"]},
         )
         workspace_ids = {workspace["workspace_id"] for workspace in workspaces}
         effort_claims = [claim for claim in claims if claim.get("workspace_id") in workspace_ids]
         frontier = _fetch_json(
-            normalized_api_base_url,
+            normalized_fetch_api_base_url,
             f"/api/v1/frontiers/{quote(effort['objective'])}/{quote(effort['platform'])}",
             query={"budget_seconds": effort["budget_seconds"]},
         )
 
         return _effort_detail_html(
-            api_base_url=normalized_api_base_url,
+            public_api_base_url=normalized_public_api_base_url,
             effort=effort,
             workspaces=workspaces,
             claims=effort_claims,
@@ -108,8 +114,11 @@ def _fetch_json(
         return json.loads(response.read().decode("utf-8"))
 
 
-def _effort_index_html(*, api_base_url: str, efforts: list[dict[str, object]]) -> str:
-    cards = "\n".join(_render_effort_index_card(api_base_url=api_base_url, effort=effort) for effort in efforts)
+def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, object]]) -> str:
+    cards = "\n".join(
+        _render_effort_index_card(public_api_base_url=public_api_base_url, effort=effort)
+        for effort in efforts
+    )
     return _page_html(
         "Live Efforts",
         """
@@ -129,7 +138,7 @@ def _effort_index_html(*, api_base_url: str, efforts: list[dict[str, object]]) -
     )
 
 
-def _render_effort_index_card(*, api_base_url: str, effort: dict[str, object]) -> str:
+def _render_effort_index_card(*, public_api_base_url: str, effort: dict[str, object]) -> str:
     state = _effort_state_label(effort)
     return f"""
     <article class="effort-card">
@@ -144,7 +153,7 @@ def _render_effort_index_card(*, api_base_url: str, effort: dict[str, object]) -
       </ul>
       <div class="hero-actions">
         <a class="button primary" href="/efforts/{escape(str(effort['effort_id']))}">Open live effort page</a>
-        <a class="button secondary" href="{escape(api_base_url)}/api/v1/publications/efforts/{escape(str(effort['effort_id']))}">Open markdown mirror</a>
+        <a class="button secondary" href="{escape(public_api_base_url)}/api/v1/publications/efforts/{escape(str(effort['effort_id']))}">Open markdown mirror</a>
       </div>
     </article>
     """
@@ -152,14 +161,14 @@ def _render_effort_index_card(*, api_base_url: str, effort: dict[str, object]) -
 
 def _effort_detail_html(
     *,
-    api_base_url: str,
+    public_api_base_url: str,
     effort: dict[str, object],
     workspaces: list[dict[str, object]],
     claims: list[dict[str, object]],
     frontier: dict[str, object],
 ) -> str:
     state = _effort_state_label(effort)
-    join_command = _join_command(effort, api_base_url=api_base_url)
+    join_command = _join_command(effort, api_base_url=public_api_base_url)
     join_brief = _join_brief(effort)
     recent_workspaces = "\n".join(_render_workspace_item(workspace) for workspace in workspaces[:6])
     frontier_items = "\n".join(_render_frontier_item(member) for member in frontier.get("members", [])[:8])

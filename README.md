@@ -216,11 +216,15 @@ routes can fetch live effort state at request time. On Railway, use the `DOCKERF
 
 ```bash
 OPENINTENTION_API_BASE_URL=https://openintention-api-production.up.railway.app
+OPENINTENTION_API_FETCH_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:8080
 ```
 
+Use the split deliberately:
+- `OPENINTENTION_API_FETCH_BASE_URL` is private Railway service networking for server-side explorer fetches
+- `OPENINTENTION_API_BASE_URL` stays public so join commands and markdown mirror links remain usable outside Railway
+
 That keeps the browser on `openintention.io` while letting the server-side explorer use the hosted
-API as its current source of truth. Private Railway service-to-service networking for the explorer
-path is still a follow-up hardening item, not the current production baseline.
+API as its current source of truth. This is the current production baseline for the hosted explorer.
 
 If you already have an existing SQLite database from before projection materialization,
 rebuild the projections once:

@@ -45,7 +45,7 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
     (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
 
     def fake_fetch_json(api_base_url: str, path: str, *, query=None):
-        assert api_base_url == "https://api.example.com"
+        assert api_base_url == "http://api.internal:8080"
         assert path == "/api/v1/efforts"
         assert query is None
         return [
@@ -70,7 +70,13 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
         ]
 
     monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
-    client = TestClient(create_site_app(dist_dir, api_base_url="https://api.example.com"))
+    client = TestClient(
+        create_site_app(
+            dist_dir,
+            api_base_url="https://api.example.com",
+            api_fetch_base_url="http://api.internal:8080",
+        )
+    )
 
     response = client.get("/efforts")
     assert response.status_code == 200
@@ -78,6 +84,7 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
     assert "Hosted shared state, proxy contribution loop" in response.text
     assert "/efforts/effort-1" in response.text
     assert "/efforts/effort-2" in response.text
+    assert "https://api.example.com/api/v1/publications/efforts/effort-1" in response.text
 
 
 def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
@@ -91,7 +98,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
 
     def fake_fetch_json(api_base_url: str, path: str, *, query=None):
-        assert api_base_url == "https://api.example.com"
+        assert api_base_url == "http://api.internal:8080"
         if path == "/api/v1/efforts":
             return [
                 {
@@ -162,7 +169,13 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
         raise AssertionError(f"unexpected path: {path}")
 
     monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
-    client = TestClient(create_site_app(dist_dir, api_base_url="https://api.example.com"))
+    client = TestClient(
+        create_site_app(
+            dist_dir,
+            api_base_url="https://api.example.com",
+            api_fetch_base_url="http://api.internal:8080",
+        )
+    )
 
     response = client.get("/efforts/effort-mlx")
     assert response.status_code == 200
@@ -175,3 +188,50 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "reproductions=<code>1</code>" in response.text
     assert "claim-beta" in response.text
     assert "snap-beta" in response.text
+
+
+def test_site_server_prefers_private_fetch_base_without_leaking_it(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    calls: list[tuple[str, str, dict[str, object] | None]] = []
+
+    def fake_fetch_json(api_base_url: str, path: str, *, query=None):
+        calls.append((api_base_url, path, query))
+        if path == "/api/v1/efforts":
+            return [
+                {
+                    "effort_id": "effort-1",
+                    "name": "Eval Sprint",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                    "budget_seconds": 300,
+                    "workspace_ids": ["workspace-1"],
+                    "tags": {"effort_type": "eval"},
+                }
+            ]
+        if path == "/api/v1/workspaces":
+            return []
+        if path == "/api/v1/claims":
+            return []
+        if path == "/api/v1/frontiers/val_bpb/A100":
+            return {"members": []}
+        raise AssertionError(path)
+
+    monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
+    monkeypatch.setenv("OPENINTENTION_API_BASE_URL", "https://api.example.com")
+    monkeypatch.setenv("OPENINTENTION_API_FETCH_BASE_URL", "http://api.internal:8080")
+
+    client = TestClient(create_site_app(dist_dir))
+
+    response = client.get("/efforts/effort-1")
+    assert response.status_code == 200
+    assert all(base == "http://api.internal:8080" for base, _, _ in calls)
+    assert "python3 -m clients.tiny_loop.run --base-url https://api.example.com" in response.text
+    assert "api.internal" not in response.text
