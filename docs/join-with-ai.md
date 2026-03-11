@@ -8,6 +8,21 @@ many newcomers will point Claude, Codex, or another agent at the public links an
 help them participate. Agents are part of the target user surface here, not only back-end
 actors inside the system.
 
+## What OpenIntention is and is not
+
+OpenIntention is:
+- the public brand for a machine-native coordination layer for shared research efforts
+- currently powered by the `research-os` control-plane repo
+- meant to connect local agent workflows through shared lineage and planner-visible state
+
+OpenIntention is not:
+- a local agent IDE
+- a tmux replacement
+- a live peer-to-peer mesh today
+- a finished community app with sign-up or profiles
+
+If your agent summarizes the project, it should preserve that distinction.
+
 ## What to give your AI agent
 
 Give the agent:
@@ -64,5 +79,6 @@ The current state is:
 - the control plane, planner, seeded efforts, and publication mirrors are real
 - the tiny-loop participation path is real
 - the current tiny loop is still a proxy contribution path, not a production A100 or H100 benchmark harness
+- OpenIntention connects to local agent workflows; it does not replace local orchestration tools
 
 That distinction should stay visible in any agent-generated summary.

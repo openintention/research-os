@@ -11,7 +11,7 @@ site, and repo together are sufficient as an onboarding surface for a human-plus
 ## Inputs to give the agent
 
 Give the agent only:
-- the final quote-post draft
+- the final founder-post draft
 - `https://openintention.io`
 - `https://github.com/openintention/research-os`
 
@@ -59,7 +59,7 @@ Public links:
 
 - do not post yet
 - fix the public artifact that caused confusion:
-  - quote-post draft
+  - founder-post draft
   - reply thread
   - `openintention.io`
   - repo docs

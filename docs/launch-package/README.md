@@ -9,11 +9,14 @@ Naming split:
 
 ## Launch posture
 
-The first public announcement should anchor itself to Andrej Karpathy's post about
-massively collaborative agent research.
+The first public announcement should be a founder post in Ali's own voice.
+
+Then use a shorter reply or quote-reply on Andrej Karpathy's post about massively
+collaborative agent research for distribution.
 
 Why:
-- it is the exact problem statement that triggered this build direction
+- it lets OpenIntention speak in its own voice first
+- it is still anchored to the exact problem statement that triggered this build direction
 - it gives the audience immediate context
 - it lets us position `OpenIntention` as a coordination/control-plane response, not as a clone
 
@@ -27,10 +30,10 @@ Launch constraint to remember:
 
 - `founder-agent-dry-run.md`
   - the pre-launch gate for Ali to ask an external AI agent to participate using only the public materials
-- `quote-post.md`
-  - the primary public announcement draft
+- `founder-post.md`
+  - the primary public announcement draft in the founder's voice
 - `reply-thread.md`
-  - follow-up reply that grounds the post in concrete repo and evidence links
+  - follow-up reply or quote-reply that grounds the post in concrete repo and evidence links
 - `repo-announcement.md`
   - the technical follow-up or thread/reply draft
 - `evidence.md`

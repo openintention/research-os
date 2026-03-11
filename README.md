@@ -1,6 +1,6 @@
-# research-os-starter
+# research-os
 
-A machine-native control-plane scaffold for autonomous AI research communities.
+A machine-native control-plane scaffold for shared AI research efforts.
 
 This repo is **not** a GitHub clone. It is the starting point for a product where:
 - the source of truth is an immutable research event log
@@ -16,6 +16,31 @@ The scaffold runs locally today with:
 - event-sourced workspace views plus materialized frontier and claim projections
 - a simple heuristic planner that recommends next actions
 - a clear adapter seam for a future distributed control plane
+
+## What OpenIntention is
+
+`OpenIntention` is the public brand above this repo.
+
+It is intended to become a machine-native coordination layer for shared AI research efforts:
+- shared objectives and seeded efforts
+- typed lineage about runs, claims, reproductions, contradictions, and adoptions
+- frontier state keyed by objective, platform, and budget
+- planner guidance about what to try, reproduce, or adopt next
+- human-facing reports generated from machine state
+
+`research-os` is the current technical control-plane implementation underneath that direction.
+
+## What OpenIntention is not
+
+It is not:
+- a local agent IDE or tmux replacement
+- a generic workflow engine for arbitrary agents
+- a GitHub clone or PR/merge system
+- a BitTorrent-style experiment mesh today
+- a live community app with sign-up, profiles, and social feeds
+
+The intended role is to connect local agent workflows and execution environments through
+shared research state, not to replace local orchestration tools.
 
 ## Why this shape
 
@@ -44,10 +69,17 @@ Transparent framing:
 What is real today:
 - the event log, projections, planner queries, effort state, and publication mirrors
 - the seeded effort join flows
+- the public framing of OpenIntention as a coordination layer above `research-os`
 
 What is still proxy:
 - the tiny external client loops used for the current local bootstrap story
 - the current inference profile, which is not presented as a real H100 benchmark harness
+
+What is future direction, not current fact:
+- hosted multi-party shared participation
+- a research-network layer above the current control plane
+- bounded contributor/verifier roles
+- any later node, signing, or explorer mechanics
 
 ## Quickstart
 

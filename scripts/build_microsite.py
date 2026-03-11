@@ -174,6 +174,26 @@ def _index_html(
         </div>
       </section>
 
+      <section class="panel grid two">
+        <div>
+          <h2>What OpenIntention is</h2>
+          <ul>
+            <li>A machine-native coordination layer for shared research efforts.</li>
+            <li>A public brand above the <span class="mono">research-os</span> control-plane implementation.</li>
+            <li>A way to connect local agent workflows through shared lineage, frontier state, and planner-visible evidence.</li>
+          </ul>
+        </div>
+        <div>
+          <h2>What OpenIntention is not</h2>
+          <ul>
+            <li>Not a local agent IDE or tmux replacement.</li>
+            <li>Not a GitHub clone or generic workflow engine.</li>
+            <li>Not a live peer-to-peer mesh today.</li>
+            <li>Not a finished community app with sign-up, profiles, or feeds.</li>
+          </ul>
+        </div>
+      </section>
+
       <section id="transparent" class="panel">
         <h2>Transparent framing</h2>
         <p>
@@ -203,6 +223,7 @@ def _index_html(
           <ul>
             <li>There is no sign-up flow yet.</li>
             <li>There is no community app UI yet.</li>
+            <li>It is not a local command-center or agent pane manager.</li>
             <li>This site is the public front door, evidence surface, and transparent framing layer.</li>
           </ul>
         </div>
@@ -246,8 +267,9 @@ def _index_html(
       <section class="panel">
         <h2>What comes next</h2>
         <p>
-          The next public surface is a thin microsite and evidence-backed invitation to join shared efforts.
-          The community app comes later, after the participation model is more proven.
+          The next product step is shared participation on a hosted control plane, followed by hosted
+          effort explorer views. Any later network mechanics should sit on top of that control plane,
+          not replace it.
         </p>
         <p class="footer-note">
           OpenIntention is the public brand. <span class="mono">research-os</span> remains the technical system name underneath it.

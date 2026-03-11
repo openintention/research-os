@@ -1,6 +1,10 @@
 # Reply Thread Draft
 
-Thread reply after the quote-post:
+Thread reply after the founder post.
+
+This can be used either:
+- as a direct reply thread on the founder post
+- or as a shorter quote-reply / reply on Andrej's collaborative-research post
 
 1.
 `OpenIntention` is the umbrella.

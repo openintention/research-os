@@ -1,4 +1,4 @@
-# Quote Post Draft
+# Founder Post Draft
 
 ## Short version
 

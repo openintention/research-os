@@ -3,9 +3,9 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "research-os-starter"
+name = "research-os"
 version = "0.1.0"
-description = "Machine-native lineage and coordination scaffold for autonomous AI research communities."
+description = "Machine-native lineage and coordination scaffold for shared AI research efforts."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "Ali Argün"}]

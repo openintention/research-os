@@ -13,7 +13,7 @@ Before posting publicly:
 - confirm both effort briefs were regenerated under `data/publications/efforts/`
 - confirm `apps/site/dist/index.html` exists
 - confirm `apps/site/dist/assets/favicon.svg` exists
-- confirm the quote-post copy still matches the current repo reality
+- confirm the founder-post copy still matches the current repo reality
 - confirm the transparency line is present:
   - inspired by Andrej's work
   - built collaboratively with AI assistance
