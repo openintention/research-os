@@ -78,8 +78,8 @@ What is still proxy:
 What is future direction, not current fact:
 - hosted multi-party shared participation
 - a research-network layer above the current control plane
-- bounded contributor/verifier roles
 - any later node, signing, or explorer mechanics
+- stronger identity, verifier economics, and later node mechanics
 
 ## Quickstart
 
@@ -164,7 +164,16 @@ Optional lightweight attribution:
 python3 -m clients.tiny_loop.run --base-url https://openintention-api-production.up.railway.app --actor-id aliargun
 ```
 
-To prove that two independent participants can land work into the same shared effort state:
+The shared control plane now distinguishes bounded workspace roles:
+- `contributor` is the default role for new workspaces
+- `verifier` is a separate workspace role used to reproduce an existing claim from another line of work
+
+That role is visible in:
+- `/api/v1/workspaces`
+- effort overview publications
+- hosted effort explorer pages
+
+To prove that one contributor and one verifier can land work into the same shared effort state:
 
 ```bash
 python3 scripts/run_shared_participation_smoke.py --base-url https://openintention-api-production.up.railway.app

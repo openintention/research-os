@@ -39,6 +39,7 @@ class ResearchOSService:
 
     def create_workspace(self, request: CreateWorkspaceRequest) -> WorkspaceCreated:
         workspace_id = str(uuid4())
+        workspace_tags = request.tags | {"participant_role": request.participant_role.value}
         event = EventEnvelope(
             kind=EventKind.WORKSPACE_STARTED,
             workspace_id=workspace_id,
@@ -53,8 +54,9 @@ class ResearchOSService:
                 "effort_id": request.effort_id,
                 "description": request.description,
                 "tags": request.tags,
+                "participant_role": request.participant_role.value,
             },
-            tags=request.tags,
+            tags=workspace_tags,
         )
         self.store.append(event)
         return WorkspaceCreated(workspace_id=workspace_id, bootstrap_event_id=event.event_id)

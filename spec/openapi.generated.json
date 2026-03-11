@@ -919,6 +919,10 @@
               }
             ],
             "title": "Actor Id"
+          },
+          "participant_role": {
+            "$ref": "#/components/schemas/ParticipantRole",
+            "default": "contributor"
           }
         },
         "type": "object",
@@ -1240,6 +1244,14 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ParticipantRole": {
+        "type": "string",
+        "enum": [
+          "contributor",
+          "verifier"
+        ],
+        "title": "ParticipantRole"
+      },
       "PublicationView": {
         "properties": {
           "kind": {
@@ -1436,6 +1448,10 @@
             ],
             "title": "Actor Id"
           },
+          "participant_role": {
+            "$ref": "#/components/schemas/ParticipantRole",
+            "default": "contributor"
+          },
           "objective": {
             "type": "string",
             "title": "Objective"
@@ -1497,6 +1513,11 @@
             },
             "type": "array",
             "title": "Claim Ids"
+          },
+          "reproduction_count": {
+            "type": "integer",
+            "title": "Reproduction Count",
+            "default": 0
           },
           "adoption_count": {
             "type": "integer",

@@ -80,7 +80,7 @@ and until stronger identity primitives are added later.
 
 ### Compatibility with later phases
 This visibility model is compatible with:
-- later contributor and verifier role separation
+- the current bounded contributor and verifier role split
 - later signed events or stronger identity primitives
 - later network mechanics built on top of the control plane
 

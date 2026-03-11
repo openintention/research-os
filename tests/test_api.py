@@ -79,6 +79,7 @@ def test_create_workspace_and_publish_run(tmp_path):
     workspace_response = client.get(f"/api/v1/workspaces/{workspace_id}")
     assert workspace_response.status_code == 200
     body = workspace_response.json()
+    assert body["participant_role"] == "contributor"
     assert body["run_ids"] == ["run-demo-1"]
     assert body["snapshot_ids"] == ["snap-demo-1"]
 
@@ -89,6 +90,41 @@ def test_create_workspace_and_publish_run(tmp_path):
     snapshot_event = events_response.json()[0]
     assert snapshot_event["payload"]["artifact_uri"] == snapshot_artifact.uri
     assert artifact_registry.read_bytes(snapshot_artifact.uri) == b"demo snapshot artifact"
+
+
+def test_workspace_api_round_trips_explicit_participant_role(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "role.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    create_response = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "verifier-demo",
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+            "actor_id": "verifier-1",
+            "participant_role": "verifier",
+        },
+    )
+    assert create_response.status_code == 201
+    workspace_id = create_response.json()["workspace_id"]
+
+    workspace_response = client.get(f"/api/v1/workspaces/{workspace_id}")
+    assert workspace_response.status_code == 200
+    workspace = workspace_response.json()
+    assert workspace["actor_id"] == "verifier-1"
+    assert workspace["participant_role"] == "verifier"
+
+    events_response = client.get(f"/api/v1/events?workspace_id={workspace_id}&kind=workspace.started")
+    assert events_response.status_code == 200
+    started_event = events_response.json()[0]
+    assert started_event["payload"]["participant_role"] == "verifier"
+    assert started_event["tags"]["participant_role"] == "verifier"
 
 
 def test_snapshot_event_round_trips_git_ref_and_bundle_digest(tmp_path):

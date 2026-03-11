@@ -114,8 +114,10 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                     "workspace_id": "workspace-beta",
                     "name": "autoresearch-mlx-beta-5efc7aa",
                     "actor_id": "mlx-beta",
+                    "participant_role": "verifier",
                     "run_ids": ["run-beta"],
                     "claim_ids": ["claim-beta"],
+                    "reproduction_count": 1,
                     "adoption_count": 1,
                     "updated_at": "2026-03-11T13:47:23Z",
                 },
@@ -123,8 +125,10 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                     "workspace_id": "workspace-alpha",
                     "name": "autoresearch-mlx-alpha-4161af3",
                     "actor_id": "mlx-alpha",
+                    "participant_role": "contributor",
                     "run_ids": ["run-alpha"],
                     "claim_ids": ["claim-alpha"],
+                    "reproduction_count": 0,
                     "adoption_count": 0,
                     "updated_at": "2026-03-11T13:47:22Z",
                 },
@@ -167,5 +171,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "README.md#external-harness-compounding-proof" in response.text
     assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in response.text
     assert "workspace-beta" in response.text
+    assert "role=<code>verifier</code>" in response.text
+    assert "reproductions=<code>1</code>" in response.text
     assert "claim-beta" in response.text
     assert "snap-beta" in response.text

@@ -16,6 +16,7 @@ from clients.tiny_loop.experiment import (  # noqa: E402
     EVAL_SPRINT_PROFILE,
     ExperimentResult,
     run_tiny_loop_experiment,
+    run_verifier_reproduction,
 )
 
 
@@ -24,10 +25,10 @@ class SharedParticipationResult:
     base_url: str
     effort_id: str
     effort_name: str
-    first: ExperimentResult
-    second: ExperimentResult
-    workspace_ids: list[str]
-    claim_ids: list[str]
+    contributor: ExperimentResult
+    verifier: ExperimentResult
+    workspaces: list[dict[str, object]]
+    claims: list[dict[str, object]]
     frontier_member_count: int
     effort_overview_excerpt: str
 
@@ -47,26 +48,30 @@ def run_shared_participation_smoke(
     api = HttpResearchOSApi(normalized_base_url)
     effort = _require_eval_effort(api)
 
-    first = run_tiny_loop_experiment(
+    contributor = run_tiny_loop_experiment(
         api,
-        artifact_root=artifact_root_path / "participant-alpha",
+        artifact_root=artifact_root_path / "participant-contributor",
         profile=EVAL_SPRINT_PROFILE,
-        actor_id="participant-alpha",
-        workspace_suffix="alpha",
+        actor_id="participant-contributor",
+        workspace_suffix="contributor",
+        auto_reproduce=False,
     )
-    second = run_tiny_loop_experiment(
+    verifier = run_verifier_reproduction(
         api,
-        artifact_root=artifact_root_path / "participant-beta",
+        artifact_root=artifact_root_path / "participant-verifier",
         profile=EVAL_SPRINT_PROFILE,
-        actor_id="participant-beta",
-        workspace_suffix="beta",
+        claim_id=contributor.claim_id,
+        actor_id="participant-verifier",
+        workspace_suffix="verifier",
     )
 
     workspaces = api.list_workspaces(effort_id=effort["effort_id"])
+    workspace_ids = {workspace["workspace_id"] for workspace in workspaces}
     claims = _get_json(
         f"{normalized_base_url}/api/v1/claims?objective={EVAL_SPRINT_PROFILE.objective}"
         f"&platform={EVAL_SPRINT_PROFILE.platform}"
     )
+    effort_claims = [claim for claim in claims if claim.get("workspace_id") in workspace_ids]
     frontier = _get_json(
         f"{normalized_base_url}/api/v1/frontiers/{EVAL_SPRINT_PROFILE.objective}/{EVAL_SPRINT_PROFILE.platform}"
         f"?budget_seconds={EVAL_SPRINT_PROFILE.budget_seconds}"
@@ -77,10 +82,10 @@ def run_shared_participation_smoke(
         base_url=normalized_base_url,
         effort_id=effort["effort_id"],
         effort_name=effort["name"],
-        first=first,
-        second=second,
-        workspace_ids=[workspace["workspace_id"] for workspace in workspaces],
-        claim_ids=[claim["claim_id"] for claim in claims],
+        contributor=contributor,
+        verifier=verifier,
+        workspaces=workspaces,
+        claims=effort_claims,
         frontier_member_count=len(frontier["members"]),
         effort_overview_excerpt=_excerpt(publication["body"], lines=24),
     )
@@ -91,8 +96,24 @@ def run_shared_participation_smoke(
 
 
 def build_shared_participation_report(result: SharedParticipationResult) -> str:
-    workspace_lines = [f"- `{workspace_id}`" for workspace_id in result.workspace_ids] or ["- none"]
-    claim_lines = [f"- `{claim_id}`" for claim_id in result.claim_ids] or ["- none"]
+    workspace_lines = [
+        (
+            f"- `{workspace['workspace_id']}` actor=`{workspace.get('actor_id', 'unknown')}` "
+            f"role=`{workspace.get('participant_role', 'contributor')}` "
+            f"runs={len(workspace.get('run_ids', []))} "
+            f"claims={len(workspace.get('claim_ids', []))} "
+            f"reproductions={workspace.get('reproduction_count', 0)}"
+        )
+        for workspace in result.workspaces
+    ] or ["- none"]
+    claim_lines = [
+        (
+            f"- `{claim['claim_id']}` status=`{claim.get('status', 'unknown')}` "
+            f"support={claim.get('support_count', 0)} "
+            f"contradictions={claim.get('contradiction_count', 0)}"
+        )
+        for claim in result.claims
+    ] or ["- none"]
     return "\n".join(
         [
             "# Shared Participation Smoke Report",
@@ -103,18 +124,18 @@ def build_shared_participation_report(result: SharedParticipationResult) -> str:
             "",
             "## Participant Runs",
             (
-                f"- `participant-alpha` -> workspace `{result.first.workspace_id}`, "
-                f"claim `{result.first.claim_id}`, reproduction `{result.first.reproduction_run_id}`"
+                f"- contributor `{result.contributor.actor_id}` -> workspace `{result.contributor.workspace_id}`, "
+                f"claim `{result.contributor.claim_id}`, reproduction `{result.contributor.reproduction_run_id or 'pending external verification'}`"
             ),
             (
-                f"- `participant-beta` -> workspace `{result.second.workspace_id}`, "
-                f"claim `{result.second.claim_id}`, reproduction `{result.second.reproduction_run_id}`"
+                f"- verifier `{result.verifier.actor_id}` -> workspace `{result.verifier.workspace_id}`, "
+                f"reproduced claim `{result.verifier.claim_id}` with run `{result.verifier.reproduction_run_id or 'n/a'}`"
             ),
             "",
             "## Shared State After Both Runs",
-            f"- Workspaces attached to effort: {len(result.workspace_ids)}",
+            f"- Workspaces attached to effort: {len(result.workspaces)}",
             *workspace_lines,
-            f"- Claims in effort scope: {len(result.claim_ids)}",
+            f"- Claims in effort scope: {len(result.claims)}",
             *claim_lines,
             f"- Frontier members: {result.frontier_member_count}",
             "",
@@ -124,8 +145,9 @@ def build_shared_participation_report(result: SharedParticipationResult) -> str:
             "```",
             "",
             "## Outcome",
-            "- Two independent participants landed work into the same hosted seeded effort state.",
-            "- The shared control plane can now point to distinct workspaces, claims, and frontier state created by separate participants.",
+            "- A contributor created a claim inside the hosted seeded effort.",
+            "- A separate verifier workspace reproduced that claim and made the verifier role visible in shared state.",
+            "- The shared control plane can now point to distinct contributor and verifier work inside the same effort.",
         ]
     ) + "\n"
 

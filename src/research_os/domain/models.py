@@ -24,6 +24,11 @@ class EventKind(StrEnum):
     SUMMARY_PUBLISHED = "summary.published"
 
 
+class ParticipantRole(StrEnum):
+    CONTRIBUTOR = "contributor"
+    VERIFIER = "verifier"
+
+
 class EventEnvelope(BaseModel):
     event_id: str = Field(default_factory=lambda: str(uuid4()))
     kind: EventKind
@@ -45,6 +50,7 @@ class CreateWorkspaceRequest(BaseModel):
     description: str | None = None
     tags: dict[str, str] = Field(default_factory=dict)
     actor_id: str | None = None
+    participant_role: ParticipantRole = ParticipantRole.CONTRIBUTOR
 
 
 class WorkspaceCreated(BaseModel):
@@ -166,6 +172,7 @@ class WorkspaceView(BaseModel):
     workspace_id: str
     name: str
     actor_id: str | None = None
+    participant_role: ParticipantRole = ParticipantRole.CONTRIBUTOR
     objective: str
     platform: str
     budget_seconds: int
@@ -175,6 +182,7 @@ class WorkspaceView(BaseModel):
     snapshot_ids: list[str] = Field(default_factory=list)
     run_ids: list[str] = Field(default_factory=list)
     claim_ids: list[str] = Field(default_factory=list)
+    reproduction_count: int = 0
     adoption_count: int = 0
     summary_count: int = 0
     event_count: int = 0

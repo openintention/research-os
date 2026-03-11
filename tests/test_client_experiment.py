@@ -12,7 +12,9 @@ from clients.tiny_loop.experiment import (
     INFERENCE_SPRINT_PROFILE,
     STANDALONE_PROFILE,
     run_tiny_loop_experiment,
+    run_verifier_reproduction,
 )
+from research_os.domain.models import ParticipantRole
 from research_os.settings import Settings
 
 
@@ -81,8 +83,10 @@ def test_tiny_loop_client_runs_end_to_end_against_api(tmp_path):
     )
 
     assert result.planner_action == "reproduce_claim"
+    assert result.participant_role == ParticipantRole.CONTRIBUTOR
     assert result.claim_id.endswith("-claim-quadratic-001")
     assert "Discussion: tiny-loop-val-loss" in result.discussion_markdown
+    assert "Role: `contributor`" in result.discussion_markdown
     assert result.claim_id in result.discussion_markdown
     assert f"PR: {result.candidate_snapshot_id}" in result.pull_request_markdown
     assert result.reproduction_run_id in result.pull_request_markdown
@@ -130,6 +134,7 @@ def test_tiny_loop_client_can_target_seeded_eval_effort(tmp_path):
     workspace = workspace_response.json()
     assert workspace["effort_id"] == result.effort_id
     assert workspace["actor_id"] == result.actor_id
+    assert workspace["participant_role"] == ParticipantRole.CONTRIBUTOR
     assert workspace["objective"] == EVAL_SPRINT_PROFILE.objective
     assert workspace["platform"] == EVAL_SPRINT_PROFILE.platform
     assert workspace["budget_seconds"] == EVAL_SPRINT_PROFILE.budget_seconds
@@ -168,6 +173,7 @@ def test_tiny_loop_client_can_target_seeded_inference_effort(tmp_path):
     workspace = workspace_response.json()
     assert workspace["effort_id"] == result.effort_id
     assert workspace["actor_id"] == result.actor_id
+    assert workspace["participant_role"] == ParticipantRole.CONTRIBUTOR
     assert workspace["objective"] == INFERENCE_SPRINT_PROFILE.objective
     assert workspace["platform"] == INFERENCE_SPRINT_PROFILE.platform
     assert workspace["budget_seconds"] == INFERENCE_SPRINT_PROFILE.budget_seconds
@@ -178,7 +184,7 @@ def test_tiny_loop_client_can_target_seeded_inference_effort(tmp_path):
     assert directions == {"max"}
 
 
-def test_tiny_loop_client_can_land_two_distinct_participants_into_same_seeded_effort(tmp_path):
+def test_tiny_loop_client_can_land_contributor_and_verifier_into_same_seeded_effort(tmp_path):
     settings = Settings(
         db_path=str(tmp_path / "client-loop-shared.db"),
         artifact_root=str(tmp_path / "service-artifacts"),
@@ -198,31 +204,51 @@ def test_tiny_loop_client_can_land_two_distinct_participants_into_same_seeded_ef
         },
     ).json()["effort_id"]
 
-    first = run_tiny_loop_experiment(
+    contributor = run_tiny_loop_experiment(
         ClientApiHarness(client),
-        artifact_root=Path(tmp_path / "client-artifacts" / "alpha"),
+        artifact_root=Path(tmp_path / "client-artifacts" / "contributor"),
         profile=EVAL_SPRINT_PROFILE,
-        actor_id="participant-alpha",
-        workspace_suffix="alpha",
+        actor_id="participant-contributor",
+        workspace_suffix="contributor",
+        auto_reproduce=False,
     )
-    second = run_tiny_loop_experiment(
+    verifier = run_verifier_reproduction(
         ClientApiHarness(client),
-        artifact_root=Path(tmp_path / "client-artifacts" / "beta"),
+        artifact_root=Path(tmp_path / "client-artifacts" / "verifier"),
         profile=EVAL_SPRINT_PROFILE,
-        actor_id="participant-beta",
-        workspace_suffix="beta",
+        claim_id=contributor.claim_id,
+        actor_id="participant-verifier",
+        workspace_suffix="verifier",
     )
 
-    assert first.workspace_id != second.workspace_id
-    assert first.claim_id != second.claim_id
-    assert first.candidate_snapshot_id != second.candidate_snapshot_id
+    assert contributor.workspace_id != verifier.workspace_id
+    assert contributor.claim_id == verifier.claim_id
+    assert contributor.candidate_snapshot_id != verifier.candidate_snapshot_id
+    assert contributor.participant_role == ParticipantRole.CONTRIBUTOR
+    assert verifier.participant_role == ParticipantRole.VERIFIER
+    assert contributor.reproduction_run_id is None
+    assert verifier.reproduction_run_id is not None
 
     workspaces = client.get(f"/api/v1/workspaces?effort_id={effort_id}").json()
-    assert {workspace["actor_id"] for workspace in workspaces} >= {"participant-alpha", "participant-beta"}
-    assert {workspace["workspace_id"] for workspace in workspaces} >= {first.workspace_id, second.workspace_id}
+    assert {workspace["actor_id"] for workspace in workspaces} >= {
+        "participant-contributor",
+        "participant-verifier",
+    }
+    assert {workspace["participant_role"] for workspace in workspaces} >= {
+        ParticipantRole.CONTRIBUTOR,
+        ParticipantRole.VERIFIER,
+    }
+    assert {workspace["workspace_id"] for workspace in workspaces} >= {
+        contributor.workspace_id,
+        verifier.workspace_id,
+    }
+    verifier_workspace = next(
+        workspace for workspace in workspaces if workspace["workspace_id"] == verifier.workspace_id
+    )
+    assert verifier_workspace["reproduction_count"] == 1
 
     claims = client.get(
         f"/api/v1/claims?objective={EVAL_SPRINT_PROFILE.objective}&platform={EVAL_SPRINT_PROFILE.platform}"
     ).json()
-    claim_ids = {claim["claim_id"] for claim in claims}
-    assert {first.claim_id, second.claim_id}.issubset(claim_ids)
+    reproduced_claim = next(claim for claim in claims if claim["claim_id"] == contributor.claim_id)
+    assert reproduced_claim["support_count"] == 1

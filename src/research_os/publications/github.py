@@ -23,6 +23,7 @@ def render_workspace_discussion(
             "",
             "## Workspace",
             *( [f"- Started by: `{workspace.actor_id}`"] if workspace.actor_id else [] ),
+            f"- Role: `{workspace.participant_role}`",
             f"- Objective: `{workspace.objective}`",
             f"- Platform: `{workspace.platform}`",
             f"- Budget seconds: `{workspace.budget_seconds}`",
@@ -33,6 +34,7 @@ def render_workspace_discussion(
             f"- Snapshots: {len(workspace.snapshot_ids)}",
             f"- Runs: {len(workspace.run_ids)}",
             f"- Claims: {len(workspace.claim_ids)}",
+            f"- Reproductions: {workspace.reproduction_count}",
             f"- Adoptions: {workspace.adoption_count}",
             f"- Summaries: {workspace.summary_count}",
             f"- Events: {workspace.event_count}",
@@ -119,7 +121,9 @@ def render_effort_overview(
         (
             f"- `{workspace.name}` ({workspace.workspace_id}) "
             f"actor={workspace.actor_id or 'unknown'}, "
+            f"role={workspace.participant_role}, "
             f"runs={len(workspace.run_ids)}, claims={len(workspace.claim_ids)}, "
+            f"reproductions={workspace.reproduction_count}, "
             f"updated={workspace.updated_at.isoformat()}"
         )
         for workspace in ordered_workspaces[:5]

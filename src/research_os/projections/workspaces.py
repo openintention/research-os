@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from research_os.domain.models import EventEnvelope, EventKind, WorkspaceView
+from research_os.domain.models import EventEnvelope, EventKind, ParticipantRole, WorkspaceView
 
 
 def build_workspace_views(events: Iterable[EventEnvelope]) -> list[WorkspaceView]:
@@ -18,12 +18,13 @@ def build_workspace_views(events: Iterable[EventEnvelope]) -> list[WorkspaceView
                 workspace_id=event.workspace_id,
                 name=payload["name"],
                 actor_id=event.actor_id,
+                participant_role=_participant_role_from_started_event(event),
                 objective=payload["objective"],
                 platform=payload["platform"],
                 budget_seconds=int(payload["budget_seconds"]),
                 effort_id=payload.get("effort_id"),
                 description=payload.get("description"),
-                tags=payload.get("tags", {}) or event.tags,
+                tags=payload.get("tags") or {},
                 updated_at=event.occurred_at,
             )
 
@@ -48,6 +49,8 @@ def build_workspace_views(events: Iterable[EventEnvelope]) -> list[WorkspaceView
             claim_id = event.payload["claim_id"]
             if claim_id not in workspace.claim_ids:
                 workspace.claim_ids.append(claim_id)
+        elif event.kind == EventKind.CLAIM_REPRODUCED:
+            workspace.reproduction_count += 1
         elif event.kind == EventKind.ADOPTION_RECORDED:
             workspace.adoption_count += 1
         elif event.kind == EventKind.SUMMARY_PUBLISHED:
@@ -61,3 +64,15 @@ def build_workspace_view(events: Iterable[EventEnvelope], workspace_id: str) -> 
         if workspace.workspace_id == workspace_id:
             return workspace
     return None
+
+
+def _participant_role_from_started_event(event: EventEnvelope) -> ParticipantRole:
+    payload_value = event.payload.get("participant_role")
+    if isinstance(payload_value, str):
+        return ParticipantRole(payload_value)
+
+    tag_value = event.tags.get("participant_role")
+    if isinstance(tag_value, str):
+        return ParticipantRole(tag_value)
+
+    return ParticipantRole.CONTRIBUTOR

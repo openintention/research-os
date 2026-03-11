@@ -45,6 +45,7 @@ def main() -> None:
         workspace_suffix=args.workspace_suffix,
     )
     print(f"actor_id={result.actor_id}")
+    print(f"participant_role={result.participant_role}")
     if result.effort_id is not None:
         print(f"effort_name={result.effort_name}")
         print(f"effort_id={result.effort_id}")

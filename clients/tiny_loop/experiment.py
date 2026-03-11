@@ -10,6 +10,7 @@ from statistics import mean
 from uuid import uuid4
 
 from clients.tiny_loop.api import ResearchOSApi
+from research_os.domain.models import ParticipantRole
 
 CANONICAL_EVAL_EFFORT_NAME = "Eval Sprint: improve validation loss under fixed budget"
 CANONICAL_INFERENCE_EFFORT_NAME = "Inference Sprint: improve flash-path throughput on H100"
@@ -50,6 +51,7 @@ class RunResult:
 @dataclass(frozen=True, slots=True)
 class ExperimentResult:
     actor_id: str
+    participant_role: ParticipantRole
     workspace_id: str
     effort_id: str | None
     effort_name: str | None
@@ -57,7 +59,7 @@ class ExperimentResult:
     candidate_snapshot_id: str
     planner_action: str
     claim_id: str
-    reproduction_run_id: str
+    reproduction_run_id: str | None
     discussion_markdown: str
     pull_request_markdown: str
 
@@ -159,6 +161,9 @@ def run_tiny_loop_experiment(
     profile: ExperimentProfile = STANDALONE_PROFILE,
     actor_id: str | None = None,
     workspace_suffix: str | None = None,
+    participant_role: ParticipantRole = ParticipantRole.CONTRIBUTOR,
+    claim_id_to_reproduce: str | None = None,
+    auto_reproduce: bool = True,
 ) -> ExperimentResult:
     artifact_root_path = Path(artifact_root)
     artifact_root_path.mkdir(parents=True, exist_ok=True)
@@ -178,6 +183,7 @@ def run_tiny_loop_experiment(
             "description": profile.description,
             "tags": profile.workspace_tags,
             "actor_id": resolved_actor_id,
+            "participant_role": participant_role,
         }
     )
     workspace_id = workspace["workspace_id"]
@@ -205,6 +211,7 @@ def run_tiny_loop_experiment(
         artifact_root=artifact_root_path,
         profile=profile,
         actor_id=resolved_actor_id,
+        participant_role=participant_role,
     )
     _publish_snapshot(
         api,
@@ -213,6 +220,7 @@ def run_tiny_loop_experiment(
         artifact_root=artifact_root_path,
         profile=profile,
         actor_id=resolved_actor_id,
+        participant_role=participant_role,
     )
 
     baseline_run = _run_snapshot(
@@ -223,6 +231,7 @@ def run_tiny_loop_experiment(
         seed=7,
         profile=profile,
         actor_id=resolved_actor_id,
+        participant_role=participant_role,
     )
     candidate_run = _run_snapshot(
         api,
@@ -232,76 +241,103 @@ def run_tiny_loop_experiment(
         seed=11,
         profile=profile,
         actor_id=resolved_actor_id,
+        participant_role=participant_role,
     )
 
-    delta = candidate_run.metric_value - baseline_run.metric_value
-    claim_id = _scoped_identifier(scope, "claim-quadratic-001")
-    api.append_event(
-        {
-            "kind": "claim.asserted",
-            "workspace_id": workspace_id,
-            "aggregate_id": claim_id,
-            "aggregate_kind": "claim",
-            "actor_id": resolved_actor_id,
-            "payload": {
-                "claim_id": claim_id,
-                "statement": profile.claim_statement,
-                "claim_type": "improvement",
-                "candidate_snapshot_id": candidate.snapshot_id,
-                "baseline_snapshot_id": baseline.snapshot_id,
-                "objective": profile.objective,
-                "platform": profile.platform,
-                "metric_name": profile.objective,
-                "delta": round(delta, 6),
-                "confidence": 0.72,
-                "evidence_run_ids": [candidate_run.run_id],
-            },
-            "tags": profile.event_tags | {"claim": "quadratic-feature"},
-        }
-    )
+    if participant_role == ParticipantRole.CONTRIBUTOR:
+        delta = candidate_run.metric_value - baseline_run.metric_value
+        claim_id = _scoped_identifier(scope, "claim-quadratic-001")
+        api.append_event(
+            {
+                "kind": "claim.asserted",
+                "workspace_id": workspace_id,
+                "aggregate_id": claim_id,
+                "aggregate_kind": "claim",
+                "actor_id": resolved_actor_id,
+                "payload": {
+                    "claim_id": claim_id,
+                    "statement": profile.claim_statement,
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": candidate.snapshot_id,
+                    "baseline_snapshot_id": baseline.snapshot_id,
+                    "objective": profile.objective,
+                    "platform": profile.platform,
+                    "metric_name": profile.objective,
+                    "delta": round(delta, 6),
+                    "confidence": 0.72,
+                    "evidence_run_ids": [candidate_run.run_id],
+                },
+                "tags": _event_tags(profile, participant_role, claim="quadratic-feature"),
+            }
+        )
 
-    recommendation = api.recommend_next(
-        {
-            "objective": profile.objective,
-            "platform": profile.platform,
-            "budget_seconds": profile.budget_seconds,
-            "workspace_id": workspace_id,
-            "limit": 1,
-        }
-    )["recommendations"][0]
+        recommendation = _recommend_reproduction(
+            api,
+            profile=profile,
+            workspace_id=workspace_id,
+        )
 
-    if recommendation["action"] != "reproduce_claim":
-        raise RuntimeError(f"expected reproduce_claim, got {recommendation['action']}")
-
-    reproduction_run = _run_snapshot(
-        api,
-        workspace_id=workspace_id,
-        config=candidate,
-        run_id=_scoped_identifier(scope, "run-candidate-repro-001"),
-        seed=23,
-        profile=profile,
-        actor_id=resolved_actor_id,
-    )
-    api.append_event(
-        {
-            "kind": "claim.reproduced",
-            "workspace_id": workspace_id,
-            "aggregate_id": claim_id,
-            "aggregate_kind": "claim",
-            "actor_id": resolved_actor_id,
-            "payload": {
-                "claim_id": claim_id,
-                "evidence_run_id": reproduction_run.run_id,
-                "notes": "Independent rerun confirms the direction of improvement.",
-            },
-            "tags": profile.event_tags | {"claim": "quadratic-feature"},
-        }
-    )
+        reproduction_run_id = None
+        if auto_reproduce:
+            reproduction_run = _run_snapshot(
+                api,
+                workspace_id=workspace_id,
+                config=candidate,
+                run_id=_scoped_identifier(scope, "run-candidate-repro-001"),
+                seed=23,
+                profile=profile,
+                actor_id=resolved_actor_id,
+                participant_role=participant_role,
+            )
+            api.append_event(
+                {
+                    "kind": "claim.reproduced",
+                    "workspace_id": workspace_id,
+                    "aggregate_id": claim_id,
+                    "aggregate_kind": "claim",
+                    "actor_id": resolved_actor_id,
+                    "payload": {
+                        "claim_id": claim_id,
+                        "evidence_run_id": reproduction_run.run_id,
+                        "notes": "Independent rerun confirms the direction of improvement.",
+                    },
+                    "tags": _event_tags(profile, participant_role, claim="quadratic-feature"),
+                }
+            )
+            reproduction_run_id = reproduction_run.run_id
+    else:
+        recommendation = _recommend_reproduction(
+            api,
+            profile=profile,
+            workspace_id=workspace_id,
+        )
+        expected_claim_id = claim_id_to_reproduce
+        recommended_claim_id = recommendation["inputs"].get("claim_id")
+        claim_id = expected_claim_id or recommended_claim_id
+        if claim_id is None:
+            raise RuntimeError("verifier flow could not resolve a claim to reproduce")
+        api.append_event(
+            {
+                "kind": "claim.reproduced",
+                "workspace_id": workspace_id,
+                "aggregate_id": claim_id,
+                "aggregate_kind": "claim",
+                "actor_id": resolved_actor_id,
+                "payload": {
+                    "claim_id": claim_id,
+                    "evidence_run_id": candidate_run.run_id,
+                    "notes": "Verifier rerun from a separate workspace confirms the direction of improvement.",
+                },
+                "tags": _event_tags(profile, participant_role, claim="quadratic-feature"),
+            }
+        )
+        reproduction_run_id = candidate_run.run_id
 
     discussion = api.get_workspace_discussion(workspace_id)
     pull_request = api.get_snapshot_pull_request(workspace_id, candidate.snapshot_id)
     return ExperimentResult(
         actor_id=resolved_actor_id,
+        participant_role=participant_role,
         workspace_id=workspace_id,
         effort_id=effort["effort_id"] if effort is not None else None,
         effort_name=effort["name"] if effort is not None else None,
@@ -309,9 +345,30 @@ def run_tiny_loop_experiment(
         candidate_snapshot_id=candidate.snapshot_id,
         planner_action=recommendation["action"],
         claim_id=claim_id,
-        reproduction_run_id=reproduction_run.run_id,
+        reproduction_run_id=reproduction_run_id,
         discussion_markdown=discussion["body"],
         pull_request_markdown=pull_request["body"],
+    )
+
+
+def run_verifier_reproduction(
+    api: ResearchOSApi,
+    *,
+    artifact_root: str | Path,
+    profile: ExperimentProfile,
+    claim_id: str,
+    actor_id: str | None = None,
+    workspace_suffix: str | None = None,
+) -> ExperimentResult:
+    return run_tiny_loop_experiment(
+        api,
+        artifact_root=artifact_root,
+        profile=profile,
+        actor_id=actor_id,
+        workspace_suffix=workspace_suffix,
+        participant_role=ParticipantRole.VERIFIER,
+        claim_id_to_reproduce=claim_id,
+        auto_reproduce=False,
     )
 
 
@@ -323,6 +380,7 @@ def _publish_snapshot(
     artifact_root: Path,
     profile: ExperimentProfile,
     actor_id: str,
+    participant_role: ParticipantRole,
 ) -> None:
     bundle = {
         "snapshot_id": config.snapshot_id,
@@ -352,7 +410,7 @@ def _publish_snapshot(
                 "git_ref": f"refs/experiments/{config.snapshot_id}",
                 "notes": config.notes,
             },
-            "tags": profile.event_tags | {"feature_mode": config.feature_mode},
+            "tags": _event_tags(profile, participant_role, feature_mode=config.feature_mode),
         }
     )
 
@@ -366,6 +424,7 @@ def _run_snapshot(
     seed: int,
     profile: ExperimentProfile,
     actor_id: str,
+    participant_role: ParticipantRole,
 ) -> RunResult:
     metric_value = _train_and_evaluate(config, seed=seed)
     api.append_event(
@@ -388,7 +447,7 @@ def _run_snapshot(
                 "seed": seed,
                 "notes": f"feature_mode={config.feature_mode}, steps={config.steps}",
             },
-            "tags": profile.event_tags | {"feature_mode": config.feature_mode},
+            "tags": _event_tags(profile, participant_role, feature_mode=config.feature_mode),
         }
     )
     return RunResult(
@@ -483,6 +542,34 @@ def _validate_effort_profile(
         raise RuntimeError(
             f"profile '{profile.name}' does not match effort '{effort['name']}': {', '.join(mismatches)}"
         )
+
+
+def _recommend_reproduction(
+    api: ResearchOSApi,
+    *,
+    profile: ExperimentProfile,
+    workspace_id: str,
+) -> dict[str, object]:
+    recommendation = api.recommend_next(
+        {
+            "objective": profile.objective,
+            "platform": profile.platform,
+            "budget_seconds": profile.budget_seconds,
+            "workspace_id": workspace_id,
+            "limit": 1,
+        }
+    )["recommendations"][0]
+    if recommendation["action"] != "reproduce_claim":
+        raise RuntimeError(f"expected reproduce_claim, got {recommendation['action']}")
+    return recommendation
+
+
+def _event_tags(
+    profile: ExperimentProfile,
+    participant_role: ParticipantRole,
+    **extra_tags: str,
+) -> dict[str, str]:
+    return profile.event_tags | {"participant_role": participant_role.value} | extra_tags
 
 
 def _default_actor_id() -> str:

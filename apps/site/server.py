@@ -228,11 +228,14 @@ def _effort_detail_html(
 
 def _render_workspace_item(workspace: dict[str, object]) -> str:
     actor_id = workspace.get("actor_id") or "unknown"
+    participant_role = workspace.get("participant_role") or "contributor"
     return (
         "<li>"
         f"<code>{escape(str(workspace['name']))}</code> actor=<code>{escape(str(actor_id))}</code>, "
+        f"role=<code>{escape(str(participant_role))}</code>, "
         f"runs=<code>{len(workspace.get('run_ids', []))}</code>, "
         f"claims=<code>{len(workspace.get('claim_ids', []))}</code>, "
+        f"reproductions=<code>{escape(str(workspace.get('reproduction_count', 0)))}</code>, "
         f"adoptions=<code>{escape(str(workspace.get('adoption_count', 0)))}</code>, "
         f"updated=<code>{escape(str(workspace.get('updated_at', 'n/a')))}</code>"
         "</li>"

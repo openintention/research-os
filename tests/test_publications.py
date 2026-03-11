@@ -72,6 +72,7 @@ def test_workspace_discussion_publication_is_rendered_from_workspace_state(tmp_p
     body = response.json()["body"]
     assert response.json()["kind"] == "github.discussion"
     assert "Discussion: publisher-demo" in body
+    assert "Role: `contributor`" in body
     assert "Publication mirror workspace" in body
     assert "claim-pub-1" in body
     assert "snapshot.published" in body
@@ -301,6 +302,7 @@ def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path
     assert "docs/seeded-efforts.md" in body
     assert "/Users/aliargun/Documents/GitHub/research-os/docs/seeded-efforts.md" not in body
     assert "actor=participant-alpha" in body
+    assert "role=contributor" in body
     assert "python3 -m clients.tiny_loop.run" in body
 
 

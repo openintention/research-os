@@ -1,4 +1,9 @@
 types:
+  ParticipantRole:
+    values:
+      - contributor
+      - verifier
+
   EventEnvelope:
     fields:
       event_id: string
@@ -35,6 +40,7 @@ events:
       - effort_id
       - description
       - tags
+      - participant_role
 
   snapshot.published:
     description: Publishes an immutable snapshot into a workspace with optional artifact-plane references.
@@ -83,7 +89,7 @@ events:
       - confidence
 
   claim.reproduced:
-    description: Adds supporting evidence for a claim.
+    description: Adds supporting evidence for a claim, often from a separate verifier workspace.
     required_payload:
       - claim_id
       - evidence_run_id
