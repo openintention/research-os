@@ -41,6 +41,7 @@ DEFAULT_JOIN_COMMAND = (
     "cd research-os && "
     "python3 scripts/join_openintention.py"
 )
+INFERENCE_JOIN_COMMAND = f"{DEFAULT_JOIN_COMMAND} --profile inference-sprint"
 
 
 def build_microsite(
@@ -306,37 +307,52 @@ def _index_html(
         </aside>
       </section>
 
-      <section class="panel join-panel" id="how-it-works">
+      <section class="panel join-panel" id="join-eval">
+        <div id="how-it-works"></div>
         <h2>Pick your first effort and run one command</h2>
         <p class="section-lede">
           Start with Eval Sprint if you want the easiest first path. Choose Inference Sprint if
           you care more about performance work. You do not need special hardware for the starter
           flow.
         </p>
+        <input class="effort-toggle" type="radio" name="effort-path" id="effort-eval" checked>
+        <input class="effort-toggle" type="radio" name="effort-path" id="effort-inference">
         <div class="join-layout">
-          <div class="join-choices">
-            <article class="choice-card is-primary" id="join-eval">
-              <div class="effort-type">Best first path</div>
-              <h3>Eval Sprint</h3>
+          <div class="join-selector-stack">
+            <div class="effort-selector" role="tablist" aria-label="Choose your first effort">
+              <label class="effort-pill effort-pill-eval" for="effort-eval">
+                <span class="effort-pill-kicker">Best first path</span>
+                <span class="effort-pill-title">Eval Sprint</span>
+              </label>
+              <label class="effort-pill effort-pill-inference" for="effort-inference">
+                <span class="effort-pill-kicker">Alternative path</span>
+                <span class="effort-pill-title">Inference Sprint</span>
+              </label>
+            </div>
+            <article class="selected-effort detail-eval">
+              <div class="effort-type">Eval Sprint</div>
+              <h3>Start here if you want the easiest first contribution.</h3>
               <p>
-                The easiest first contribution. Join a live quality-focused effort and leave
-                behind a result the next person can continue from.
+                Join the live quality-focused effort, leave behind a visible result, and give the
+                next person a better starting point than a blank slate.
               </p>
+              <p class="selected-effort-meta">No special hardware needed for the starter flow.</p>
               <div class="card-links">
-                <a href="./evidence/eval-effort.html">See the current brief</a>
-                <a href="/efforts">See live effort state</a>
+                <a href="./evidence/eval-effort.html">Current brief</a>
+                <a href="/efforts">Live effort state</a>
               </div>
             </article>
-            <article class="choice-card">
-              <div class="effort-type">Alternative path</div>
-              <h3>Inference Sprint</h3>
+            <article class="selected-effort detail-inference">
+              <div class="effort-type">Inference Sprint</div>
+              <h3>Use this path if you care more about performance work.</h3>
               <p>
-                The performance path. The starter flow is still a proxy here, but you do not need
-                an H100 to try it.
+                The starter loop is still a proxy here, but it joins the live performance-shaped
+                effort and leaves behind visible work you can hand forward.
               </p>
+              <p class="selected-effort-meta">You do not need an H100 to try the starter flow.</p>
               <div class="card-links">
-                <a href="./evidence/inference-effort.html">See the current brief</a>
-                <a href="/efforts">See live effort state</a>
+                <a href="./evidence/inference-effort.html">Current brief</a>
+                <a href="/efforts">Live effort state</a>
               </div>
             </article>
           </div>
@@ -347,11 +363,27 @@ def _index_html(
               </div>
               <div class="shell-title">join command · session</div>
             </div>
-            <div class="proof-label">Copy this</div>
-            <p class="command command-hero">{escape(DEFAULT_JOIN_COMMAND)}</p>
-            <p class="command-note">
-              Paste the same command into Claude or Codex if you want your agent to do the join
-              for you. Add <code>--profile inference-sprint</code> for the performance path.
+            <div class="command-head">
+              <div class="proof-label">Copy this</div>
+              <button
+                class="copy-button"
+                type="button"
+                data-copy-default="Copy command"
+                data-copy-eval="{escape(DEFAULT_JOIN_COMMAND)}"
+                data-copy-inference="{escape(INFERENCE_JOIN_COMMAND)}"
+              >
+                Copy command
+              </button>
+            </div>
+            <pre class="command command-hero command-eval">{escape(DEFAULT_JOIN_COMMAND)}</pre>
+            <pre class="command command-hero command-inference">{escape(INFERENCE_JOIN_COMMAND)}</pre>
+            <p class="command-note command-note-eval">
+              Run it yourself or paste it into Claude or Codex. This starts with Eval Sprint, the
+              easiest first path.
+            </p>
+            <p class="command-note command-note-inference">
+              Run it yourself or paste it into Claude or Codex. This switches the join to
+              Inference Sprint for the performance path.
             </p>
           </div>
         </div>
@@ -429,6 +461,27 @@ def _index_html(
         </ul>
       </section>
     </main>
+    <script>
+      document.querySelectorAll(".copy-button[data-copy-eval]").forEach((button) => {{
+        button.addEventListener("click", async () => {{
+          const defaultLabel = button.dataset.copyDefault || "Copy command";
+          const inferenceSelected = document.getElementById("effort-inference")?.checked;
+          const command = inferenceSelected ? button.dataset.copyInference : button.dataset.copyEval;
+          if (!command) {{
+            return;
+          }}
+          try {{
+            await navigator.clipboard.writeText(command);
+            button.textContent = "Copied";
+          }} catch {{
+            button.textContent = "Copy manually";
+          }}
+          window.setTimeout(() => {{
+            button.textContent = defaultLabel;
+          }}, 1600);
+        }});
+      }});
+    </script>
   </body>
 </html>
 """
@@ -811,46 +864,129 @@ li {
 .effort-card,
 .evidence-card,
 .flow-card,
-.choice-card,
-.result-summary-card {
+.result-summary-card,
+.selected-effort {
   border-radius: 24px;
   padding: var(--space-5);
 }
 
 .flow-card,
-.choice-card,
-.result-summary-card {
+.result-summary-card,
+.selected-effort {
   background: var(--panel-2);
   border: 1px solid var(--line);
 }
 
 .join-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
-  gap: var(--space-5);
-  align-items: stretch;
+  grid-template-columns: minmax(280px, 0.62fr) minmax(0, 1.38fr);
+  gap: var(--space-4);
+  align-items: start;
 }
 
-.join-choices {
+.join-selector-stack {
   display: grid;
   gap: var(--space-3);
   align-content: start;
 }
 
-.choice-card.is-primary {
+.effort-toggle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.effort-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.effort-pill {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(10, 18, 28, 0.76);
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.effort-pill-kicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-2);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.effort-pill-title {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+#effort-eval:checked ~ .join-layout .effort-pill-eval,
+#effort-inference:checked ~ .join-layout .effort-pill-inference {
   border-color: var(--line-strong);
+  background: rgba(15, 28, 42, 0.92);
   box-shadow: inset 0 1px 0 rgba(126, 247, 184, 0.08);
+}
+
+.selected-effort {
+  display: none;
+  gap: var(--space-3);
+}
+
+.selected-effort h3,
+.selected-effort p {
+  margin: 0;
+}
+
+.selected-effort h3 {
+  font-size: 1.35rem;
+}
+
+.selected-effort-meta {
+  color: #d5e1f1;
+}
+
+#effort-eval:checked ~ .join-layout .detail-eval,
+#effort-inference:checked ~ .join-layout .detail-inference {
+  display: grid;
 }
 
 .join-command-stack {
   display: grid;
   gap: var(--space-3);
-  padding: 26px;
+  padding: 24px;
   border-radius: 22px;
   align-content: start;
+  align-self: start;
   box-shadow:
     inset 0 1px 0 rgba(126, 247, 184, 0.1),
     0 20px 52px rgba(0, 0, 0, 0.28);
+}
+
+.command-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.copy-button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(9, 16, 24, 0.72);
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .command-hero {
@@ -867,6 +1003,21 @@ li {
 .command-note {
   margin: 0;
   color: #d5e1f1;
+}
+
+.command-inference,
+.command-note-inference {
+  display: none;
+}
+
+#effort-inference:checked ~ .join-layout .command-eval,
+#effort-inference:checked ~ .join-layout .command-note-eval {
+  display: none;
+}
+
+#effort-inference:checked ~ .join-layout .command-inference,
+#effort-inference:checked ~ .join-layout .command-note-inference {
+  display: block;
 }
 
 .effort-type {
@@ -1033,6 +1184,10 @@ a {
 
   .join-command-stack {
     padding: 20px;
+  }
+
+  .effort-selector {
+    grid-template-columns: 1fr;
   }
 
   .card-links a {

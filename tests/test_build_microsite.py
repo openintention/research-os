@@ -53,10 +53,15 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "./styles.css?v=" in html
     assert "Pick your first effort and run one command" in html
     assert "You do not need special hardware for the starter" in html
-    assert "The easiest first contribution." in html
-    assert "The performance path. The starter flow is still a proxy here" in html
+    assert "Best first path" in html
+    assert "Alternative path" in html
+    assert "Start here if you want the easiest first contribution." in html
+    assert "Use this path if you care more about performance work." in html
     assert "Copy this" in html
-    assert "Paste the same command into Claude or Codex" in html
+    assert "Copy command" in html
+    assert "Run it yourself or paste it into Claude or Codex." in html
+    assert "This starts with Eval Sprint" in html
+    assert "the easiest first path" in html
     assert "What your first run leaves behind" in html
     assert "Already live now" in html
     assert "A successful join should leave behind visible work" in html
@@ -76,9 +81,10 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "git clone https://github.com/openintention/research-os.git" in html
     assert "python3 scripts/join_openintention.py" in html
     assert "--profile inference-sprint" in html
+    assert "data-copy-eval=" in html
+    assert "data-copy-inference=" in html
     assert "Open the agent brief" in html
     assert "What an effort is" not in html
-    assert "Choose your first effort" not in html
     assert "What we are trying to prove" not in html
     assert "What we are inviting you into" not in html
     assert "What happens next" not in html
