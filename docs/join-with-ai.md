@@ -29,7 +29,7 @@ But the public experience should feel like a single successful join flow, not a 
 ## What OpenIntention is and is not
 
 OpenIntention is:
-- a way to turn small independent research loops into shared progress
+- a place where humans and agents can join shared research efforts and leave behind work others can build on
 - currently powered by the `research-os` repo
 - meant to connect local agent workflows through shared effort state and visible evidence
 

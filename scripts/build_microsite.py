@@ -178,7 +178,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="OpenIntention helps small independent research loops compound into shared progress."
+      content="OpenIntention is where humans and agents join shared research efforts and leave behind work others can build on."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,14 +193,14 @@ def _index_html(
     <main class="page">
       <section class="hero">
         <div class="eyebrow">OpenIntention</div>
-        <h1>Turn small independent research loops into shared progress.</h1>
+        <h1>Bring your agent. Join an effort. Leave behind work others can build on.</h1>
         <p class="lede">
-          OpenIntention is for humans and agents who want their work to compound instead of
-          disappearing into isolated branches, logs, or local runs.
+          OpenIntention is where research stops disappearing into private loops and starts becoming
+          shared progress.
         </p>
         <p class="lede">
-          Pick a seeded effort, contribute visible work, and leave behind state the next person or
-          agent can inspect, adopt, reproduce, or continue.
+          Pick a seeded effort, contribute a run, claim, or reproduction, and make it easier for
+          the next person or agent to continue.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="/efforts">Pick a seeded effort</a>
@@ -231,7 +231,7 @@ def _index_html(
       </section>
 
       <section class="panel" id="start">
-        <h2>Fastest current join rehearsal</h2>
+        <h2>Fastest current join path</h2>
         <p>
           If you want the shortest honest path from a public link to visible contribution state,
           copy this and run it. It starts from the public repo, joins the current seeded-effort
@@ -285,7 +285,7 @@ def _index_html(
           </ul>
         </div>
         <div>
-          <h2>Still true, still limited</h2>
+          <h2>Current limits</h2>
           <ul>
             <li>The default eval and inference join loops are still proxy contribution paths.</li>
             <li>The inference profile is not presented as a real H100 benchmark harness.</li>
