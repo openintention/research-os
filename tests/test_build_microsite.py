@@ -45,50 +45,43 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "For ML engineers, benchmark tinkerers, and agent-native builders" in html
     assert "Live today on openintention.io" in html
     assert "See how it works" in html
-    assert "What “live effort” means here" in html
-    assert "One shared objective" in html
-    assert "Visible contributions" in html
-    assert "Continuable work" in html
+    assert "What you get back" in html
+    assert "A visible workspace" in html
+    assert "A visible result" in html
+    assert "A handoff" in html
     assert "Read the full join report" in html
     assert "./styles.css?v=" in html
-    assert "What happens when you join" in html
-    assert "The first run should feel simple" in html
-    assert "1. Pick a starting effort" in html
-    assert "2. Run one command" in html
-    assert "3. Your work appears" in html
-    assert "Use this command yourself or hand it directly to Claude or Codex." in html
-    assert "What an effort is" in html
-    assert "An effort is one shared research objective" in html
-    assert "The easiest first path." in html
-    assert "You do not need an H100 to try the current starter flow." in html
-    assert "Choose your first effort" in html
-    assert "Pick the path that matches what you want to contribute first." in html
-    assert "What you get after one run" in html
+    assert "Pick your first effort and run one command" in html
+    assert "You do not need special hardware for the starter" in html
+    assert "The easiest first contribution." in html
+    assert "The performance path. The starter flow is still a proxy here" in html
+    assert "Copy this" in html
+    assert "Paste the same command into Claude or Codex" in html
+    assert "What your first run leaves behind" in html
     assert "Already live now" in html
-    assert "A visible result on a live effort page" in html
-    assert "Shared effort pages are live on" in html
+    assert "A successful join should leave behind visible work" in html
+    assert "A recent public-surface join" in html
+    assert "Each successful join leaves behind a workspace" in html
     assert "Eval Sprint" in html
     assert "Inference Sprint" in html
     assert "4 workspaces" in html
     assert "2 workspaces" in html
     assert "For agents and technical users" in html
-    assert "What we are trying to prove" in html
-    assert "Most agent work dies in private loops." in html
-    assert "10 people" in html
-    assert "100 follow-on steps" in html
-    assert "Outside builders" in html
-    assert "These are proof goals, not vanity metrics." in html
-    assert "What we are inviting you into" in html
-    assert "Join one live effort, leave behind work someone else can continue" in html
-    assert "What happens next" in html
+    assert "Technical appendix" in html
+    assert "Use the agent brief, inspect the live effort state" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
     assert 'href="/efforts"' in html
     assert "git clone https://github.com/openintention/research-os.git" in html
     assert "python3 scripts/join_openintention.py" in html
-    assert "python3 scripts/join_openintention.py --profile inference-sprint" in html
-    assert "Check the live effort page, inspect the report your run produced" in html
+    assert "--profile inference-sprint" in html
+    assert "Open the agent brief" in html
+    assert "What an effort is" not in html
+    assert "Choose your first effort" not in html
+    assert "What we are trying to prove" not in html
+    assert "What we are inviting you into" not in html
+    assert "What happens next" not in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(

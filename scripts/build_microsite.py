@@ -277,24 +277,27 @@ def _index_html(
               </div>
               <div class="shell-title">live effort · proof</div>
             </div>
-            <div class="proof-label">What “live effort” means here</div>
+            <div class="proof-label">What you get back</div>
             <ul class="proof-list">
               <li>
-                <strong>One shared objective</strong>
-                <span>A metric, a platform context, and a bounded budget for contribution.</span>
+                <strong>A visible workspace</strong>
+                <span>Your run lands on a live effort page instead of staying trapped in a local loop.</span>
               </li>
               <li>
-                <strong>Visible contributions</strong>
-                <span>Runs and results that do not disappear into your local loop.</span>
+                <strong>A visible result</strong>
+                <span>You leave behind a claim or reproduction the next person can inspect.</span>
               </li>
               <li>
-                <strong>Continuable work</strong>
-                <span>The next person or agent can inspect what happened and continue from it.</span>
+                <strong>A handoff</strong>
+                <span>Your run produces a short report the next person or agent can continue from.</span>
               </li>
             </ul>
             <div class="proof-divider"></div>
-            <div class="proof-label">What is live right now</div>
-            <pre class="proof-pre">{escape(hero_participation_excerpt)}</pre>
+            <div class="proof-label">Already happening now</div>
+            <p class="proof-summary">
+              People are already joining the seeded efforts from the public surface and leaving
+              behind visible work.
+            </p>
             <div class="card-links">
               <a href="/efforts">See live effort state</a>
               <a href="./evidence/public-ingress-smoke.html">Read the full join report</a>
@@ -303,43 +306,39 @@ def _index_html(
         </aside>
       </section>
 
-      <section class="panel" id="how-it-works">
-        <h2>What happens when you join</h2>
+      <section class="panel join-panel" id="how-it-works">
+        <h2>Pick your first effort and run one command</h2>
         <p class="section-lede">
-          The first run should feel simple: pick a starting effort, run one command, and watch
-          your work show up somewhere the next person can continue from.
+          Start with Eval Sprint if you want the easiest first path. Choose Inference Sprint if
+          you care more about performance work. You do not need special hardware for the starter
+          flow.
         </p>
-        <div class="flow-steps">
-          <div class="step-card">
-            <div class="step-label">1. Pick a starting effort</div>
-            <p>
-              Start with Eval Sprint if you want the easiest first path. Choose Inference Sprint if
-              you care more about performance work.
-            </p>
-          </div>
-          <div class="step-card">
-            <div class="step-label">2. Run one command</div>
-            <p>
-              Run the hosted join path yourself, or paste the same command into Claude or Codex.
-            </p>
-          </div>
-          <div class="step-card">
-            <div class="step-label">3. Your work appears</div>
-            <p>
-              You should end up with a visible workspace, a claim or reproduction, and a short
-              report linked back to the live effort.
-            </p>
-          </div>
-        </div>
-        <div class="join-action-card">
-          <div class="join-action-copy">
-            <div class="effort-type">Best first path</div>
-            <h3>Start with Eval Sprint</h3>
-            <p>
-              Use this command yourself or hand it directly to Claude or Codex.
-              If you want the performance path instead, add
-              <code>--profile inference-sprint</code>.
-            </p>
+        <div class="join-layout">
+          <div class="join-choices">
+            <article class="choice-card is-primary" id="join-eval">
+              <div class="effort-type">Best first path</div>
+              <h3>Eval Sprint</h3>
+              <p>
+                The easiest first contribution. Join a live quality-focused effort and leave
+                behind a result the next person can continue from.
+              </p>
+              <div class="card-links">
+                <a href="./evidence/eval-effort.html">See the current brief</a>
+                <a href="/efforts">See live effort state</a>
+              </div>
+            </article>
+            <article class="choice-card">
+              <div class="effort-type">Alternative path</div>
+              <h3>Inference Sprint</h3>
+              <p>
+                The performance path. The starter flow is still a proxy here, but you do not need
+                an H100 to try it.
+              </p>
+              <div class="card-links">
+                <a href="./evidence/inference-effort.html">See the current brief</a>
+                <a href="/efforts">See live effort state</a>
+              </div>
+            </article>
           </div>
           <div class="join-command-stack shell-card">
             <div class="shell-bar">
@@ -348,165 +347,86 @@ def _index_html(
               </div>
               <div class="shell-title">join command · session</div>
             </div>
-            <div class="proof-label">Join command</div>
+            <div class="proof-label">Copy this</div>
             <p class="command command-hero">{escape(DEFAULT_JOIN_COMMAND)}</p>
+            <p class="command-note">
+              Paste the same command into Claude or Codex if you want your agent to do the join
+              for you. Add <code>--profile inference-sprint</code> for the performance path.
+            </p>
           </div>
         </div>
       </section>
 
-      <section class="panel">
-        <h2>What an effort is</h2>
-        <p class="section-lede">
-          An effort is one shared research objective with a metric, a platform context, and a short
-          budget. It gives many separate runs a common place to land.
-        </p>
-        <div class="grid two">
-          <div class="flow-card">
-            <div class="step-label">Eval Sprint</div>
-            <p>
-              The easiest first path. Think: improve a quality metric under a short fixed budget.
-            </p>
-            <p class="footer-note">The current objective is <code>{escape(eval_effort.objective)}</code> on an <code>{escape(eval_effort.platform)}</code>-shaped track with a {escape(eval_effort.budget_seconds)} second budget.</p>
-          </div>
-          <div class="flow-card">
-            <div class="step-label">Inference Sprint</div>
-            <p>
-              The performance path. Think: improve throughput on a hardware-shaped target.
-            </p>
-            <p class="footer-note">You do not need an H100 to try the current starter flow. The real target is <code>{escape(inference_effort.platform)}</code>-class inference work under the same {escape(inference_effort.budget_seconds)} second budget.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Choose your first effort</h2>
-        <p class="section-lede">
-          Pick the path that matches what you want to contribute first. Both flows land work into
-          the same shared system; they just start from different kinds of questions.
-        </p>
-        <div class="efforts">
-          <article class="effort-card" id="join-eval">
-            <div class="effort-type">Best first path</div>
-            <h3>Eval Sprint</h3>
-            <p>Best if you want the simplest first contribution and the clearest “join” experience.</p>
-            <p class="command">python3 scripts/join_openintention.py</p>
-            <p>
-              Join a live quality-focused track, create a visible workspace, and leave behind a
-              result the next person can continue from.
-            </p>
-            <div class="card-links">
-              <a href="/efforts">See live effort state</a>
-              <a href="./evidence/eval-effort.html">See the current brief</a>
-            </div>
-          </article>
-          <article class="effort-card" id="join-inference">
-            <div class="effort-type">Alternative path</div>
-            <h3>Inference Sprint</h3>
-            <p>Best if you care more about performance and hardware-shaped work than the easiest first path.</p>
-            <p class="command">python3 scripts/join_openintention.py --profile inference-sprint</p>
-            <p>
-              The starter flow is still a proxy here, but the effort itself is organized around
-              real throughput questions instead of quality questions.
-            </p>
-            <div class="card-links">
-              <a href="/efforts">See live effort state</a>
-              <a href="./evidence/inference-effort.html">See the current brief</a>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="grid two">
+      <section class="panel proof-result-section">
+        <div class="proof-result-header">
           <div>
-            <h2>What you get after one run</h2>
-            <ul>
-              <li>A visible result on a live effort page instead of another local-only run.</li>
-              <li>A short report the next person or agent can inspect without asking you for context.</li>
-              <li>A better starting point for the next iteration than a blank slate.</li>
-            </ul>
-          </div>
-          <div>
-            <h2>Already live now</h2>
-            <p>
-              Yes. Both seeded efforts already have visible work and shared history that new
-              participants can continue from.
-            </p>
-            <ul>
-              <li><strong>{escape(eval_effort.title)}</strong>: {escape(eval_effort.attached_workspaces)} workspaces, {escape(eval_effort.claims_in_scope)} claim signals, {escape(eval_effort.frontier_members)} frontier entries.</li>
-              <li><strong>{escape(inference_effort.title)}</strong>: {escape(inference_effort.attached_workspaces)} workspaces, {escape(inference_effort.claims_in_scope)} claim signals, {escape(inference_effort.frontier_members)} frontier entries.</li>
-            </ul>
-            <p class="footer-note">
-              Shared effort pages are live on <code>openintention.io</code>. The default join path
-              is real, and the deeper external-harness proof is in the repo.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel proof-section">
-        <div class="proof-section-header">
-          <div>
-            <div class="proof-label">The proof</div>
-            <h2>What we are trying to prove</h2>
+            <div class="proof-label">Proof and result</div>
+            <h2>What your first run leaves behind</h2>
           </div>
           <p class="section-lede">
-            Most agent work dies in private loops. OpenIntention only matters if many small
-            independent runs can start turning into shared progress instead.
+            A successful join should leave behind visible work, not another local-only result.
           </p>
         </div>
-        <div class="grid three proof-goals">
-          <div class="proof-goal-card">
-            <div class="proof-metric">10 people</div>
-            <p>join live efforts and leave behind visible work.</p>
-          </div>
-          <div class="proof-goal-card">
-            <div class="proof-metric">100 follow-on steps</div>
-            <p>build on earlier work instead of starting from scratch.</p>
-          </div>
-          <div class="proof-goal-card">
-            <div class="proof-metric">Outside builders</div>
-            <p>help improve OpenIntention and the repo itself.</p>
-          </div>
-        </div>
-        <p class="footer-note">
-          These are proof goals, not vanity metrics.
-        </p>
-      </section>
-
-      <section class="panel" id="inspect">
-        <div class="grid two">
-          <div>
-            <h2>What we are inviting you into</h2>
-            <p>
-              Join one live effort, leave behind work someone else can continue, and help prove
-              that small research loops can add up to something larger than a private run.
+        <div class="proof-result-grid">
+          <div class="shell-card result-card">
+            <div class="shell-bar">
+              <div class="shell-dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="shell-title">recent join · result</div>
+            </div>
+            <div class="proof-label">A recent public-surface join</div>
+            <pre class="proof-pre">{escape(hero_participation_excerpt)}</pre>
+            <p class="footer-note">
+              Each successful join leaves behind a workspace, a visible result, and a report linked
+              back to the effort.
             </p>
           </div>
-          <div>
-          <h2>For agents and technical users</h2>
-          <ul class="link-list">
-            <li><a href="./evidence/join-with-ai.html">Use the AI-agent onboarding brief</a></li>
-            <li><a href="./evidence/public-ingress-smoke.html">Read the deterministic ingress proof</a></li>
-            <li><a href="./evidence/eval-effort.html">Read the current eval brief</a></li>
-            <li><a href="./evidence/inference-effort.html">Read the current inference brief</a></li>
-            {repo_list_item}
-          </ul>
+          <div class="result-summary-card">
+            <div class="proof-label">Already live now</div>
+            <p>
+              Both seeded efforts already have visible work and shared history that the next person
+              can continue from.
+            </p>
+            <ul class="counts-list">
+              <li>
+                <strong>{escape(eval_effort.title)}</strong>
+                <span>{escape(eval_effort.attached_workspaces)} workspaces · {escape(eval_effort.claims_in_scope)} claim signals · {escape(eval_effort.frontier_members)} frontier entries</span>
+              </li>
+              <li>
+                <strong>{escape(inference_effort.title)}</strong>
+                <span>{escape(inference_effort.attached_workspaces)} workspaces · {escape(inference_effort.claims_in_scope)} claim signals · {escape(inference_effort.frontier_members)} frontier entries</span>
+              </li>
+            </ul>
+            <div class="card-links">
+              <a href="/efforts">See live effort state</a>
+              <a href="./evidence/public-ingress-smoke.html">Read the full join report</a>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="panel">
-        <h2>What happens next</h2>
-        <p>
-          Check the live effort page, inspect the report your run produced, and hand that forward
-          to the next human or agent. That is how one small run starts becoming shared progress.
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
-          <a class="button secondary" href="./evidence/join-with-ai.html">Open the agent brief</a>
-          {repo_action}
+      <section class="panel technical-footer" id="inspect">
+        <div class="technical-footer-copy">
+          <div>
+            <div class="proof-label">Technical appendix</div>
+            <h2>For agents and technical users</h2>
+            <p>
+              Use the agent brief, inspect the live effort state, or read the repo and public
+              evidence directly.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <a class="button primary" href="./evidence/join-with-ai.html">Open the agent brief</a>
+            {repo_action}
+          </div>
         </div>
+        <ul class="link-list">
+          <li><a href="./evidence/public-ingress-smoke.html">Read the deterministic ingress proof</a></li>
+          <li><a href="./evidence/eval-effort.html">Read the current eval brief</a></li>
+          <li><a href="./evidence/inference-effort.html">Read the current inference brief</a></li>
+          {repo_list_item}
+        </ul>
       </section>
     </main>
   </body>
@@ -802,6 +722,11 @@ li {
   line-height: 1.45;
 }
 
+.proof-summary {
+  margin: 0;
+  color: #d5e1f1;
+}
+
 .proof-divider {
   height: 1px;
   background: var(--line);
@@ -867,85 +792,43 @@ li {
   margin-bottom: 8px;
 }
 
-.efforts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
 .effort-card,
 .evidence-card,
-.flow-card {
+.flow-card,
+.choice-card,
+.result-summary-card {
   border-radius: 24px;
   padding: 24px;
 }
 
-.flow-card {
+.flow-card,
+.choice-card,
+.result-summary-card {
   background: var(--panel-2);
   border: 1px solid var(--line);
 }
 
-.flow-steps {
+.join-layout {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  margin: 18px 0 20px;
-}
-
-.step-card {
-  min-height: 0;
-  border-radius: 22px;
-  padding: 24px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  position: relative;
-  overflow: hidden;
-}
-
-.step-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-}
-
-.join-action-card {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 18px;
-  align-items: center;
-  border-radius: 24px;
-  padding: 24px;
-  background:
-    linear-gradient(135deg, rgba(14, 24, 37, 0.98), rgba(11, 17, 26, 0.98));
-  border: 1px solid var(--line-strong);
-  box-shadow:
-    inset 0 1px 0 rgba(126, 247, 184, 0.1),
-    0 18px 48px rgba(0, 0, 0, 0.25);
-}
-
-.proof-section {
-  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
   gap: 20px;
+  align-items: stretch;
 }
 
-.proof-section-header {
+.join-choices {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: 20px;
-  align-items: end;
+  gap: 18px;
 }
 
-.join-action-copy h3 {
-  margin-bottom: 10px;
+.choice-card.is-primary {
+  border-color: var(--line-strong);
+  box-shadow: inset 0 1px 0 rgba(126, 247, 184, 0.08);
 }
 
 .join-command-stack {
   display: grid;
   gap: 10px;
-  padding: 18px;
+  padding: 22px;
   border-radius: 22px;
 }
 
@@ -958,6 +841,11 @@ li {
   background: rgba(5, 11, 18, 0.82);
   border: 1px solid var(--line);
   color: #ecfff5;
+}
+
+.command-note {
+  margin: 0;
+  color: #d5e1f1;
 }
 
 .effort-type {
@@ -979,26 +867,72 @@ li {
   font-family: "IBM Plex Mono", monospace;
 }
 
-.proof-goal-card {
-  border-radius: 20px;
-  padding: 22px;
-  background: rgba(14, 24, 37, 0.82);
-  border: 1px solid var(--line);
-}
-
-.proof-metric {
-  color: #eef8ff;
-  font-size: 1.4rem;
-  line-height: 1.15;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
 .card-links {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
   margin-top: 14px;
+}
+
+.proof-result-section {
+  display: grid;
+  gap: 20px;
+}
+
+.proof-result-header {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: end;
+}
+
+.proof-result-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 20px;
+}
+
+.result-card,
+.result-summary-card {
+  min-height: 100%;
+}
+
+.result-card {
+  display: grid;
+  gap: 14px;
+}
+
+.counts-list {
+  list-style: none;
+  padding-left: 0;
+  display: grid;
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+.counts-list li {
+  display: grid;
+  gap: 4px;
+}
+
+.counts-list strong {
+  color: #ffffff;
+}
+
+.counts-list span {
+  color: var(--muted);
+}
+
+.technical-footer {
+  display: grid;
+  gap: 18px;
+}
+
+.technical-footer-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
 }
 
 .mono,
@@ -1042,10 +976,10 @@ a {
 @media (max-width: 900px) {
   .grid.two,
   .grid.three,
-  .efforts,
-  .flow-steps,
-  .join-action-card,
-  .proof-section-header {
+  .join-layout,
+  .proof-result-header,
+  .proof-result-grid,
+  .technical-footer-copy {
     grid-template-columns: 1fr;
   }
 
