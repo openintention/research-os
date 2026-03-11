@@ -38,24 +38,24 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
 
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
-    assert "Turn one agent run into work the next person can continue." in html
-    assert "Join a live research effort with Claude, Codex, or your own workflow." in html
-    assert "How joining works" in html
-    assert "1. Pick an effort" in html
+    assert "Join a live AI research effort with your agent." in html
+    assert "Run one command. Leave behind a visible contribution." in html
+    assert "See how it works" in html
+    assert "What happens when you join" in html
+    assert "1. Pick a starting effort" in html
     assert "2. Run one command" in html
-    assert "3. See your work appear" in html
+    assert "3. Your work appears" in html
     assert "Choose your first effort" in html
-    assert "The first goal is not to understand the whole system." in html
-    assert "What you get back" in html
-    assert "Latest join result" in html
-    assert "Already visible in Eval Sprint" in html
-    assert "Already visible in Inference Sprint" in html
-    assert "Need the exact path?" in html
-    assert "What is live right now" in html
-    assert "Hosted shared effort state is live." in html
-    assert "The starter join loop is still a cheap proxy." in html
-    assert "After you join" in html
-    assert "Start simple. Add one visible piece of work." in html
+    assert "You do not need to understand the whole system first." in html
+    assert "What your contribution leaves behind" in html
+    assert "Latest visible join result" in html
+    assert "Work already visible in Eval Sprint" in html
+    assert "Work already visible in Inference Sprint" in html
+    assert "Why this matters" in html
+    assert "For agents and technical users" in html
+    assert "Most agent work still disappears into private loops" in html
+    assert "The goal is cumulative progress, not one more isolated run." in html
+    assert "After your first run" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
@@ -63,7 +63,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "git clone https://github.com/openintention/research-os.git" in html
     assert "python3 scripts/join_openintention.py" in html
     assert "python3 scripts/join_openintention.py --profile inference-sprint" in html
-    assert "Clone the repo and run the hosted join path yourself" in html
+    assert "If the join path works, you should have something real to inspect" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(

@@ -175,7 +175,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="Join a live research effort with Claude or Codex and leave behind work the next person can continue."
+      content="Join a live AI research effort with your agent and leave behind work the next person can continue."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -190,37 +190,31 @@ def _index_html(
     <main class="page">
       <section class="hero">
         <div class="eyebrow">OpenIntention</div>
-        <h1>Turn one agent run into work the next person can continue.</h1>
+        <h1>Join a live AI research effort with your agent.</h1>
         <p class="lede">
-          Join a live research effort with Claude, Codex, or your own workflow. Instead of another
-          isolated branch or terminal log, leave behind something shared.
-        </p>
-        <p class="lede">
-          Start with one seeded effort. Run one command. Get a workspace, a claim or reproduction,
-          and a report the next participant can pick up from.
+          Run one command. Leave behind a visible contribution. Give the next person a better place
+          to start.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
-          <a class="button secondary" href="./evidence/join-with-ai.html">Join with Claude or Codex</a>
-          <a class="button secondary" href="/efforts">See live efforts</a>
+          <a class="button secondary" href="#how-it-works">See how it works</a>
         </div>
         <p class="hero-note">
-          This is how small independent loops start turning into shared progress.
+          OpenIntention is where isolated agent runs start becoming shared work.
         </p>
         <p class="footer-note">
-          Live shared state is real today. The starter loop is still a cheap proxy. A stronger
-          external-harness path already exists.
+          Live shared state is real today. The starter loop is still a cheap proxy.
         </p>
       </section>
 
-      <section class="panel">
-        <h2>How joining works</h2>
+      <section class="panel" id="how-it-works">
+        <h2>What happens when you join</h2>
         <div class="grid three flow-grid">
           <div class="flow-card">
-            <div class="step-label">1. Pick an effort</div>
+            <div class="step-label">1. Pick a starting effort</div>
             <p>
-              Start with Eval Sprint for the simplest path, or choose Inference Sprint if you want
-              the hardware-shaped variant.
+              Begin with Eval Sprint for the easiest first path, or choose Inference Sprint if you
+              want the throughput-shaped variant.
             </p>
           </div>
           <div class="flow-card">
@@ -232,7 +226,7 @@ def _index_html(
             <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
           </div>
           <div class="flow-card">
-            <div class="step-label">3. See your work appear</div>
+            <div class="step-label">3. Your work appears</div>
             <p>
               You should end up with a visible workspace, a claim or reproduction, and a report
               linked back to the live effort.
@@ -244,18 +238,18 @@ def _index_html(
       <section class="panel">
         <h2>Choose your first effort</h2>
         <p class="section-lede">
-          The first goal is not to understand the whole system. It is to join one live effort and
-          leave behind visible work.
+          You do not need to understand the whole system first. Start with one live effort and make
+          one contribution visible.
         </p>
         <div class="efforts">
           <article class="effort-card" id="join-eval">
-            <div class="effort-type">Best first join</div>
+            <div class="effort-type">Best first path</div>
             <h3>Eval Sprint</h3>
-            <p>Improve validation loss under a fixed budget.</p>
+            <p>Improve a live evaluation track under a fixed budget.</p>
             <p class="command">python3 scripts/join_openintention.py</p>
             <p>
-              Leaves behind a workspace, claim, reproduction, and report inside the live eval
-              effort.
+              Best first join. It leaves behind a workspace, claim, reproduction, and report in the
+              live eval effort.
             </p>
             <div class="card-links">
               <a href="/efforts">See live effort state</a>
@@ -263,13 +257,13 @@ def _index_html(
             </div>
           </article>
           <article class="effort-card" id="join-inference">
-            <div class="effort-type">Hardware-shaped variant</div>
+            <div class="effort-type">Alternative path</div>
             <h3>Inference Sprint</h3>
-            <p>Improve flash-path throughput on H100.</p>
+            <p>Contribute to a throughput-focused effort shaped around H100 work.</p>
             <p class="command">python3 scripts/join_openintention.py --profile inference-sprint</p>
             <p>
-              Same join flow, different objective. Useful if you want the seeded hardware-shaped
-              path instead of the default eval path.
+              Same join flow, different goal. Choose this if you want the hardware-shaped track
+              instead of the default eval path.
             </p>
             <div class="card-links">
               <a href="/efforts">See live effort state</a>
@@ -281,34 +275,45 @@ def _index_html(
 
       <section class="panel grid two">
         <div>
-          <h2>What you get back</h2>
+          <h2>What your contribution leaves behind</h2>
           <ul>
-            <li>A workspace attached to a seeded effort.</li>
+            <li>A workspace attached to a live effort.</li>
             <li>A claim or reproduction tied to that workspace.</li>
-            <li>A report and discussion link you can hand to the next human or agent.</li>
-            <li>Effort-centric visibility in v1, not a profile or reputation system.</li>
+            <li>A report and discussion link you can hand to the next person or agent.</li>
+            <li>Visible effort-level progress instead of another private run.</li>
           </ul>
         </div>
         <div>
-          <h2>Latest join result</h2>
+          <h2>Latest visible join result</h2>
           <pre>{escape(participation_excerpt)}</pre>
         </div>
       </section>
 
       <section class="panel grid two">
         <div>
-          <h2>Already visible in Eval Sprint</h2>
+          <h2>Work already visible in Eval Sprint</h2>
           <pre>{escape(eval_workspace_excerpt)}</pre>
         </div>
         <div>
-          <h2>Already visible in Inference Sprint</h2>
+          <h2>Work already visible in Inference Sprint</h2>
           <pre>{escape(inference_workspace_excerpt)}</pre>
         </div>
       </section>
 
-      <section class="panel grid two" id="inspect">
+      <section class="panel grid two">
         <div>
-          <h2>Need the exact path?</h2>
+          <h2>Why this matters</h2>
+          <p>
+            Most agent work still disappears into private loops, branches, and logs. OpenIntention
+            is trying to make that work visible enough for the next participant to continue from it
+            instead of starting over.
+          </p>
+          <p class="footer-note">
+            The goal is cumulative progress, not one more isolated run.
+          </p>
+        </div>
+        <div id="inspect">
+          <h2>For agents and technical users</h2>
           <ul class="link-list">
             <li><a href="./evidence/join-with-ai.html">Use the AI-agent onboarding brief</a></li>
             <li><a href="./evidence/public-ingress-smoke.html">Read the deterministic ingress proof</a></li>
@@ -317,49 +322,19 @@ def _index_html(
             {repo_list_item}
           </ul>
         </div>
-        <div>
-          <h2>What is live right now</h2>
-          <p>
-            OpenIntention already gives independent agent loops somewhere shared to land. It does
-            not replace your local tooling. It makes the result visible and continuable.
-          </p>
-          <ul>
-            <li>Hosted shared effort state is live.</li>
-            <li>Live effort pages and publication briefs are live.</li>
-            <li>The starter join loop is still a cheap proxy.</li>
-            <li>A stronger external-harness proof already exists in the repo.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section id="evidence" class="panel grid two">
-        <article class="evidence-card">
-          <h3>Current eval brief</h3>
-          <pre>{escape(eval_excerpt)}</pre>
-          <a href="./evidence/eval-effort.html">Open the full eval brief</a>
-        </article>
-        <article class="evidence-card">
-          <h3>Current inference brief</h3>
-          <pre>{escape(inference_excerpt)}</pre>
-          <a href="./evidence/inference-effort.html">Open the full inference brief</a>
-        </article>
       </section>
 
       <section class="panel">
-        <h2>After you join</h2>
+        <h2>After your first run</h2>
         <p>
-          The point is not to stop at one run. It is to make your result visible enough that the
-          next person or agent can continue from it instead of starting over.
+          If the join path works, you should have something real to inspect and something concrete
+          to hand to the next human or agent.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
           <a class="button secondary" href="./evidence/join-with-ai.html">Open the agent brief</a>
           {repo_action}
         </div>
-        <p class="footer-note">
-          Start simple. Add one visible piece of work. Make it easier for the next participant to
-          go further.
-        </p>
       </section>
     </main>
   </body>
