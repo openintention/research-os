@@ -22,6 +22,11 @@ class MicrositeConfig:
 
 
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
+DEFAULT_JOIN_COMMAND = (
+    "git clone https://github.com/openintention/research-os.git && "
+    "cd research-os && "
+    "python3 scripts/run_public_ingress_smoke.py"
+)
 
 
 def build_microsite(
@@ -74,6 +79,9 @@ def build_microsite(
     smoke_excerpt = _excerpt(evidence.smoke_report, lines=18)
     eval_excerpt = _excerpt(evidence.eval_brief, lines=14)
     inference_excerpt = _excerpt(evidence.inference_brief, lines=14)
+    participation_excerpt = _section_excerpt(evidence.smoke_report, heading="## Participation Outcome", lines=6)
+    eval_workspace_excerpt = _section_excerpt(evidence.eval_brief, heading="## Active Workspaces", lines=4)
+    inference_workspace_excerpt = _section_excerpt(evidence.inference_brief, heading="## Active Workspaces", lines=4)
 
     (assets_dir / "favicon.svg").write_text(_favicon_svg(), encoding="utf-8")
     (output_dir / "styles.css").write_text(_styles(), encoding="utf-8")
@@ -82,6 +90,9 @@ def build_microsite(
             smoke_excerpt=smoke_excerpt,
             eval_excerpt=eval_excerpt,
             inference_excerpt=inference_excerpt,
+            participation_excerpt=participation_excerpt,
+            eval_workspace_excerpt=eval_workspace_excerpt,
+            inference_workspace_excerpt=inference_workspace_excerpt,
             config=config,
         ),
         encoding="utf-8",
@@ -122,11 +133,31 @@ def _excerpt(path: Path, *, lines: int) -> str:
     return "\n".join(content[:lines]).strip()
 
 
+def _section_excerpt(path: Path, *, heading: str, lines: int) -> str:
+    content = path.read_text(encoding="utf-8").splitlines()
+    try:
+        start_index = content.index(heading) + 1
+    except ValueError:
+        return ""
+    section_lines: list[str] = []
+    for line in content[start_index:]:
+        if line.startswith("## "):
+            break
+        if line.strip():
+            section_lines.append(line)
+        if len(section_lines) >= lines:
+            break
+    return "\n".join(section_lines).strip()
+
+
 def _index_html(
     *,
     smoke_excerpt: str,
     eval_excerpt: str,
     inference_excerpt: str,
+    participation_excerpt: str,
+    eval_workspace_excerpt: str,
+    inference_workspace_excerpt: str,
     config: MicrositeConfig,
 ) -> str:
     repo_action = (
@@ -173,8 +204,8 @@ def _index_html(
           control plane underneath them, and a newcomer path that works for both humans and agents.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#evidence">See the evidence</a>
-          <a class="button secondary" href="#why">Why this matters</a>
+          <a class="button primary" href="#start">Pick a seeded effort</a>
+          <a class="button secondary" href="./evidence/join-with-ai.html">Join with Claude or Codex</a>
           {repo_action}
         </div>
       </section>
@@ -190,13 +221,55 @@ def _index_html(
           </ul>
         </div>
         <div>
-          <h2>What you can do here today</h2>
+          <h2>What joining means right now</h2>
           <ul>
-            <li>Inspect two seeded efforts for eval improvement and inference optimization.</li>
-            <li>Bring Claude, Codex, or your own workflow and follow the current participation path.</li>
-            <li>Run a narrow loop locally and leave behind claims, runs, and exported briefs.</li>
-            <li>See exactly what is real today and what is still a proxy contribution path.</li>
+            <li>Pick a seeded effort: `Eval Sprint` or `Inference Sprint`.</li>
+            <li>Join it with Claude, Codex, or your own workflow.</li>
+            <li>Leave behind visible contribution state: workspace, claim/reproduction, and brief.</li>
+            <li>When it works, you should be able to hand the same path to the next person or agent.</li>
           </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="start">
+        <h2>Join with one command</h2>
+        <p>
+          If you want the shortest current path, copy this and run it. It starts from the public
+          repo, verifies the public ingress flow, and ends with a visible record of what your run
+          contributed.
+        </p>
+        <p class="command">{escape(DEFAULT_JOIN_COMMAND)}</p>
+        <p class="footer-note">
+          The current loop is still local and proxy-based, but joining should still leave behind
+          real lineage, claims, reproductions, and an inspectable brief that someone else can pick
+          up from.
+        </p>
+      </section>
+
+      <section class="panel grid two">
+        <div>
+          <h2>What becomes visible when you participate</h2>
+          <ul>
+            <li>A workspace attached to a seeded effort.</li>
+            <li>A run history and a claim or reproduction tied to that workspace.</li>
+            <li>An exported brief other people and agents can inspect.</li>
+            <li>In v1 this visibility is effort-centric. It is not a profile or reputation system yet.</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Latest visible participation outcome</h2>
+          <pre>{escape(participation_excerpt)}</pre>
+        </div>
+      </section>
+
+      <section class="panel grid two">
+        <div>
+          <h2>Visible in Eval Sprint now</h2>
+          <pre>{escape(eval_workspace_excerpt)}</pre>
+        </div>
+        <div>
+          <h2>Visible in Inference Sprint now</h2>
+          <pre>{escape(inference_workspace_excerpt)}</pre>
         </div>
       </section>
 
@@ -237,7 +310,7 @@ def _index_html(
 
       <section id="inspect" class="panel grid two">
         <div>
-          <h2>Inspect this yourself</h2>
+          <h2>Read the exact path</h2>
           <ul class="link-list">
             <li><a href="./evidence/join-with-ai.html">Read the AI-agent onboarding brief</a></li>
             <li><a href="./evidence/first-user-smoke.html">Read the first-user smoke report</a></li>
@@ -249,13 +322,13 @@ def _index_html(
         <div>
           <h2>What this page is for</h2>
           <p>
-            This page is the public front door: a concise explanation, an evidence surface, and a
-            join brief for the current narrow path.
+            This page is the public front door: join a seeded effort, leave behind inspectable
+            contribution state, and make it easy for the next human or agent to continue.
           </p>
           <p>
-            It is not a sign-up wall, a command center, or a profile product. If the idea is
-            interesting, the next step is to inspect the evidence and hand the public links to an
-            agent or try the loop yourself.
+            It is not a sign-up wall, a command center, or a profile product. The next step is to
+            run the path yourself or hand the public links to an agent and ask it to help you join
+            the current effort network.
           </p>
         </div>
       </section>

@@ -1,7 +1,7 @@
 # Join OpenIntention With an AI Agent
 
 If you arrived from `https://openintention.io` or a social post, this is the shortest honest
-path to participation.
+path to joining the current OpenIntention effort network.
 
 This is not just a convenience document. It reflects the intended onboarding surface:
 many newcomers will point Claude, Codex, or another agent at the public links and ask it to
@@ -10,6 +10,21 @@ actors inside the system.
 
 For the full newcomer path and success criteria, see:
 - `docs/canonical-ingress-flow.md`
+
+## What "join" means right now
+
+To a newcomer this should feel like one task:
+- pick a seeded effort
+- ask an agent or your own workflow to help you join it
+- leave behind a visible workspace, claim/reproduction, and inspectable brief
+- be able to hand the same public path to the next human or agent
+
+Internally we still track this as:
+- `onboarded`
+- `joined`
+- `participated`
+
+But the public experience should feel like a single successful join flow, not a taxonomy lesson.
 
 ## What OpenIntention is and is not
 
@@ -54,6 +69,8 @@ Then do the narrow canonical participation path:
 3. fetch the resulting publication output
 4. summarize whether I became onboarded, joined, and participated
 5. summarize what claim was touched and what I should inspect next
+6. be explicit about what visible record of my participation now exists
+7. tell me what I should hand to the next human or agent if I want to invite them in
 
 If the repo already contains a public-ingress smoke command, prefer that command first.
 ```

@@ -9,9 +9,18 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     eval_brief = repo_root / "eval.md"
     inference_brief = repo_root / "inference.md"
     join_with_ai = repo_root / "join-with-ai.md"
-    smoke_report.write_text("# First User Smoke Report\nline\n", encoding="utf-8")
-    eval_brief.write_text("# Effort: Eval Sprint\nline\n", encoding="utf-8")
-    inference_brief.write_text("# Effort: Inference Sprint\nline\n", encoding="utf-8")
+    smoke_report.write_text(
+        "# First User Smoke Report\n\n## Participation Outcome\n- Joined: workspace-1\n- Participated: claim-1\n",
+        encoding="utf-8",
+    )
+    eval_brief.write_text(
+        "# Effort: Eval Sprint\n\n## Active Workspaces\n- `eval-workspace`\n",
+        encoding="utf-8",
+    )
+    inference_brief.write_text(
+        "# Effort: Inference Sprint\n\n## Active Workspaces\n- `inference-workspace`\n",
+        encoding="utf-8",
+    )
     join_with_ai.write_text("# Join With an AI Agent\nline\n", encoding="utf-8")
 
     output_dir = repo_root / "dist"
@@ -30,19 +39,25 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Shared research needs shared memory" in html
-    assert "What you can do here today" in html
+    assert "What joining means right now" in html
+    assert "Join with one command" in html
     assert "What is real today" in html
     assert "Not there yet" in html
-    assert "Bring Claude, Codex, or your own workflow" in html
+    assert "Join it with Claude, Codex, or your own workflow" in html
     assert "not a live peer-to-peer mesh or hosted shared network yet" in html
     assert "Full smoke report" in html
     assert "Read the AI-agent onboarding brief" in html
-    assert "Inspect this yourself" in html
+    assert "Read the exact path" in html
     assert "What this page is for" in html
     assert "not a sign-up wall, a command center, or a profile product" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/first-user-smoke.html" in html
+    assert "What becomes visible when you participate" in html
+    assert "Latest visible participation outcome" in html
+    assert "Visible in Eval Sprint now" in html
+    assert "Visible in Inference Sprint now" in html
+    assert "git clone https://github.com/openintention/research-os.git" in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "first-user-smoke.md").read_text(encoding="utf-8").startswith(
