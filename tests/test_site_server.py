@@ -169,6 +169,105 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                     "updated_at": "2026-03-11T13:47:23Z",
                 }
             ]
+        if path == "/api/v1/events":
+            if query == {"workspace_id": "workspace-beta", "limit": 10_000}:
+                return [
+                    {
+                        "event_id": "event-beta-started",
+                        "kind": "workspace.started",
+                        "occurred_at": "2026-03-11T13:47:20Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "workspace-beta",
+                        "aggregate_kind": "workspace",
+                        "actor_id": "mlx-beta",
+                        "payload": {},
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-run",
+                        "kind": "run.completed",
+                        "occurred_at": "2026-03-11T13:47:21Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "run-beta",
+                        "aggregate_kind": "run",
+                        "actor_id": "mlx-beta",
+                        "payload": {
+                            "run_id": "run-beta",
+                            "snapshot_id": "snap-beta",
+                            "metric_name": "val_bpb",
+                            "metric_value": 1.807902,
+                            "direction": "min",
+                            "status": "success",
+                        },
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-claim",
+                        "kind": "claim.asserted",
+                        "occurred_at": "2026-03-11T13:47:22Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "claim-beta",
+                        "aggregate_kind": "claim",
+                        "actor_id": "mlx-beta",
+                        "payload": {"claim_id": "claim-beta"},
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-repro",
+                        "kind": "claim.reproduced",
+                        "occurred_at": "2026-03-11T13:47:23Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "claim-beta",
+                        "aggregate_kind": "claim",
+                        "actor_id": "mlx-beta",
+                        "payload": {"claim_id": "claim-beta"},
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-adopt",
+                        "kind": "adoption.recorded",
+                        "occurred_at": "2026-03-11T13:47:24Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "claim-beta",
+                        "aggregate_kind": "claim",
+                        "actor_id": "mlx-beta",
+                        "payload": {"claim_id": "claim-beta"},
+                        "tags": {},
+                    },
+                ]
+            if query == {"workspace_id": "workspace-alpha", "limit": 10_000}:
+                return [
+                    {
+                        "event_id": "event-alpha-started",
+                        "kind": "workspace.started",
+                        "occurred_at": "2026-03-11T13:47:19Z",
+                        "workspace_id": "workspace-alpha",
+                        "aggregate_id": "workspace-alpha",
+                        "aggregate_kind": "workspace",
+                        "actor_id": "mlx-alpha",
+                        "payload": {},
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-alpha-run",
+                        "kind": "run.completed",
+                        "occurred_at": "2026-03-11T13:47:20Z",
+                        "workspace_id": "workspace-alpha",
+                        "aggregate_id": "run-alpha",
+                        "aggregate_kind": "run",
+                        "actor_id": "mlx-alpha",
+                        "payload": {
+                            "run_id": "run-alpha",
+                            "snapshot_id": "snap-alpha",
+                            "metric_name": "val_bpb",
+                            "metric_value": 1.812345,
+                            "direction": "min",
+                            "status": "success",
+                        },
+                        "tags": {},
+                    },
+                ]
+            raise AssertionError(query)
         if path == "/api/v1/frontiers/val_bpb/Apple-Silicon-MLX":
             assert query == {"budget_seconds": 300}
             return {
@@ -208,7 +307,20 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "Best current result" in response.text
     assert "Latest claim signal" in response.text
     assert "Best next move" in response.text
+    assert "Compounding proof" in response.text
+    assert "Visible work is stacking up on this effort" in response.text
+    assert "2 contributors" in response.text
+    assert "2 visible handoffs" in response.text
+    assert "2 successful runs" in response.text
+    assert "1 claim signal" in response.text
+    assert "1 reproduction" in response.text
+    assert "1 adoption" in response.text
+    assert "Best-so-far progression" in response.text
+    assert "Starting point" in response.text
+    assert "New best #1" in response.text
+    assert "Latest public handoff" in response.text
     assert "Recent handoffs" in response.text
+    assert "Work the next person can continue" in response.text
     assert "mlx-beta" in response.text
     assert "Left behind 1 run, 1 claim, 1 reproduction, and 1 adoption" in response.text
     assert "/api/v1/publications/workspaces/workspace-beta/discussion" in response.text
@@ -247,6 +359,8 @@ def test_site_server_prefers_private_fetch_base_without_leaking_it(monkeypatch, 
         if path == "/api/v1/workspaces":
             return []
         if path == "/api/v1/claims":
+            return []
+        if path == "/api/v1/events":
             return []
         if path == "/api/v1/frontiers/val_bpb/A100":
             return {"members": []}

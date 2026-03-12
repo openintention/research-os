@@ -1070,6 +1070,58 @@ li {
   gap: var(--space-5);
 }
 
+.proof-surface-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.14fr) minmax(320px, 0.86fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.proof-stat-pills {
+  margin-bottom: var(--space-4);
+}
+
+.progress-ladder {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.progress-step,
+.progress-step-empty {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(7, 13, 20, 0.68);
+  padding: 16px 18px;
+}
+
+.progress-step {
+  display: grid;
+  gap: 6px;
+}
+
+.progress-step strong {
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.progress-step span,
+.progress-step-empty {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.progress-step-kicker {
+  color: var(--accent-2);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: "IBM Plex Mono", monospace;
+}
+
 .result-card,
 .result-summary-card {
   min-height: 100%;
@@ -1242,6 +1294,7 @@ a {
   .join-layout,
   .proof-result-header,
   .proof-result-grid,
+  .proof-surface-grid,
   .handoff-grid,
   .technical-footer-copy {
     grid-template-columns: 1fr;
