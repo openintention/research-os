@@ -393,13 +393,13 @@ def _index_html(
 
       <section class="panel proof-result-section">
         <div class="proof-result-header">
-          <div>
+          <div class="proof-result-copy">
             <div class="proof-label">Proof and result</div>
             <h2>What your first run leaves behind</h2>
+            <p class="section-lede">
+              A successful join should leave behind visible work, not another local-only result.
+            </p>
           </div>
-          <p class="section-lede">
-            A successful join should leave behind visible work, not another local-only result.
-          </p>
         </div>
         <div class="proof-result-grid">
           <div class="shell-card result-card">
@@ -806,6 +806,8 @@ li {
   margin: 0;
   max-height: none;
   color: #d7e8ff;
+  padding: 18px 20px;
+  line-height: 1.56;
 }
 
 .button {
@@ -850,7 +852,7 @@ li {
 }
 
 .section-lede {
-  margin-bottom: var(--space-4);
+  margin: 0;
   color: #d5e1f1;
   max-width: 44rem;
 }
@@ -1056,20 +1058,26 @@ li {
 
 .proof-result-section {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .proof-result-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
-  gap: var(--space-5);
+  gap: var(--space-2);
   align-items: start;
+}
+
+.proof-result-copy {
+  display: grid;
+  gap: 8px;
+  max-width: 58rem;
 }
 
 .proof-result-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
-  gap: var(--space-5);
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .proof-surface-grid {
@@ -1131,20 +1139,40 @@ li {
 
 .result-card {
   display: grid;
-  gap: var(--space-3);
+  gap: 14px;
+  padding: 16px 16px 18px;
+}
+
+.result-card .shell-bar {
+  padding-bottom: 10px;
+}
+
+.result-card .proof-label {
+  margin-top: 2px;
 }
 
 .counts-list {
   list-style: none;
   padding-left: 0;
   display: grid;
-  gap: var(--space-4);
-  margin-bottom: 0;
+  gap: 0;
+  margin: 0;
 }
 
 .counts-list li {
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.counts-list li:first-child {
+  padding-top: 6px;
+}
+
+.counts-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .counts-list strong {
@@ -1157,8 +1185,13 @@ li {
 
 .result-summary-card {
   display: grid;
-  gap: var(--space-3);
+  gap: 18px;
   align-content: start;
+  padding: 22px 22px 24px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: rgba(18, 27, 41, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .effort-summary-grid {
@@ -1286,8 +1319,17 @@ a {
 }
 
 .footer-note {
+  margin: 0;
   color: #d2dded;
   font-weight: 500;
+  font-size: 0.98rem;
+  line-height: 1.52;
+}
+
+.result-card .footer-note {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  max-width: 42ch;
 }
 
 @media (max-width: 900px) {
@@ -1320,6 +1362,11 @@ a {
 
   .join-command-stack {
     padding: 20px;
+  }
+
+  .result-card,
+  .result-summary-card {
+    padding: 18px;
   }
 
   .effort-selector {
