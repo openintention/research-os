@@ -727,8 +727,8 @@ def _join_brief(effort: dict[str, object]) -> str:
     tags = effort.get("tags", {})
     if explicit := tags.get("join_brief_path"):
         return str(explicit)
-    if tags.get("external_harness") == "autoresearch-mlx":
-        return "README.md#external-harness-compounding-proof"
+    if tags.get("external_harness") == "mlx-history":
+        return "README.md#external-mlx-compounding-proof"
     return "docs/seeded-efforts.md"
 
 
@@ -739,10 +739,10 @@ def _effort_state_label(effort) -> dict[str, str]:
             "label": "Historical proof run",
             "description": "This proof window remains inspectable in the immutable event log, but new proof work should continue on its successor effort.",
         }
-    if tags.get("external_harness") == "autoresearch-mlx":
+    if tags.get("external_harness") == "mlx-history":
         return {
             "label": "Live external-harness proof",
-            "description": "Real kept-history from autoresearch-mlx is compounding through adoption in the hosted shared control plane.",
+            "description": "Real kept-history from an external MLX line is compounding through adoption in the hosted shared control plane.",
         }
     if tags.get("effort_type") == "inference":
         return {

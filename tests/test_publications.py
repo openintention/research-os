@@ -408,17 +408,17 @@ def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
     effort_id = client.post(
         "/api/v1/efforts",
         json={
-            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+            "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
             "objective": "val_bpb",
             "platform": "Apple-Silicon-MLX",
             "budget_seconds": 300,
-            "summary": "Compounding external harness effort.",
-            "tags": {
-                "effort_type": "autoresearch_mlx",
-                "join_brief_path": "README.md#external-harness-compounding-proof",
-                "join_command": (
-                    "python3 scripts/run_autoresearch_mlx_compounding_smoke.py "
-                    "--repo-path <path_to_autoresearch_mlx> "
+                "summary": "Compounding external harness effort.",
+                "tags": {
+                    "effort_type": "mlx_history",
+                    "join_brief_path": "README.md#external-mlx-compounding-proof",
+                    "join_command": (
+                        "python3 scripts/run_mlx_history_compounding_smoke.py "
+                        "--repo-path <path_to_mlx_history> "
                     "--base-url https://openintention-api-production.up.railway.app"
                 ),
             },
@@ -428,14 +428,14 @@ def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
     response = client.get(f"/api/v1/publications/efforts/{effort_id}")
     assert response.status_code == 200
     body = response.json()["body"]
-    assert "README.md#external-harness-compounding-proof" in body
-    assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in body
+    assert "README.md#external-mlx-compounding-proof" in body
+    assert "python3 scripts/run_mlx_history_compounding_smoke.py" in body
     assert "clients.tiny_loop.run" not in body
 
 
-def test_effort_overview_publication_infers_autoresearch_brief_for_legacy_efforts(tmp_path):
+def test_effort_overview_publication_infers_mlx_history_brief_for_legacy_efforts(tmp_path):
     settings = Settings(
-        db_path=str(tmp_path / "publication-effort-legacy-autoresearch.db"),
+        db_path=str(tmp_path / "publication-effort-legacy-mlx-history.db"),
         artifact_root=str(tmp_path / "artifacts"),
     )
     app = create_app(settings)
@@ -444,15 +444,15 @@ def test_effort_overview_publication_infers_autoresearch_brief_for_legacy_effort
     effort_id = client.post(
         "/api/v1/efforts",
         json={
-            "name": "Legacy Autoresearch Effort",
+            "name": "Legacy MLX History Effort",
             "objective": "val_bpb",
             "platform": "Apple-Silicon-MLX",
             "budget_seconds": 300,
             "summary": "Legacy effort missing a brief override tag.",
             "tags": {
-                "effort_type": "autoresearch_mlx",
-                "external_harness": "autoresearch-mlx",
-                "join_command": "python3 scripts/run_autoresearch_mlx_compounding_smoke.py --repo-path /tmp/autoresearch-mlx --base-url http://testserver",
+                "effort_type": "mlx_history",
+                "external_harness": "mlx-history",
+                "join_command": "python3 scripts/run_mlx_history_compounding_smoke.py --repo-path /tmp/mlx-history --base-url http://testserver",
             },
         },
     ).json()["effort_id"]
@@ -460,8 +460,8 @@ def test_effort_overview_publication_infers_autoresearch_brief_for_legacy_effort
     response = client.get(f"/api/v1/publications/efforts/{effort_id}")
     assert response.status_code == 200
     body = response.json()["body"]
-    assert "README.md#external-harness-compounding-proof" in body
-    assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in body
+    assert "README.md#external-mlx-compounding-proof" in body
+    assert "python3 scripts/run_mlx_history_compounding_smoke.py" in body
     assert "docs/seeded-efforts.md" not in body
 
 
@@ -476,15 +476,15 @@ def test_effort_overview_publication_marks_historical_proof_runs(tmp_path):
     effort_id = client.post(
         "/api/v1/efforts",
         json={
-            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+            "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
             "objective": "val_bpb",
             "platform": "Apple-Silicon-MLX",
             "budget_seconds": 300,
             "summary": "Historical proof run.",
             "tags": {
-                "external_harness": "autoresearch-mlx",
+                "external_harness": "mlx-history",
                 "public_proof": "true",
-                "proof_series": "autoresearch-mlx-apple-silicon-300",
+                "proof_series": "mlx-history-apple-silicon-300",
                 "proof_version": "1",
             },
         },
@@ -492,15 +492,15 @@ def test_effort_overview_publication_marks_historical_proof_runs(tmp_path):
     successor_id = client.post(
         "/api/v1/efforts",
         json={
-            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon (proof v2)",
+            "name": "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)",
             "objective": "val_bpb",
             "platform": "Apple-Silicon-MLX",
             "budget_seconds": 300,
             "summary": "Current proof run.",
             "tags": {
-                "external_harness": "autoresearch-mlx",
+                "external_harness": "mlx-history",
                 "public_proof": "true",
-                "proof_series": "autoresearch-mlx-apple-silicon-300",
+                "proof_series": "mlx-history-apple-silicon-300",
                 "proof_version": "2",
             },
         },
@@ -518,7 +518,7 @@ def test_effort_overview_publication_marks_historical_proof_runs(tmp_path):
                 },
                 "tags": {
                     "public_proof": "true",
-                    "proof_series": "autoresearch-mlx-apple-silicon-300",
+                    "proof_series": "mlx-history-apple-silicon-300",
                     "proof_version": "1",
                     "proof_status": "historical",
                 },

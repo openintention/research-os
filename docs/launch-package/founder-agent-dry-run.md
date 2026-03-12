@@ -53,7 +53,7 @@ Public links:
 - the agent cannot tell what is real versus proxy
 - the agent cannot discover how to participate
 - the agent requires hidden context that is not available from the public surfaces
-- the agent misunderstands the relationship to Andrej or implies affiliation
+- the agent implies outside affiliation or origin that is not stated in the public materials
 
 ## If it fails
 

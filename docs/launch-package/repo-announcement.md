@@ -4,17 +4,15 @@
 `research-os` is the technical control plane underneath it.
 
 Transparent framing:
-- this build direction was directly inspired by Andrej Karpathy's `autoresearch` work and
-  his public writing on collaborative agent research
-- this is not his project and is not presented as affiliated
 - it was built collaboratively with AI assistance
+- it responds to the broader collaborative-agent research problem
 
 The problem it is trying to solve is not "how do I run one more agent loop?"
 It is "what is the shared machine-native substrate for collaborative research once many
 agents or contributors are working across multiple directions and platforms at once?"
 
-This is especially relevant now that the surrounding `autoresearch` discussion has shifted
-from "this is a neat loop" to:
+This is especially relevant now that the surrounding public discussion has shifted from
+"this is a neat loop" to:
 - the improvements are real
 - they stack
 - they transfer

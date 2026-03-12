@@ -72,12 +72,12 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
             },
             {
                 "effort_id": "effort-2",
-                "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+                "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
                 "objective": "val_bpb",
                 "platform": "Apple-Silicon-MLX",
                 "budget_seconds": 300,
                 "workspace_ids": ["workspace-2", "workspace-3"],
-                "tags": {"external_harness": "autoresearch-mlx"},
+                "tags": {"external_harness": "mlx-history"},
                 "successor_effort_id": None,
                 "updated_at": "2026-03-11T16:00:00Z",
             },
@@ -117,14 +117,14 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
             return [
                 {
                     "effort_id": "effort-mlx",
-                    "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+                    "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
                     "objective": "val_bpb",
                     "platform": "Apple-Silicon-MLX",
                     "budget_seconds": 300,
                     "workspace_ids": ["workspace-alpha", "workspace-beta"],
                     "tags": {
-                        "external_harness": "autoresearch-mlx",
-                        "join_command": "python3 scripts/run_autoresearch_mlx_compounding_smoke.py --repo-path /tmp/autoresearch-mlx --base-url https://api.example.com",
+                        "external_harness": "mlx-history",
+                        "join_command": "python3 scripts/run_mlx_history_compounding_smoke.py --repo-path /tmp/mlx-history --base-url https://api.example.com",
                     },
                     "successor_effort_id": None,
                     "updated_at": "2026-03-11T16:00:00Z",
@@ -135,7 +135,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
             return [
                 {
                     "workspace_id": "workspace-beta",
-                    "name": "autoresearch-mlx-beta-5efc7aa",
+                    "name": "mlx-history-beta-5efc7aa",
                     "actor_id": "mlx-beta",
                     "participant_role": "verifier",
                     "run_ids": ["run-beta"],
@@ -149,7 +149,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                 },
                 {
                     "workspace_id": "workspace-alpha",
-                    "name": "autoresearch-mlx-alpha-4161af3",
+                    "name": "mlx-history-alpha-4161af3",
                     "actor_id": "mlx-alpha",
                     "participant_role": "contributor",
                     "run_ids": ["run-alpha"],
@@ -310,10 +310,10 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
 
     response = client.get("/efforts/effort-mlx")
     assert response.status_code == 200
-    assert "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon" in response.text
+    assert "MLX History Sprint: improve val_bpb on Apple Silicon" in response.text
     assert "Live external-harness proof" in response.text
-    assert "README.md#external-harness-compounding-proof" in response.text
-    assert "python3 scripts/run_autoresearch_mlx_compounding_smoke.py" in response.text
+    assert "README.md#external-mlx-compounding-proof" in response.text
+    assert "python3 scripts/run_mlx_history_compounding_smoke.py" in response.text
     assert "Best current result" in response.text
     assert "Latest claim signal" in response.text
     assert "Best next move" in response.text
@@ -405,15 +405,15 @@ def test_site_server_splits_current_and_historical_proof_efforts(monkeypatch, tm
         return [
             {
                 "effort_id": "effort-current",
-                "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon (proof v2)",
+                "name": "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)",
                 "objective": "val_bpb",
                 "platform": "Apple-Silicon-MLX",
                 "budget_seconds": 300,
                 "workspace_ids": ["workspace-2"],
                 "tags": {
-                    "external_harness": "autoresearch-mlx",
+                    "external_harness": "mlx-history",
                     "public_proof": "true",
-                    "proof_series": "autoresearch-mlx-apple-silicon-300",
+                    "proof_series": "mlx-history-apple-silicon-300",
                     "proof_version": "2",
                 },
                 "successor_effort_id": None,
@@ -421,15 +421,15 @@ def test_site_server_splits_current_and_historical_proof_efforts(monkeypatch, tm
             },
             {
                 "effort_id": "effort-old",
-                "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+                "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
                 "objective": "val_bpb",
                 "platform": "Apple-Silicon-MLX",
                 "budget_seconds": 300,
                 "workspace_ids": ["workspace-1"],
                 "tags": {
-                    "external_harness": "autoresearch-mlx",
+                    "external_harness": "mlx-history",
                     "public_proof": "true",
-                    "proof_series": "autoresearch-mlx-apple-silicon-300",
+                    "proof_series": "mlx-history-apple-silicon-300",
                     "proof_version": "1",
                     "proof_status": "historical",
                 },

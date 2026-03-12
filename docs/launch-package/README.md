@@ -11,8 +11,8 @@ Naming split:
 
 The first public announcement should be a founder post in Ali's own voice.
 
-Then use a shorter reply or quote-reply on Andrej Karpathy's post about massively
-collaborative agent research for distribution.
+Then use a shorter reply or quote-reply on the broader collaborative-agent discussion
+for distribution.
 
 Why:
 - it lets OpenIntention speak in its own voice first

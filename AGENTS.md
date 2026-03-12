@@ -49,7 +49,7 @@ The product is a control plane with:
 ## Planning and tracking
 Linear is the canonical planning system for this repository.
 - Team: ANJ
-- Context/workstream: Andrej
+- Context/workstream: OpenIntention
 - Use the Linear issue ID (`ANJ-*`) as the canonical task and discussion reference.
 - Keep backlog/spec IDs (`OS-*`) as references, not as canonical issue IDs.
 - Linear ticket titles should use the plain task name without the backlog ID prefix.
@@ -76,7 +76,7 @@ Linear is the canonical planning system for this repository.
 - planner policies per objective family
 - subscription / notification layer
 - GitHub publisher
-- Rama event-store adapter
+- distributed substrate adapter
 
 ## Avoid
 

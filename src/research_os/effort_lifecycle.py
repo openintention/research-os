@@ -10,7 +10,7 @@ PROOF_VERSION_PATTERN = re.compile(r"^(?P<base>.+?) \(proof v(?P<version>\d+)\)$
 
 def is_public_proof_effort(effort: EffortView) -> bool:
     tags = effort.tags
-    return tags.get("public_proof") == "true" or tags.get("external_harness") == "autoresearch-mlx"
+    return tags.get("public_proof") == "true" or tags.get("external_harness") == "mlx-history"
 
 
 def is_historical_proof_effort(effort: EffortView) -> bool:

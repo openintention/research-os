@@ -4,9 +4,9 @@
 
 This post is exactly what pushed me to build `OpenIntention`.
 
-`autoresearch` made the single-agent loop feel real. What I wanted next was the control
-plane for shared research efforts: lineage, claims, reproductions, adoptions, and
-platform-specific frontiers.
+A small, real research loop made the missing coordination layer feel obvious. What I wanted
+next was the control plane for shared research efforts: lineage, claims, reproductions,
+adoptions, and platform-specific frontiers.
 
 I've been building that layer with AI assistance in `research-os`.
 

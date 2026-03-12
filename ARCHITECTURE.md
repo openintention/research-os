@@ -62,15 +62,15 @@ SQLite here is a **bootstrap substrate**, not the final destination.
 The abstractions are chosen so the event store can later be backed by:
 - Postgres + projection workers
 - Kafka + materializers
-- Rama depots + PStates + query topologies
+- a distributed event substrate + indexed query state
 
-## Rama mapping
+## Distributed substrate mapping
 
-The future Rama path is:
+The future distributed path is:
 
-- event log -> Rama depot(s)
-- projections -> PStates
-- planner queries -> query topologies
+- event log -> append-only distributed event substrate
+- projections -> indexed query state
+- planner queries -> query services or materialized reads
 - publication pipeline -> stream or microbatch topology
 - heterogeneous execution -> supervisor labels / worker capability routing
 
@@ -100,4 +100,4 @@ That is enough to support:
 3. Add subscriptions and notification fan-out.
 4. Add GitHub publisher that emits PR-like and Discussion-like views.
 5. Add lease tables and worker heartbeats.
-6. Add a Rama-backed adapter with the same logical interface.
+6. Add a distributed adapter with the same logical interface.

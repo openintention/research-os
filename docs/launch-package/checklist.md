@@ -15,9 +15,8 @@ Before posting publicly:
 - confirm `apps/site/dist/assets/favicon.svg` exists
 - confirm the founder-post copy still matches the current repo reality
 - confirm the transparency line is present:
-  - inspired by Andrej's work
   - built collaboratively with AI assistance
-  - not affiliated with Andrej
+  - direct about what is early vs already live
 - confirm the honesty line is present:
   - control plane is real
   - proxy contribution loops are real

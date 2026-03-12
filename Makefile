@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-autoresearch-mlx smoke-production backup-runtime restore-runtime backup-production build-microsite
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-mlx-history smoke-production backup-runtime restore-runtime backup-production build-microsite
 
 PYTHON ?= python3
 
@@ -47,8 +47,8 @@ smoke-shared-participation:
 smoke-nightly-window:
 	$(PYTHON) scripts/run_nightly_contribution_window_smoke.py --base-url $(BASE_URL) --site-url $(SITE_URL)
 
-smoke-autoresearch-mlx:
-	$(PYTHON) scripts/run_autoresearch_mlx_compounding_smoke.py --base-url $(BASE_URL) --repo-path $(REPO_PATH)
+smoke-mlx-history:
+	$(PYTHON) scripts/run_mlx_history_compounding_smoke.py --base-url $(BASE_URL) --repo-path $(REPO_PATH)
 
 smoke-production:
 	$(PYTHON) scripts/run_production_smoke.py --site-url $(SITE_URL) --api-base-url $(BASE_URL)
