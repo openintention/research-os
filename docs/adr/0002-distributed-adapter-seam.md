@@ -1,4 +1,4 @@
-# ADR 0002: Keep a Rama adapter seam from day one
+# ADR 0002: Keep a distributed adapter seam from day one
 
 ## Status
 Accepted
@@ -11,7 +11,8 @@ A future production control plane may want:
 - hardware-aware distributed execution
 
 ## Decision
-Define the domain model and service layer so the local event store can be replaced later.
+Define the domain model and service layer so the local event store can be replaced later by
+a distributed substrate.
 Do not leak SQLite assumptions into domain or API code.
 
 ## Consequences

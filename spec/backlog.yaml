@@ -84,11 +84,11 @@ epics:
     status: todo
     items:
       - id: OS-040
-        title: Add a Rama-backed event-store and projection adapter
+        title: Add a distributed event-store and projection adapter
         status: todo
         acceptance:
           - domain API stays unchanged
-          - docs map depot, PState, and query topology responsibilities
+          - docs map event-log, indexed-state, and query-service responsibilities
       - id: OS-041
         title: Add worker leases and heartbeats
         status: todo

@@ -13,21 +13,21 @@ if str(REPO_ROOT) not in sys.path:
 
 from clients.tiny_loop.api import HttpResearchOSApi  # noqa: E402
 from research_os.domain.models import EventKind  # noqa: E402
-from research_os.integrations.autoresearch_mlx import (  # noqa: E402
-    AutoresearchResult,
+from research_os.integrations.mlx_history import (  # noqa: E402
+    MlxHistoryResult,
     commit_url,
     load_results_tsv,
 )
 
-EFFORT_NAME = "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon"
+EFFORT_NAME = "MLX History Sprint: improve val_bpb on Apple Silicon"
 EFFORT_OBJECTIVE = "val_bpb"
 EFFORT_PLATFORM = "Apple-Silicon-MLX"
 EFFORT_BUDGET_SECONDS = 300
 EFFORT_SUMMARY = (
-    "Shared autoresearch-mlx effort for compounding Apple Silicon val_bpb improvements "
+    "Shared MLX history effort for compounding Apple Silicon val_bpb improvements "
     "through adoption, continuation, and visible frontier progress."
 )
-DEFAULT_REPO_URL = "https://github.com/trevin-creator/autoresearch-mlx"
+DEFAULT_REPO_URL = "https://github.com/example/mlx-history"
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +44,7 @@ class ImportedContribution:
 
 
 @dataclass(frozen=True, slots=True)
-class CompoundingAutoresearchResult:
+class CompoundingMlxHistoryResult:
     base_url: str
     effort_id: str
     effort_name: str
@@ -60,7 +60,7 @@ class CompoundingAutoresearchResult:
     effort_overview_excerpt: str
 
 
-def run_autoresearch_mlx_compounding_smoke(
+def run_mlx_history_compounding_smoke(
     *,
     base_url: str,
     repo_path: str,
@@ -83,7 +83,7 @@ def run_autoresearch_mlx_compounding_smoke(
         api,
         effort_id=effort["effort_id"],
         actor_id="mlx-alpha",
-        workspace_name="autoresearch-mlx-alpha",
+        workspace_name="mlx-history-alpha",
         baseline=baseline,
         candidate=alpha_result,
         repo_url=repo_url,
@@ -92,7 +92,7 @@ def run_autoresearch_mlx_compounding_smoke(
         api,
         effort_id=effort["effort_id"],
         actor_id="mlx-beta",
-        workspace_name="autoresearch-mlx-beta",
+        workspace_name="mlx-history-beta",
         baseline=alpha_result,
         candidate=beta_result,
         repo_url=repo_url,
@@ -119,7 +119,7 @@ def run_autoresearch_mlx_compounding_smoke(
     )
     recommendation = planner["recommendations"][0]
 
-    result = CompoundingAutoresearchResult(
+    result = CompoundingMlxHistoryResult(
         base_url=normalized_base_url,
         effort_id=effort["effort_id"],
         effort_name=effort["name"],
@@ -135,17 +135,17 @@ def run_autoresearch_mlx_compounding_smoke(
         effort_overview_excerpt=_excerpt(publication["body"], lines=28),
     )
 
-    report_path = output_root / "autoresearch-mlx-compounding-smoke.md"
+    report_path = output_root / "mlx-history-compounding-smoke.md"
     report_path.write_text(build_compounding_report(result), encoding="utf-8")
     return report_path
 
 
-def build_compounding_report(result: CompoundingAutoresearchResult) -> str:
+def build_compounding_report(result: CompoundingMlxHistoryResult) -> str:
     workspace_lines = [f"- `{workspace_id}`" for workspace_id in result.workspace_ids] or ["- none"]
     claim_lines = [f"- `{claim_id}`" for claim_id in result.claim_ids] or ["- none"]
     return "\n".join(
         [
-            "# Autoresearch MLX Compounding Smoke Report",
+            "# MLX History Compounding Smoke Report",
             "",
             "## Shared Control Plane",
             f"- Base URL: `{result.base_url}`",
@@ -184,7 +184,7 @@ def build_compounding_report(result: CompoundingAutoresearchResult) -> str:
             f"- Inputs: `{json.dumps(result.planner_inputs, sort_keys=True)}`",
             "",
             "## Outcome",
-            "- A real external autoresearch-class harness history published into the shared control plane.",
+            "- A real external MLX history published into the shared control plane.",
             "- The later contribution explicitly adopted earlier visible work instead of landing as an isolated run.",
             "- The next participant can continue from the shared frontier, claims, and planner recommendation.",
         ]
@@ -193,10 +193,10 @@ def build_compounding_report(result: CompoundingAutoresearchResult) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Import autoresearch-mlx history into a shared effort and prove compounding continuation."
+        description="Import MLX history into a shared effort and prove compounding continuation."
     )
     parser.add_argument("--base-url", required=True, help="Hosted API base URL for the shared control plane.")
-    parser.add_argument("--repo-path", required=True, help="Path to a local clone of autoresearch-mlx.")
+    parser.add_argument("--repo-path", required=True, help="Path to a local clone of MLX history.")
     parser.add_argument(
         "--repo-url",
         default=DEFAULT_REPO_URL,
@@ -204,12 +204,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--output-dir",
-        default="data/publications/launch/compounding-autoresearch-mlx",
+        default="data/publications/launch/compounding-mlx-history",
         help="Directory to write the compounding proof markdown report into.",
     )
     args = parser.parse_args()
 
-    report_path = run_autoresearch_mlx_compounding_smoke(
+    report_path = run_mlx_history_compounding_smoke(
         base_url=args.base_url,
         repo_path=args.repo_path,
         repo_url=args.repo_url,
@@ -233,16 +233,16 @@ def _ensure_effort(api: HttpResearchOSApi, *, base_url: str) -> dict[str, object
             "summary": EFFORT_SUMMARY,
             "actor_id": "openintention-pm",
             "tags": {
-                "effort_type": "autoresearch_mlx",
-                "external_harness": "autoresearch-mlx",
+                "effort_type": "mlx_history",
+                "external_harness": "mlx-history",
                 "seeded": "true",
                 "public_proof": "true",
-                "proof_series": "autoresearch-mlx-apple-silicon-300",
+                "proof_series": "mlx-history-apple-silicon-300",
                 "proof_version": "1",
-                "join_brief_path": "README.md#external-harness-compounding-proof",
+                "join_brief_path": "README.md#external-mlx-compounding-proof",
                 "join_command": (
-                    "python3 scripts/run_autoresearch_mlx_compounding_smoke.py "
-                    f"--repo-path <path_to_autoresearch_mlx> --base-url {base_url}"
+                    "python3 scripts/run_mlx_history_compounding_smoke.py "
+                    f"--repo-path <path_to_mlx_history> --base-url {base_url}"
                 ),
             },
         }
@@ -257,8 +257,8 @@ def _import_contribution(
     effort_id: str,
     actor_id: str,
     workspace_name: str,
-    baseline: AutoresearchResult,
-    candidate: AutoresearchResult,
+    baseline: MlxHistoryResult,
+    candidate: MlxHistoryResult,
     repo_url: str,
 ) -> ImportedContribution:
     workspace_label = f"{workspace_name}-{candidate.commit}"
@@ -283,10 +283,10 @@ def _import_contribution(
             "budget_seconds": EFFORT_BUDGET_SECONDS,
             "effort_id": effort_id,
             "description": (
-                f"Imported autoresearch-mlx result `{candidate.commit}` building on "
+                f"Imported MLX history result `{candidate.commit}` building on "
                 f"`{baseline.commit}`."
             ),
-            "tags": {"external_harness": "autoresearch-mlx", "imported": "true"},
+            "tags": {"external_harness": "mlx-history", "imported": "true"},
             "actor_id": actor_id,
         }
     )
@@ -312,7 +312,7 @@ def _import_contribution(
                 "git_ref": baseline.commit,
                 "notes": baseline.description,
             },
-            "tags": {"external_harness": "autoresearch-mlx", "commit": baseline.commit},
+            "tags": {"external_harness": "mlx-history", "commit": baseline.commit},
         }
     )
     api.append_event(
@@ -330,7 +330,7 @@ def _import_contribution(
                 "git_ref": candidate.commit,
                 "notes": candidate.description,
             },
-            "tags": {"external_harness": "autoresearch-mlx", "commit": candidate.commit},
+            "tags": {"external_harness": "mlx-history", "commit": candidate.commit},
         }
     )
     api.append_event(
@@ -351,10 +351,10 @@ def _import_contribution(
                 "direction": "min",
                 "status": "success",
                 "memory_gb": candidate.memory_gb,
-                "external_harness": "autoresearch-mlx",
+                "external_harness": "mlx-history",
                 "description": candidate.description,
             },
-            "tags": {"external_harness": "autoresearch-mlx", "commit": candidate.commit},
+            "tags": {"external_harness": "mlx-history", "commit": candidate.commit},
         }
     )
     api.append_event(
@@ -368,7 +368,7 @@ def _import_contribution(
                 "claim_id": claim_id,
                 "statement": (
                     f"`{candidate.description}` improved val_bpb from "
-                    f"{baseline.val_bpb:.6f} to {candidate.val_bpb:.6f} on autoresearch-mlx."
+                    f"{baseline.val_bpb:.6f} to {candidate.val_bpb:.6f} on MLX history."
                 ),
                 "claim_type": "improvement",
                 "candidate_snapshot_id": candidate_snapshot_id,
@@ -380,7 +380,7 @@ def _import_contribution(
                 "confidence": 0.7,
                 "evidence_run_ids": [run_id],
             },
-            "tags": {"external_harness": "autoresearch-mlx", "commit": candidate.commit},
+            "tags": {"external_harness": "mlx-history", "commit": candidate.commit},
         }
     )
 
@@ -431,17 +431,17 @@ def _record_adoption(
                 "subject_id": from_contribution.claim_id,
                 "from_workspace_id": from_contribution.workspace_id,
                 "reason": (
-                    "Continue the autoresearch-mlx line from the earlier kept improvement "
+                    "Continue the MLX history line from the earlier kept improvement "
                     f"`{from_contribution.candidate_commit}`."
                 ),
             },
-            "tags": {"external_harness": "autoresearch-mlx", "adopted_claim": from_contribution.claim_id},
+            "tags": {"external_harness": "mlx-history", "adopted_claim": from_contribution.claim_id},
         }
     )
     return event_id
 
 
-def _require_commit(results: list[AutoresearchResult], commit: str) -> AutoresearchResult:
+def _require_commit(results: list[MlxHistoryResult], commit: str) -> MlxHistoryResult:
     for result in results:
         if result.commit == commit:
             return result
@@ -474,8 +474,8 @@ def _build_imported_contribution_from_workspace(
     *,
     actor_id: str,
     workspace_name: str,
-    baseline: AutoresearchResult,
-    candidate: AutoresearchResult,
+    baseline: MlxHistoryResult,
+    candidate: MlxHistoryResult,
 ) -> ImportedContribution:
     workspace_id = str(workspace["workspace_id"])
     scope = workspace_id.split("-", maxsplit=1)[0]

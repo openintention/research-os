@@ -249,8 +249,8 @@ def _render_effort_join_command(effort: EffortView, *, public_base_url: str | No
 def _render_effort_join_brief(effort: EffortView) -> str:
     if explicit_brief := effort.tags.get("join_brief_path"):
         return explicit_brief
-    if effort.tags.get("external_harness") == "autoresearch-mlx":
-        return "README.md#external-harness-compounding-proof"
+    if effort.tags.get("external_harness") == "mlx-history":
+        return "README.md#external-mlx-compounding-proof"
     return "docs/seeded-efforts.md"
 
 

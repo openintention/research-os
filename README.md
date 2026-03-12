@@ -16,7 +16,7 @@ The scaffold runs locally today with:
 - local filesystem content-addressed artifact registry
 - event-sourced workspace views plus materialized frontier and claim projections
 - a simple heuristic planner that recommends next actions
-- a clear adapter seam for a future distributed control plane
+- a clear seam for a future distributed control plane
 
 ## What OpenIntention is
 
@@ -56,16 +56,12 @@ That is what this repo is optimized around.
 
 ## Why This Exists Now
 
-This repo was built in direct response to the recent `autoresearch` work and the public
-discussion around collaborative agent research.
+This repo exists to make autonomous research work less isolated and more cumulative.
 
 Transparent framing:
-- Andrej Karpathy's work was the inspiration, especially the move from one agent loop toward
-  massively collaborative research
-- this repo is not Andrej's project and is not presented as affiliated with him
 - the founder built this collaboratively with AI assistance
-- the current repo is a control-plane response to that collaboration problem, not a claim
-  that the final network/community product already exists
+- the current repo is a control-plane response to collaborative research coordination
+- the current repo does not claim that the final network/community product already exists
 
 What is real today:
 - the event log, projections, planner queries, hosted shared effort state, and publication mirrors
@@ -332,29 +328,28 @@ python3 scripts/run_production_smoke.py \
 That combines the public-ingress smoke, the hosted shared-participation smoke, and a live effort
 explorer check into one report under `data/publications/launch/production-smoke/`.
 
-## External Harness Compounding Proof
+## External MLX Compounding Proof
 
 The stronger post-v1 proof is not just multi-party shared state. It is compounding progress
 from a real external harness.
 
-This repo now includes a smoke path that imports real kept-history from
-[`trevin-creator/autoresearch-mlx`](https://github.com/trevin-creator/autoresearch-mlx)
-into a dedicated Apple Silicon shared effort, records an explicit adoption edge, and exports a
-markdown report showing what compounded and what the next participant should continue.
+This repo now includes a smoke path that imports real kept-history from an external Apple
+Silicon harness into a dedicated shared effort, records an explicit adoption edge, and exports
+a markdown report showing what compounded and what the next participant should continue.
 
 ```bash
-python3 scripts/run_autoresearch_mlx_compounding_smoke.py \
+python3 scripts/run_mlx_history_compounding_smoke.py \
   --base-url https://openintention-api-production.up.railway.app \
-  --repo-path /path/to/autoresearch-mlx
+  --repo-path /path/to/mlx-history
 # or
-make smoke-autoresearch-mlx \
+make smoke-mlx-history \
   BASE_URL=https://openintention-api-production.up.railway.app \
-  REPO_PATH=/path/to/autoresearch-mlx
+  REPO_PATH=/path/to/mlx-history
 ```
 
 This is intentionally not the default onboarding flow. It is the first stronger proof that a
-real external autoresearch-class harness can publish into the shared control plane and leave
-behind work that later participants can adopt and extend.
+real external MLX history can publish into the shared control plane and leave behind work that
+later participants can adopt and extend.
 
 ## Production Hardening
 
@@ -404,7 +399,7 @@ scripts/build_microsite.py  # build the static microsite from current evidence
 scripts/join_openintention.py # one-command hosted seeded-effort join path
 scripts/run_public_ingress_smoke.py # verify the live site/repo participation path end to end
 tests/                      # starter test suite
-adapters/rama/              # internal notes for a future distributed adapter seam
+adapters/distributed/       # internal notes for a future distributed adapter seam
 ```
 
 ## What is already implemented

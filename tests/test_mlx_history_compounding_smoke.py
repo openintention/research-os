@@ -2,28 +2,28 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.run_autoresearch_mlx_compounding_smoke import _build_imported_contribution_from_workspace
-from scripts.run_autoresearch_mlx_compounding_smoke import _find_existing_workspace
-from scripts.run_autoresearch_mlx_compounding_smoke import _record_adoption
+from scripts.run_mlx_history_compounding_smoke import _build_imported_contribution_from_workspace
+from scripts.run_mlx_history_compounding_smoke import _find_existing_workspace
+from scripts.run_mlx_history_compounding_smoke import _record_adoption
 from research_os.domain.models import EventKind
-from scripts.run_autoresearch_mlx_compounding_smoke import (
-    CompoundingAutoresearchResult,
+from scripts.run_mlx_history_compounding_smoke import (
+    CompoundingMlxHistoryResult,
     ImportedContribution,
     build_compounding_report,
 )
-from research_os.integrations.autoresearch_mlx import AutoresearchResult
+from research_os.integrations.mlx_history import MlxHistoryResult
 
 
 def test_build_compounding_report_highlights_adoption_and_next_step() -> None:
     report = build_compounding_report(
-        CompoundingAutoresearchResult(
+        CompoundingMlxHistoryResult(
             base_url="https://openintention-api-production.up.railway.app",
             effort_id="effort-mlx",
-            effort_name="Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+            effort_name="MLX History Sprint: improve val_bpb on Apple Silicon",
             alpha=ImportedContribution(
                 actor_id="mlx-alpha",
                 workspace_id="ws-alpha",
-                workspace_name="autoresearch-mlx-alpha",
+                workspace_name="mlx-history-alpha",
                 baseline_commit="383abb4",
                 candidate_commit="4161af3",
                 claim_id="claim-alpha",
@@ -34,7 +34,7 @@ def test_build_compounding_report_highlights_adoption_and_next_step() -> None:
             beta=ImportedContribution(
                 actor_id="mlx-beta",
                 workspace_id="ws-beta",
-                workspace_name="autoresearch-mlx-beta",
+                workspace_name="mlx-history-beta",
                 baseline_commit="4161af3",
                 candidate_commit="5efc7aa",
                 claim_id="claim-beta",
@@ -53,7 +53,7 @@ def test_build_compounding_report_highlights_adoption_and_next_step() -> None:
         )
     )
 
-    assert "Autoresearch MLX Compounding Smoke Report" in report
+    assert "MLX History Compounding Smoke Report" in report
     assert "mlx-beta` adopted `claim-alpha`" in report
     assert "Action: `reproduce_claim`" in report
     assert "claim-beta" in report
@@ -62,13 +62,13 @@ def test_build_compounding_report_highlights_adoption_and_next_step() -> None:
 
 def test_find_existing_workspace_matches_by_name_and_actor() -> None:
     workspaces = [
-        {"workspace_id": "ws-1", "name": "autoresearch-mlx-alpha-4161af3", "actor_id": "mlx-alpha"},
-        {"workspace_id": "ws-2", "name": "autoresearch-mlx-alpha-4161af3", "actor_id": "mlx-other"},
+        {"workspace_id": "ws-1", "name": "mlx-history-alpha-4161af3", "actor_id": "mlx-alpha"},
+        {"workspace_id": "ws-2", "name": "mlx-history-alpha-4161af3", "actor_id": "mlx-other"},
     ]
 
     workspace = _find_existing_workspace(
         workspaces,
-        name="autoresearch-mlx-alpha-4161af3",
+        name="mlx-history-alpha-4161af3",
         actor_id="mlx-alpha",
     )
 
@@ -79,15 +79,15 @@ def test_build_imported_contribution_from_workspace_reuses_existing_scope() -> N
     contribution = _build_imported_contribution_from_workspace(
         {"workspace_id": "2785c9d9-7b37-4c06-9c8b-1759d9013a2b"},
         actor_id="mlx-alpha",
-        workspace_name="autoresearch-mlx-alpha",
-        baseline=AutoresearchResult(
+        workspace_name="mlx-history-alpha",
+        baseline=MlxHistoryResult(
             commit="383abb4",
             val_bpb=2.667,
             memory_gb=26.9,
             status="keep",
             description="baseline",
         ),
-        candidate=AutoresearchResult(
+        candidate=MlxHistoryResult(
             commit="4161af3",
             val_bpb=2.533728,
             memory_gb=26.9,
@@ -123,7 +123,7 @@ def test_record_adoption_is_idempotent(monkeypatch) -> None:
         ]
 
     monkeypatch.setattr(
-        "scripts.run_autoresearch_mlx_compounding_smoke._get_json",
+        "scripts.run_mlx_history_compounding_smoke._get_json",
         fake_get_json,
     )
     api = FakeApi()
@@ -132,7 +132,7 @@ def test_record_adoption_is_idempotent(monkeypatch) -> None:
         from_contribution=ImportedContribution(
             actor_id="mlx-alpha",
             workspace_id="ws-alpha",
-            workspace_name="autoresearch-mlx-alpha",
+            workspace_name="mlx-history-alpha",
             baseline_commit="383abb4",
             candidate_commit="4161af3",
             claim_id="claim-alpha",
@@ -143,7 +143,7 @@ def test_record_adoption_is_idempotent(monkeypatch) -> None:
         to_contribution=ImportedContribution(
             actor_id="mlx-beta",
             workspace_id="ws-beta",
-            workspace_name="autoresearch-mlx-beta",
+            workspace_name="mlx-history-beta",
             baseline_commit="4161af3",
             candidate_commit="5efc7aa",
             claim_id="claim-beta",

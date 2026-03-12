@@ -165,19 +165,19 @@ python3 -m clients.tiny_loop.run
 Use this only if you need a local-only rehearsal. It proves the shape of the flow, but it does
 not land work into the live hosted shared effort state.
 
-## Stronger external-harness proof
+## Stronger external MLX proof
 
 The default seeded join paths are still cheap proxy loops. The stronger proof path already in the
 repo is the external-harness compounding flow:
 
 ```bash
-python3 scripts/run_autoresearch_mlx_compounding_smoke.py \
-  --repo-path <path_to_autoresearch_mlx> \
+python3 scripts/run_mlx_history_compounding_smoke.py \
+  --repo-path <path_to_mlx_history> \
   --base-url https://openintention-api-production.up.railway.app
 ```
 
 That path is not the default newcomer CTA, but it is the current proof that a real external
-autoresearch-class history can publish into the shared effort state and compound there.
+MLX history can publish into the shared effort state and compound there.
 
 ## Honesty line
 

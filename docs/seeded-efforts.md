@@ -64,5 +64,5 @@ Together they express the product correctly:
 - eval work proves collaborative evidence and claim quality
 - inference work proves hardware-aware contribution and platform-specific frontier value
 
-Other effort classes remain valid later, including tiny autoresearch-style model-improvement
+Other effort classes remain valid later, including tiny model-improvement
 loops, but these two are the best first public shape for the network.

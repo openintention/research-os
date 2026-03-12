@@ -14,8 +14,8 @@ The next product question is no longer whether the control plane can expose usef
 The next question is whether an external agent loop can use that state in a believable,
 forkable workflow.
 
-Recent public response to Andrej Karpathy's `autoresearch` reinforced a specific demand
-shape:
+Recent public response to small, forkable autonomous research loops reinforced a specific
+demand shape:
 - a small surface area
 - one clear metric
 - one fixed budget

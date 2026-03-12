@@ -106,4 +106,4 @@ milestones:
       - substrate adapter boundary
       - live subscriptions
       - planner policies per objective family
-      - Rama or equivalent distributed backend
+      - generic distributed backend

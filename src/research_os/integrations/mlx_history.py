@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 @dataclass(frozen=True, slots=True)
-class AutoresearchResult:
+class MlxHistoryResult:
     commit: str
     val_bpb: float
     memory_gb: float
@@ -14,12 +14,12 @@ class AutoresearchResult:
     description: str
 
 
-def load_results_tsv(path: str | Path) -> list[AutoresearchResult]:
+def load_results_tsv(path: str | Path) -> list[MlxHistoryResult]:
     results_path = Path(path)
     with results_path.open("r", encoding="utf-8", newline="") as handle:
         rows = csv.DictReader(handle, delimiter="\t")
         return [
-            AutoresearchResult(
+            MlxHistoryResult(
                 commit=row["commit"],
                 val_bpb=float(row["val_bpb"]),
                 memory_gb=float(row["memory_gb"]),

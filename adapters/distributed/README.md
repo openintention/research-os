@@ -1,13 +1,13 @@
-# Rama adapter seam
+# Distributed adapter seam
 
-This directory is a landing zone for a future Rama-backed implementation.
+This directory is a landing zone for a future distributed implementation.
 
 ## Conceptual mapping
 
-- `events` SQLite table -> one or more Rama depots
-- frontier / claim / workspace projections -> PStates
-- `recommend_next` -> query topology
-- publication pipelines -> stream or microbatch topology
+- `events` SQLite table -> one or more immutable event partitions
+- frontier / claim / workspace projections -> indexed materialized views
+- `recommend_next` -> query service
+- publication pipelines -> stream or microbatch processors
 - worker routing -> external workers, plus capability-aware placement if desired
 
 ## Suggested first adapter boundary
@@ -19,9 +19,9 @@ Implement the same logical interface as `research_os.ledger.protocol.EventStore`
 - optionally publish precomputed query results
 
 The service layer and API should not need to know whether the substrate is SQLite,
-Postgres, or Rama.
+Postgres, or a distributed control-plane backend.
 
-## Recommended PState families
+## Recommended indexed state families
 
 - `workspace_heads`
 - `workspace_summaries`
@@ -30,7 +30,7 @@ Postgres, or Rama.
 - `lease_table`
 - `subscription_state`
 
-## Recommended query topologies
+## Recommended query surfaces
 
 - `workspace(workspace_id)`
 - `frontier(objective, platform, budget_seconds)`

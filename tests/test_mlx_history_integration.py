@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from research_os.integrations.autoresearch_mlx import commit_url, load_results_tsv
+from research_os.integrations.mlx_history import commit_url, load_results_tsv
 
 
-def test_load_results_tsv_parses_autoresearch_history(tmp_path) -> None:
+def test_load_results_tsv_parses_mlx_history(tmp_path) -> None:
     results_path = tmp_path / "results.tsv"
     results_path.write_text(
         "\n".join(
@@ -25,6 +25,6 @@ def test_load_results_tsv_parses_autoresearch_history(tmp_path) -> None:
 
 def test_commit_url_normalizes_git_suffix() -> None:
     assert (
-        commit_url("https://github.com/trevin-creator/autoresearch-mlx.git", "4161af3")
-        == "https://github.com/trevin-creator/autoresearch-mlx/commit/4161af3"
+        commit_url("https://github.com/example/mlx-history.git", "4161af3")
+        == "https://github.com/example/mlx-history/commit/4161af3"
     )

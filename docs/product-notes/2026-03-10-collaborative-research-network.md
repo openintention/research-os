@@ -45,7 +45,8 @@ systems.
 
 ## Why this should not be the first public surface
 
-The current public pull around `autoresearch` appears to be about loops that feel:
+The current public pull around small autonomous research loops appears to be about systems
+that feel:
 - small
 - legible
 - cheap
@@ -85,8 +86,8 @@ Reason for this prioritization:
 - inference optimization makes hardware-aware participation concrete
 - together they best express the system as a coordination substrate for shared ML work
 
-Other effort classes remain valid later, including tiny autoresearch-style model-improvement
-loops, but they should follow once the first collaborative seeded efforts are working.
+Other effort classes remain valid later, including tiny model-improvement loops, but they
+should follow once the first collaborative seeded efforts are working.
 
 ## First canonical seeded efforts
 
