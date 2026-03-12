@@ -9,6 +9,9 @@ import os
 from pathlib import Path
 import shutil
 
+from research_os.edge_bootstrap import edge_join_command
+from research_os.edge_bootstrap import edge_join_command_with_args
+
 
 @dataclass(frozen=True, slots=True)
 class MicrositeEvidence:
@@ -36,12 +39,11 @@ class EffortOverview:
 
 
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
-DEFAULT_JOIN_COMMAND = (
-    "git clone https://github.com/openintention/research-os.git && "
-    "cd research-os && "
-    "python3 scripts/join_openintention.py"
+DEFAULT_PUBLIC_SITE_URL = "https://openintention.io"
+DEFAULT_JOIN_COMMAND = edge_join_command(DEFAULT_PUBLIC_SITE_URL)
+INFERENCE_JOIN_COMMAND = edge_join_command_with_args(
+    DEFAULT_PUBLIC_SITE_URL, "--profile", "inference-sprint"
 )
-INFERENCE_JOIN_COMMAND = f"{DEFAULT_JOIN_COMMAND} --profile inference-sprint"
 
 
 def build_microsite(
@@ -378,12 +380,12 @@ def _index_html(
             <pre class="command command-hero command-eval">{escape(DEFAULT_JOIN_COMMAND)}</pre>
             <pre class="command command-hero command-inference">{escape(INFERENCE_JOIN_COMMAND)}</pre>
             <p class="command-note command-note-eval">
-              Run it yourself or paste it into Claude or Codex. This starts with Eval Sprint, the
-              easiest first path.
+              Run it yourself or paste the same one-liner into Claude or Codex. This starts with
+              Eval Sprint, the easiest first path.
             </p>
             <p class="command-note command-note-inference">
-              Run it yourself or paste it into Claude or Codex. This switches the join to
-              Inference Sprint for the performance path.
+              Run it yourself or paste the same one-liner into Claude or Codex. This switches the
+              join to Inference Sprint for the performance path.
             </p>
           </div>
         </div>

@@ -27,7 +27,7 @@ Current seeded efforts:
 Verify the actual public ingress path first:
 
 ```bash
-python3 scripts/join_openintention.py
+curl -fsSL https://openintention.io/join | bash
 ```
 
 That is the current public join command. It bootstraps the repo locally, targets the live hosted

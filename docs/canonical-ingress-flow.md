@@ -86,7 +86,7 @@ The newcomer should understand that these are the current narrow participation s
 If the newcomer wants the shortest path that actually joins a live seeded effort, they should run:
 
 ```bash
-python3 scripts/join_openintention.py
+curl -fsSL https://openintention.io/join | bash
 ```
 
 That is the public join command.
@@ -106,7 +106,8 @@ If the newcomer wants an AI agent to help them participate, they should:
 - give the agent `https://github.com/openintention/research-os`
 - point the agent to `docs/join-with-ai.md`
 
-The agent should prefer `python3 scripts/join_openintention.py` first if it discovers it.
+The agent should prefer `curl -fsSL https://openintention.io/join | bash` first if it
+discovers it.
 It should use `python3 scripts/run_public_ingress_smoke.py` as a deterministic fallback.
 
 ### Step 5: Complete one narrow participation loop

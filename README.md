@@ -156,19 +156,24 @@ full local demo state.
 Participants can then target the shared API directly:
 
 ```bash
-python3 scripts/join_openintention.py
-python3 scripts/join_openintention.py --profile inference-sprint
+curl -fsSL https://openintention.io/join | bash
+curl -fsSL https://openintention.io/join | bash -s -- --profile inference-sprint
 ```
 
 Optional lightweight attribution:
 
 ```bash
-python3 scripts/join_openintention.py --actor-id aliargun
+curl -fsSL https://openintention.io/join | bash -s -- --actor-id aliargun
 ```
 
-Under the hood, that bootstrap command creates or reuses a local venv, installs the repo, runs
-the hosted seeded-effort path, and writes a join report under
-`data/publications/launch/hosted-join/`.
+Under the hood, that bootstrap command clones or updates a dedicated edge checkout under
+`~/.openintention/research-os`, refreshes a local venv, runs the hosted seeded-effort path, and
+writes a join report under `data/publications/launch/hosted-join/`.
+
+The update model is still explicit and pull-based:
+- rerun the same one-line command before a new session or nightly window
+- the script fast-forwards the dedicated edge checkout on `main`
+- it does not silently self-update during an active contribution window
 
 The shared control plane now distinguishes bounded workspace roles:
 - `contributor` is the default role for new workspaces
@@ -193,8 +198,8 @@ If you want your own machine to keep contributing to one hosted effort during a 
 window, use the nightly contribution runner:
 
 ```bash
-python3 scripts/run_nightly_contribution_window.py --actor-id aliargun --window-seconds 28800
-python3 scripts/run_nightly_contribution_window.py --profile inference-sprint --actor-id aliargun --window-seconds 28800
+curl -fsSL https://openintention.io/join | bash -s -- --nightly --actor-id aliargun --window-seconds 28800
+curl -fsSL https://openintention.io/join | bash -s -- --nightly --profile inference-sprint --actor-id aliargun --window-seconds 28800
 ```
 
 That path is still intentionally narrow:
@@ -299,7 +304,7 @@ start here:
 
 - `docs/canonical-ingress-flow.md`
 - `docs/join-with-ai.md`
-- `python3 scripts/join_openintention.py`
+- `curl -fsSL https://openintention.io/join | bash`
 - `python3 scripts/run_shared_participation_smoke.py --base-url <shared_api_base_url>`
 
 The hosted join command is the current public action. It bootstraps the repo into a local venv,

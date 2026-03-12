@@ -33,6 +33,16 @@ def test_site_server_serves_generated_index_and_evidence(tmp_path):
     assert evidence_response.headers["content-type"].startswith("text/markdown")
     assert "# smoke" in evidence_response.text
 
+    join_response = client.get("/join")
+    assert join_response.status_code == 200
+    assert "curl -fsSL" not in join_response.text
+    assert "OPENINTENTION_REPO_URL" in join_response.text
+    assert "scripts/join_openintention.py --no-bootstrap" in join_response.text
+
+    join_sh_response = client.get("/join.sh")
+    assert join_sh_response.status_code == 200
+    assert join_sh_response.text == join_response.text
+
 
 def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
     dist_dir = tmp_path / "dist"

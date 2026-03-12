@@ -73,7 +73,7 @@ Prefer:
 Then do this:
 1. inspect the current seeded efforts and choose the best first effort to join
 2. find the shortest path that actually leaves visible contribution state
-3. if `python3 scripts/join_openintention.py` exists, prefer that first
+3. if `curl -fsSL https://openintention.io/join | bash` exists, prefer that first
 4. otherwise use the public-ingress smoke command as the deterministic fallback
 5. at the end, tell me:
    - which effort I joined
@@ -93,19 +93,19 @@ Be explicit about whether I became:
 If you already cloned the repo and want the shortest path into the live shared effort state, run:
 
 ```bash
-python3 scripts/join_openintention.py
+curl -fsSL https://openintention.io/join | bash
 ```
 
 To join the inference effort instead:
 
 ```bash
-python3 scripts/join_openintention.py --profile inference-sprint
+curl -fsSL https://openintention.io/join | bash -s -- --profile inference-sprint
 ```
 
 To attach a lightweight public handle in v1:
 
 ```bash
-python3 scripts/join_openintention.py --actor-id <handle>
+curl -fsSL https://openintention.io/join | bash -s -- --actor-id <handle>
 ```
 
 That hosted path should:
@@ -122,13 +122,13 @@ If you want to keep helping one seeded effort while you are away from the keyboa
 nightly contribution window:
 
 ```bash
-python3 scripts/run_nightly_contribution_window.py --actor-id <handle> --window-seconds 28800
+curl -fsSL https://openintention.io/join | bash -s -- --nightly --actor-id <handle> --window-seconds 28800
 ```
 
 To point the same window at the inference effort instead:
 
 ```bash
-python3 scripts/run_nightly_contribution_window.py --profile inference-sprint --actor-id <handle> --window-seconds 28800
+curl -fsSL https://openintention.io/join | bash -s -- --nightly --profile inference-sprint --actor-id <handle> --window-seconds 28800
 ```
 
 That path is still honest and narrow:

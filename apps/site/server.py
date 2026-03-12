@@ -9,7 +9,7 @@ from urllib.parse import quote, urlencode
 from urllib.request import urlopen
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from research_os.effort_lifecycle import is_historical_proof_effort
@@ -22,6 +22,7 @@ from research_os.domain.models import EventEnvelope
 from research_os.domain.models import EventKind
 from research_os.domain.models import FrontierMember
 from research_os.domain.models import WorkspaceView
+from research_os.edge_bootstrap import render_edge_bootstrap_script
 
 DEFAULT_API_BASE_URL = "https://openintention-api-production.up.railway.app"
 
@@ -85,6 +86,14 @@ def create_site_app(
     @app.get("/styles.css", include_in_schema=False)
     def styles() -> FileResponse:
         return FileResponse(dist_root / "styles.css")
+
+    @app.get("/join", include_in_schema=False, response_class=PlainTextResponse)
+    @app.get("/join.sh", include_in_schema=False, response_class=PlainTextResponse)
+    def join_script() -> PlainTextResponse:
+        return PlainTextResponse(
+            render_edge_bootstrap_script(site_url="https://openintention.io"),
+            media_type="text/plain; charset=utf-8",
+        )
 
     @app.get("/evidence/{path:path}", include_in_schema=False)
     def evidence(path: str) -> FileResponse:

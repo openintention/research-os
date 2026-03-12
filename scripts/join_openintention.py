@@ -39,6 +39,7 @@ def run_hosted_join(
     output_dir: str,
     python_executable: str = sys.executable,
     venv_dir: str = ".venv-openintention-join",
+    bootstrap_environment: bool = True,
 ) -> Path:
     output_root = (REPO_ROOT / output_dir).resolve()
     output_root.mkdir(parents=True, exist_ok=True)
@@ -46,13 +47,15 @@ def run_hosted_join(
     artifact_root_path.mkdir(parents=True, exist_ok=True)
 
     resolved_actor_id = actor_id or _default_actor_id()
-    venv_path = (REPO_ROOT / venv_dir).resolve()
-    venv_python = _venv_python(venv_path)
+    venv_python = Path(python_executable)
+    if bootstrap_environment:
+        venv_path = (REPO_ROOT / venv_dir).resolve()
+        venv_python = _venv_python(venv_path)
 
-    if not venv_python.exists():
-        _run_command([python_executable, "-m", "venv", str(venv_path)], cwd=REPO_ROOT)
+        if not venv_python.exists():
+            _run_command([python_executable, "-m", "venv", str(venv_path)], cwd=REPO_ROOT)
 
-    _run_command([str(venv_python), "-m", "pip", "install", "-e", "."], cwd=REPO_ROOT)
+        _run_command([str(venv_python), "-m", "pip", "install", "-e", "."], cwd=REPO_ROOT)
 
     command = [
         str(venv_python),
@@ -168,6 +171,11 @@ def main() -> None:
         default=".venv-openintention-join",
         help="Virtual environment path used to bootstrap the join command.",
     )
+    parser.add_argument(
+        "--no-bootstrap",
+        action="store_true",
+        help="Run inside the current Python environment without creating the nested hosted-join venv.",
+    )
     args = parser.parse_args()
 
     print("Joining OpenIntention from the public repo into the live hosted effort state...")
@@ -179,6 +187,7 @@ def main() -> None:
         artifact_root=args.artifact_root,
         output_dir=args.output_dir,
         venv_dir=args.venv_dir,
+        bootstrap_environment=not args.no_bootstrap,
     )
     print()
     print(report_path.read_text(encoding="utf-8"))

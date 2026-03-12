@@ -59,9 +59,9 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Use this path if you care more about performance work." in html
     assert "Copy this" in html
     assert "Copy command" in html
-    assert "Run it yourself or paste it into Claude or Codex." in html
-    assert "This starts with Eval Sprint" in html
-    assert "the easiest first path" in html
+    assert "Run it yourself or paste the same one-liner into Claude or Codex." in html
+    assert "This starts with" in html
+    assert "Eval Sprint, the easiest first path." in html
     assert "What your first run leaves behind" in html
     assert "Already live now" in html
     assert "A successful join should leave behind visible work" in html
@@ -78,8 +78,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
     assert 'href="/efforts"' in html
-    assert "git clone https://github.com/openintention/research-os.git" in html
-    assert "python3 scripts/join_openintention.py" in html
+    assert "curl -fsSL https://openintention.io/join | bash" in html
     assert "--profile inference-sprint" in html
     assert "data-copy-eval=" in html
     assert "data-copy-inference=" in html
