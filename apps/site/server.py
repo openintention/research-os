@@ -25,6 +25,7 @@ from research_os.domain.models import WorkspaceView
 from research_os.edge_bootstrap import render_edge_bootstrap_script
 
 DEFAULT_API_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
 
 
 @dataclass(frozen=True, slots=True)
@@ -780,6 +781,14 @@ def _page_html(title: str, body: str) -> str:
     <main class="page">
       {body}
     </main>
+    <footer class="site-footer">
+      <p class="site-footer-copy">OpenIntention stays public, inspectable, and easy to hand forward.</p>
+      <div class="site-footer-links">
+        <a href="/efforts">Live efforts</a>
+        <a href="/evidence/join-with-ai.html">Agent brief</a>
+        <a href="{escape(DEFAULT_PUBLIC_REPO_URL)}">GitHub repo</a>
+      </div>
+    </footer>
   </body>
 </html>
 """

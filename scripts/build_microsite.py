@@ -212,14 +212,17 @@ def _index_html(
     styles_version: str,
 ) -> str:
     repo_action = (
-        f'<a class="button secondary" href="{escape(config.repo_url)}">Inspect the repo</a>'
+        f'<a class="button secondary" href="{escape(config.repo_url)}">Open the GitHub repo</a>'
         if config.repo_url
         else '<a class="button secondary" href="#inspect">Inspect what is already public</a>'
     )
     repo_list_item = (
-        f'<li><a href="{escape(config.repo_url)}">Public technical repo</a></li>'
+        f'<li><a href="{escape(config.repo_url)}">GitHub repo for code and docs</a></li>'
         if config.repo_url
         else "<li>The public repo link will land with the first announcement.</li>"
+    )
+    site_footer_repo_link = (
+        f'<a href="{escape(config.repo_url)}">GitHub repo</a>' if config.repo_url else ""
     )
     hero_participation_excerpt = _human_join_summary(participation_excerpt)
     return f"""<!doctype html>
@@ -463,6 +466,14 @@ def _index_html(
         </ul>
       </section>
     </main>
+    <footer class="site-footer">
+      <p class="site-footer-copy">OpenIntention stays public, inspectable, and easy to hand forward.</p>
+      <div class="site-footer-links">
+        <a href="/efforts">Live efforts</a>
+        <a href="/evidence/join-with-ai.html">Agent brief</a>
+        {site_footer_repo_link}
+      </div>
+    </footer>
     <script>
       document.querySelectorAll(".copy-button[data-copy-eval]").forEach((button) => {{
         button.addEventListener("click", async () => {{
@@ -1285,6 +1296,29 @@ li {
   align-items: start;
 }
 
+.site-footer {
+  width: min(1160px, calc(100vw - 32px));
+  margin: 0 auto 48px;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.site-footer-copy {
+  margin: 0;
+  color: #9bb0c8;
+  font-size: 0.95rem;
+}
+
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
 .mono,
 .command,
 pre,
@@ -1342,6 +1376,11 @@ a {
   .handoff-grid,
   .technical-footer-copy {
     grid-template-columns: 1fr;
+  }
+
+  .site-footer {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .hero-grid {
