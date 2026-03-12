@@ -116,6 +116,26 @@ That hosted path should:
 The optional `--actor-id` is only lightweight asserted attribution in v1. It is not an
 authenticated account system yet.
 
+## Leave your machine contributing overnight
+
+If you want to keep helping one seeded effort while you are away from the keyboard, run a bounded
+nightly contribution window:
+
+```bash
+python3 scripts/run_nightly_contribution_window.py --actor-id <handle> --window-seconds 28800
+```
+
+To point the same window at the inference effort instead:
+
+```bash
+python3 scripts/run_nightly_contribution_window.py --profile inference-sprint --actor-id <handle> --window-seconds 28800
+```
+
+That path is still honest and narrow:
+- it is one local machine contributing repeated loops to one hosted effort
+- it leaves behind the same live evidence as a manual join
+- it does not auto-detect idleness or turn your machine into a mesh node
+
 ## Deterministic public-ingress proof
 
 If the agent needs the shortest deterministic end-to-end check from the public surface, run:

@@ -189,6 +189,32 @@ make smoke-shared-participation BASE_URL=https://openintention-api-production.up
 
 That report is written under `data/publications/launch/shared-participation/`.
 
+If you want your own machine to keep contributing to one hosted effort during a bounded local
+window, use the nightly contribution runner:
+
+```bash
+python3 scripts/run_nightly_contribution_window.py --actor-id aliargun --window-seconds 28800
+python3 scripts/run_nightly_contribution_window.py --profile inference-sprint --actor-id aliargun --window-seconds 28800
+```
+
+That path is still intentionally narrow:
+- opt into one seeded effort
+- let the same machine run repeated contribution loops inside a bounded window
+- leave behind the same hosted evidence as the one-shot join path
+
+It does **not** auto-detect idleness, build a worker mesh, or create a generic scheduler.
+It is the first `bring your idle machine to one shared effort overnight` path.
+
+For the deterministic hosted rehearsal:
+
+```bash
+python3 scripts/run_nightly_contribution_window_smoke.py --base-url https://openintention-api-production.up.railway.app
+# or
+make smoke-nightly-window BASE_URL=https://openintention-api-production.up.railway.app SITE_URL=https://openintention.io
+```
+
+That report is written under `data/publications/launch/nightly-contribution-window-smoke/`.
+
 The seeded efforts also have publication mirrors intended as the first public invitation
 surface. After listing efforts, fetch one with:
 
