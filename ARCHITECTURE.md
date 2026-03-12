@@ -8,6 +8,16 @@ This repo starts from one core bet:
 
 The system is split into two planes.
 
+## Repo boundary
+
+This repository is the public technical implementation of the control plane described above.
+The public product framing is `OpenIntention`.
+
+- `research-os` owns the API, event semantics, projections, planner behavior, and publication mirrors.
+- `OpenIntention` is the coordination direction built on top of this control plane.
+- Public-facing claims must remain tied to these actual capabilities, not to unimplemented mesh/network
+  features.
+
 ### Control plane
 The control plane owns:
 - event ingestion
