@@ -59,6 +59,42 @@
       "items": {
         "type": "string"
       }
+    },
+    "candidate_snapshot_manifest_uri": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "candidate_snapshot_manifest_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "candidate_snapshot_manifest_signature": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "candidate_snapshot_manifest_provenance_schema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "candidate_snapshot_manifest_provenance_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "candidate_snapshot_manifest_signature_scheme": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "additionalProperties": true

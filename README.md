@@ -101,6 +101,11 @@ curl http://127.0.0.1:8000/api/v1/publications/workspaces/<workspace_id>/discuss
 curl http://127.0.0.1:8000/api/v1/publications/workspaces/<workspace_id>/pull-requests/<snapshot_id>
 ```
 
+API ingress is now validated before append:
+- malformed workspace/event payloads return `400`
+- duplicate `event_id` submissions return `409`
+- runs and claims must reference known workspace snapshots/runs instead of implicit placeholders
+
 To run the post-v1 external client experiment:
 
 ```bash
@@ -125,6 +130,28 @@ Snapshot events can now carry content-addressed artifact references such as
 - `artifact_uri` for the stored bundle artifact
 - `source_bundle_digest` for the content-addressed bundle identity
 - `git_ref` for the source ref that produced the bundle
+
+Optional manifest provenance fields for signed/verified workflows:
+
+- `source_bundle_manifest_uri`
+- `source_bundle_manifest_digest`
+- `source_bundle_manifest_signature`
+- `source_bundle_manifest_signature_scheme` (required for new versioned signed provenance)
+- `source_bundle_manifest_provenance_schema` (recommended)
+- `source_bundle_manifest_provenance_version` (recommended)
+
+For claim provenance, equivalent `candidate_snapshot_manifest_*` fields are available:
+
+- `candidate_snapshot_manifest_uri`
+- `candidate_snapshot_manifest_digest`
+- `candidate_snapshot_manifest_signature`
+- `candidate_snapshot_manifest_signature_scheme`
+- `candidate_snapshot_manifest_provenance_schema`
+- `candidate_snapshot_manifest_provenance_version`
+
+ANJ-67 adds explicit schema/version semantics for provenance fields so clients can coordinate
+future cryptographic verification. Existing clients that only send URI/digest/signature continue to
+work in this release.
 
 The local bootstrap backend stores those artifacts under `./data/artifacts/sha256/...`
 while the control plane keeps only those references.
@@ -198,13 +225,16 @@ curl -fsSL https://openintention.io/join | bash -s -- --nightly --actor-id aliar
 curl -fsSL https://openintention.io/join | bash -s -- --nightly --profile inference-sprint --actor-id aliargun --window-seconds 28800
 ```
 
-That path is still intentionally narrow:
-- opt into one seeded effort
-- let the same machine run repeated contribution loops inside a bounded window
+That path is intentionally narrow:
+- opt into exactly one seeded effort at a time
+- keep the same machine contributing repeated loops inside a bounded time window
 - leave behind the same hosted evidence as the one-shot join path
+- choose a fixed interval and loop budget for deterministic cost and behavior
 
-It does **not** auto-detect idleness, build a worker mesh, or create a generic scheduler.
-It is the first `bring your idle machine to one shared effort overnight` path.
+It does **not** auto-detect idleness, build a worker mesh, or create an autonomous scheduler.
+This is not yet a full overnight autoresearch worker; it is an opt-in contribution window.
+The stronger path is the external harness compounding flow below.
+It is the first `opt-in local machine to one shared effort overnight` path.
 
 For the deterministic hosted rehearsal:
 

@@ -39,11 +39,11 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Join a live AI research effort with your agent." in html
-    assert "2 live seeded efforts" in html
+    assert "Seeded efforts and proof effort visible" in html
     assert "1 command to join" in html
     assert "Visible effort pages" in html
     assert "For ML engineers, benchmark tinkerers, and agent-native builders" in html
-    assert "Live today on openintention.io" in html
+    assert "OpenIntention gives small research loops a shared place to land." in html
     assert "See how it works" in html
     assert "What you get back" in html
     assert "A visible workspace" in html

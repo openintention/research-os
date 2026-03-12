@@ -6,11 +6,14 @@ import re
 from dataclasses import dataclass
 from html import escape
 import os
+import sys
 from pathlib import Path
 import shutil
 
-from research_os.edge_bootstrap import edge_join_command
-from research_os.edge_bootstrap import edge_join_command_with_args
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_SRC_ROOT = _REPO_ROOT / "src"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +27,8 @@ class MicrositeEvidence:
 @dataclass(frozen=True, slots=True)
 class MicrositeConfig:
     repo_url: str | None = None
+    default_join_command: str = ""
+    inference_join_command: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,10 +45,16 @@ class EffortOverview:
 
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
 DEFAULT_PUBLIC_SITE_URL = "https://openintention.io"
-DEFAULT_JOIN_COMMAND = edge_join_command(DEFAULT_PUBLIC_SITE_URL)
-INFERENCE_JOIN_COMMAND = edge_join_command_with_args(
-    DEFAULT_PUBLIC_SITE_URL, "--profile", "inference-sprint"
-)
+
+
+def _load_edge_join_commands() -> tuple[str, str]:
+    from research_os.edge_bootstrap import edge_join_command
+    from research_os.edge_bootstrap import edge_join_command_with_args
+
+    return (
+        edge_join_command(DEFAULT_PUBLIC_SITE_URL),
+        edge_join_command_with_args(DEFAULT_PUBLIC_SITE_URL, "--profile", "inference-sprint"),
+    )
 
 
 def build_microsite(
@@ -72,6 +83,9 @@ def build_microsite(
     participation_excerpt = _section_excerpt(evidence.smoke_report, heading="## Participation Outcome", lines=6)
     eval_effort = _parse_effort_overview(evidence.eval_brief)
     inference_effort = _parse_effort_overview(evidence.inference_brief)
+    default_join_command, inference_join_command = _load_edge_join_commands()
+    default_join_command = config.default_join_command or default_join_command
+    inference_join_command = config.inference_join_command or inference_join_command
 
     styles = _styles()
     styles_version = hashlib.sha256(styles.encode("utf-8")).hexdigest()[:10]
@@ -83,6 +97,8 @@ def build_microsite(
             eval_effort=eval_effort,
             inference_effort=inference_effort,
             config=config,
+            default_join_command=default_join_command,
+            inference_join_command=inference_join_command,
             styles_version=styles_version,
         ),
         encoding="utf-8",
@@ -209,6 +225,8 @@ def _index_html(
     eval_effort: EffortOverview,
     inference_effort: EffortOverview,
     config: MicrositeConfig,
+    default_join_command: str,
+    inference_join_command: str,
     styles_version: str,
 ) -> str:
     repo_action = (
@@ -255,7 +273,7 @@ def _index_html(
             become shared progress instead of another private result.
           </p>
           <p class="sublede">
-            Live today on openintention.io: two seeded efforts, visible results, and one simple
+            OpenIntention is live with seeded efforts plus an external proof effort, plus one simple
             join path that leaves behind work the next person can continue.
           </p>
           <div class="hero-actions">
@@ -263,12 +281,12 @@ def _index_html(
             <a class="button secondary" href="#how-it-works">See how it works</a>
           </div>
           <div class="hero-trust">
-            <span>2 live seeded efforts</span>
+            <span>Seeded efforts and proof effort visible</span>
             <span>1 command to join</span>
             <span>Visible effort pages</span>
           </div>
           <p class="hero-note">
-            OpenIntention gives small research loops somewhere shared to land.
+            OpenIntention gives small research loops a shared place to land.
           </p>
           <p class="footer-note">
             Shared effort state is live today. The starter loop is still a cheap proxy. A stronger
@@ -374,14 +392,14 @@ def _index_html(
                 class="copy-button"
                 type="button"
                 data-copy-default="Copy command"
-                data-copy-eval="{escape(DEFAULT_JOIN_COMMAND)}"
-                data-copy-inference="{escape(INFERENCE_JOIN_COMMAND)}"
+                data-copy-eval="{escape(default_join_command)}"
+                data-copy-inference="{escape(inference_join_command)}"
               >
                 Copy command
               </button>
             </div>
-            <pre class="command command-hero command-eval">{escape(DEFAULT_JOIN_COMMAND)}</pre>
-            <pre class="command command-hero command-inference">{escape(INFERENCE_JOIN_COMMAND)}</pre>
+            <pre class="command command-hero command-eval">{escape(default_join_command)}</pre>
+            <pre class="command command-hero command-inference">{escape(inference_join_command)}</pre>
             <p class="command-note command-note-eval">
               Run it yourself or paste the same one-liner into Claude or Codex. This starts with
               Eval Sprint, the easiest first path.

@@ -80,3 +80,5 @@ def test_build_shared_participation_report_includes_two_distinct_participants():
     assert "role=`verifier`" in report
     assert "support=1" in report
     assert "Frontier members: 2" in report
+    assert "Verifier-Ready Provenance Evidence" in report
+    assert "- Not available yet." in report

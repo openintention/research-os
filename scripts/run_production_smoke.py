@@ -7,8 +7,10 @@ import sys
 from urllib.request import Request, urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+SRC_ROOT = REPO_ROOT / "src"
+for path in (SRC_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from scripts.run_public_ingress_smoke import run_public_ingress_smoke  # noqa: E402
 from scripts.run_shared_participation_smoke import run_shared_participation_smoke  # noqa: E402

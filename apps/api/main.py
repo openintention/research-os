@@ -20,7 +20,7 @@ from research_os.domain.models import (
     WorkspaceView,
 )
 from research_os.ledger.sqlite import SQLiteEventStore
-from research_os.service import ResearchOSService
+from research_os.service import EventConflictError, EventIngestionError, ResearchOSService
 from research_os.settings import Settings
 
 
@@ -51,7 +51,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/v1/workspaces", response_model=WorkspaceCreated, status_code=201)
     def create_workspace(request: CreateWorkspaceRequest) -> WorkspaceCreated:
-        return service.create_workspace(request)
+        try:
+            return service.create_workspace(request)
+        except EventIngestionError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except EventConflictError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @app.post("/api/v1/efforts", response_model=EffortCreated, status_code=201)
     def create_effort(request: CreateEffortRequest) -> EffortCreated:
@@ -74,7 +79,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/v1/events", response_model=EventEnvelope, status_code=201)
     def append_event(event: EventEnvelope) -> EventEnvelope:
-        return service.append_event(event)
+        try:
+            return service.append_event(event)
+        except EventIngestionError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except EventConflictError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @app.get("/api/v1/events", response_model=list[EventEnvelope])
     def list_events(

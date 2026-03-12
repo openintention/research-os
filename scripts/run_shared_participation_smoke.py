@@ -8,8 +8,10 @@ import sys
 from urllib.request import urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+SRC_ROOT = REPO_ROOT / "src"
+for path in (SRC_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from clients.tiny_loop.api import HttpResearchOSApi  # noqa: E402
 from clients.tiny_loop.experiment import (  # noqa: E402
@@ -144,6 +146,13 @@ def build_shared_participation_report(result: SharedParticipationResult) -> str:
             result.effort_overview_excerpt.strip(),
             "```",
             "",
+            "## Verifier-Ready Provenance Evidence",
+            "### Contributor Workspace",
+            *(_extract_provenance_lines(result.contributor.discussion_markdown) or ["- Not available yet."]),
+            "",
+            "### Verifier Workspace",
+            *(_extract_provenance_lines(result.verifier.discussion_markdown) or ["- Not available yet."]),
+            "",
             "## Outcome",
             "- A contributor created a claim inside the hosted seeded effort.",
             "- A separate verifier workspace reproduced that claim and made the verifier role visible in shared state.",
@@ -182,6 +191,14 @@ def _excerpt(body: str, *, lines: int) -> str:
 def _get_json(url: str) -> dict[str, object] | list[dict[str, object]]:
     with urlopen(url, timeout=20) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _extract_provenance_lines(markdown: str) -> list[str]:
+    return [
+        line.strip()
+        for line in markdown.splitlines()
+        if "manifest" in line.lower() or "provenance" in line.lower()
+    ][:20]
 
 
 def _require_eval_effort(api: HttpResearchOSApi) -> dict[str, object]:

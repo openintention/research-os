@@ -12,6 +12,76 @@ from research_os.projections.materialized import PROJECTION_METADATA_TABLE
 from research_os.service import ResearchOSService
 
 
+def _start_workspace(
+    service: ResearchOSService,
+    *,
+    workspace_id: str,
+    objective: str,
+    platform: str = "A100",
+    budget_seconds: int = 300,
+) -> None:
+    service.append_event(
+        EventEnvelope(
+            kind=EventKind.WORKSPACE_STARTED,
+            workspace_id=workspace_id,
+            aggregate_id=workspace_id,
+            aggregate_kind="workspace",
+            payload={
+                "name": workspace_id,
+                "objective": objective,
+                "platform": platform,
+                "budget_seconds": budget_seconds,
+            },
+        )
+    )
+
+
+def _start_run(
+    service: ResearchOSService,
+    *,
+    workspace_id: str,
+    run_id: str,
+    snapshot_id: str,
+    objective: str,
+    platform: str = "A100",
+    budget_seconds: int = 300,
+) -> None:
+    workspace = service.get_workspace(workspace_id)
+    assert workspace is not None
+    if snapshot_id not in workspace.snapshot_ids:
+        service.append_event(
+            EventEnvelope(
+                kind=EventKind.SNAPSHOT_PUBLISHED,
+                workspace_id=workspace_id,
+                aggregate_id=snapshot_id,
+                aggregate_kind="snapshot",
+                payload={
+                    "snapshot_id": snapshot_id,
+                    "artifact_uri": "artifact://sha256/" + "a" * 64,
+                },
+            )
+        )
+    service.append_event(
+        EventEnvelope(
+            kind=EventKind.RUN_COMPLETED,
+            workspace_id=workspace_id,
+            aggregate_id=run_id,
+            aggregate_kind="run",
+            payload={
+                "run_id": run_id,
+                "snapshot_id": snapshot_id,
+                "objective": objective,
+                "platform": platform,
+                "budget_seconds": budget_seconds,
+                "metric_name": objective,
+                "metric_value": 1.2,
+                "direction": "min",
+                "status": "success",
+            },
+        )
+    )
+
+
 def test_frontier_uses_best_snapshot_run():
     events = [
         EventEnvelope(
@@ -101,6 +171,8 @@ def test_claim_summary_support_and_contradiction():
 def test_materialized_frontier_matches_full_scan_without_listing_events(tmp_path, monkeypatch):
     store = SQLiteEventStore(str(tmp_path / "frontier.db"))
     service = ResearchOSService(store)
+    _start_workspace(service, workspace_id="ws-1", objective="val_bpb")
+    _start_workspace(service, workspace_id="ws-2", objective="val_bpb")
 
     events = [
         EventEnvelope(
@@ -162,6 +234,21 @@ def test_materialized_frontier_matches_full_scan_without_listing_events(tmp_path
         ),
     ]
 
+    _start_run(
+        service,
+        workspace_id="ws-1",
+        run_id="run-1",
+        snapshot_id="snap-1",
+        objective="val_bpb",
+    )
+    _start_run(
+        service,
+        workspace_id="ws-2",
+        run_id="run-2",
+        snapshot_id="snap-2",
+        objective="val_bpb",
+    )
+
     for event in events:
         service.append_event(event)
 
@@ -185,6 +272,14 @@ def test_frontier_projection_rebuild_restores_materialized_state(tmp_path):
     db_path = tmp_path / "frontier-rebuild.db"
     store = SQLiteEventStore(str(db_path))
     service = ResearchOSService(store)
+    _start_workspace(service, workspace_id="ws-1", objective="val_bpb")
+    _start_run(
+        service,
+        workspace_id="ws-1",
+        run_id="run-3",
+        snapshot_id="snap-1",
+        objective="val_bpb",
+    )
 
     events = [
         EventEnvelope(
@@ -269,6 +364,30 @@ def test_frontier_projection_rebuild_restores_materialized_state(tmp_path):
 def test_materialized_claims_match_full_scan_without_listing_events(tmp_path, monkeypatch):
     store = SQLiteEventStore(str(tmp_path / "claims.db"))
     service = ResearchOSService(store)
+    _start_workspace(service, workspace_id="ws-1", objective="val_bpb")
+    _start_workspace(service, workspace_id="ws-2", objective="val_bpb")
+    _start_workspace(service, workspace_id="ws-3", objective="val_bpb")
+    _start_run(
+        service,
+        workspace_id="ws-1",
+        run_id="run-1",
+        snapshot_id="snap-1",
+        objective="val_bpb",
+    )
+    _start_run(
+        service,
+        workspace_id="ws-2",
+        run_id="run-2",
+        snapshot_id="snap-2",
+        objective="val_bpb",
+    )
+    _start_run(
+        service,
+        workspace_id="ws-3",
+        run_id="run-3",
+        snapshot_id="snap-3",
+        objective="val_bpb",
+    )
 
     events = [
         EventEnvelope(
@@ -329,6 +448,27 @@ def test_claim_projection_rebuild_restores_materialized_state(tmp_path):
     db_path = tmp_path / "claim-rebuild.db"
     store = SQLiteEventStore(str(db_path))
     service = ResearchOSService(store)
+    _start_workspace(service, workspace_id="ws-1", objective="val_bpb")
+    _start_workspace(service, workspace_id="ws-2", objective="val_bpb")
+    service.append_event(
+        EventEnvelope(
+            kind=EventKind.SNAPSHOT_PUBLISHED,
+            workspace_id="ws-1",
+            aggregate_id="snap-1",
+            aggregate_kind="snapshot",
+            payload={
+                "snapshot_id": "snap-1",
+                "artifact_uri": "artifact://sha256/" + "a" * 64,
+            },
+        )
+    )
+    _start_run(
+        service,
+        workspace_id="ws-2",
+        run_id="run-1",
+        snapshot_id="snap-2",
+        objective="val_bpb",
+    )
 
     events = [
         EventEnvelope(
@@ -377,6 +517,27 @@ def test_projection_metadata_rebuilds_outdated_frontier_and_claim_state(tmp_path
     db_path = tmp_path / "projection-metadata.db"
     store = SQLiteEventStore(str(db_path))
     service = ResearchOSService(store)
+    _start_workspace(service, workspace_id="ws-1", objective="val_bpb")
+    _start_workspace(service, workspace_id="ws-2", objective="val_bpb")
+    service.append_event(
+        EventEnvelope(
+            kind=EventKind.SNAPSHOT_PUBLISHED,
+            workspace_id="ws-1",
+            aggregate_id="snap-1",
+            aggregate_kind="snapshot",
+            payload={
+                "snapshot_id": "snap-1",
+                "artifact_uri": "artifact://sha256/" + "a" * 64,
+            },
+        )
+    )
+    _start_run(
+        service,
+        workspace_id="ws-2",
+        run_id="run-2",
+        snapshot_id="snap-2",
+        objective="val_bpb",
+    )
 
     events = [
         EventEnvelope(

@@ -70,6 +70,21 @@ Prefer:
 2. docs/seeded-efforts.md
 3. docs/canonical-ingress-flow.md
 
+API contract note: when sending provenance for snapshot/claim payloads, clients can now add:
+- `<payload>_manifest_uri`
+- `<payload>_manifest_digest`
+- `<payload>_manifest_signature`
+- `<payload>_signature_scheme`
+- `<payload>_provenance_schema`
+- `<payload>_provenance_version`
+
+Canonical value for this release:
+- provenance schema: `openintention-artifact-manifest-v1`
+- provenance version: `1`
+
+Where `<payload>` is either `source_bundle` (snapshot) or `candidate_snapshot` (claim).
+Legacy payloads that only include the base provenance fields are still accepted for now.
+
 Then do this:
 1. inspect the current seeded efforts and choose the best first effort to join
 2. find the shortest path that actually leaves visible contribution state
@@ -116,10 +131,10 @@ That hosted path should:
 The optional `--actor-id` is only lightweight asserted attribution in v1. It is not an
 authenticated account system yet.
 
-## Leave your machine contributing overnight
+## Run a bounded overnight contribution window
 
-If you want to keep helping one seeded effort while you are away from the keyboard, run a bounded
-nightly contribution window:
+If you want to keep helping one seeded effort while you are away from the keyboard, run a
+bounded overnight contribution window:
 
 ```bash
 curl -fsSL https://openintention.io/join | bash -s -- --nightly --actor-id <handle> --window-seconds 28800
@@ -132,9 +147,11 @@ curl -fsSL https://openintention.io/join | bash -s -- --nightly --profile infere
 ```
 
 That path is still honest and narrow:
-- it is one local machine contributing repeated loops to one hosted effort
+- it is one local machine intentionally running repeated loops for one hosted effort
+- you choose the effort and the time budget
 - it leaves behind the same live evidence as a manual join
-- it does not auto-detect idleness or turn your machine into a mesh node
+- it does not auto-detect idleness, rotate effort, or turn your machine into a mesh node
+- this is a contribution window, not a real autonomous autoresearch worker yet
 
 ## Deterministic public-ingress proof
 

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+from urllib.request import urlopen
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +28,8 @@ class HostedJoinResult:
     claim_id: str | None
     reproduction_run_id: str | None
     participant_role: str | None
-    output: str
+    provenance_snippet: list[str] = field(default_factory=list)
+    output: str = ""
 
 
 def run_hosted_join(
@@ -83,6 +86,7 @@ def run_hosted_join(
         claim_id=fields.get("claim_id"),
         reproduction_run_id=fields.get("reproduction_run_id"),
         participant_role=fields.get("participant_role"),
+        provenance_snippet=_extract_provenance(fields.get("workspace_id"), base_url),
         output=output,
     )
 
@@ -119,6 +123,9 @@ def build_join_report(result: HostedJoinResult) -> str:
             f"- Live effort page: `{effort_url}`",
             f"- Workspace discussion: `{discussion_url}`",
             "- Hand the live effort page or this report to the next human or agent.",
+            "",
+            "## Verifier-Ready Provenance",
+            *(result.provenance_snippet if result.provenance_snippet else ["- Not available yet."]),
             "",
             "## Command Output",
             "```text",
@@ -213,6 +220,26 @@ def _extract_fields(output: str) -> dict[str, str]:
         if match:
             fields[match.group(1)] = match.group(2)
     return fields
+
+
+def _extract_provenance(workspace_id: str | None, base_url: str) -> list[str]:
+    if not workspace_id:
+        return []
+    try:
+        discussion = _fetch_workspace_discussion(base_url, workspace_id)
+    except Exception:
+        return ["- Provenance evidence fetch failed at build time."]
+    if not discussion:
+        return []
+    lines = [line.strip() for line in discussion.splitlines() if "manifest" in line.lower() or "provenance" in line.lower()]
+    return lines[:12] if lines else ["- No provenance fields are currently exposed in this workspace discussion."]
+
+
+def _fetch_workspace_discussion(base_url: str, workspace_id: str) -> str:
+    url = f"{base_url.rstrip('/')}/api/v1/publications/workspaces/{workspace_id}/discussion"
+    with urlopen(url, timeout=10) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    return str(payload.get("body", ""))
 
 
 def _run_command(command: list[str], *, cwd: Path) -> str:

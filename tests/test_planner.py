@@ -52,6 +52,22 @@ def _append_claim(
         payload["delta"] = delta
     if confidence is not None:
         payload["confidence"] = confidence
+    workspace = service.get_workspace(workspace_id)
+    assert workspace is not None
+    snapshot_id = str(payload["candidate_snapshot_id"])
+    if snapshot_id not in workspace.snapshot_ids:
+        service.append_event(
+            EventEnvelope(
+                kind=EventKind.SNAPSHOT_PUBLISHED,
+                workspace_id=workspace_id,
+                aggregate_id=snapshot_id,
+                aggregate_kind="snapshot",
+                payload={
+                    "snapshot_id": snapshot_id,
+                    "artifact_uri": "artifact://sha256/" + "a" * 64,
+                },
+            )
+        )
 
     service.append_event(
         EventEnvelope(
@@ -77,6 +93,21 @@ def _append_run(
     direction: str = "min",
     tags: dict[str, str] | None = None,
 ) -> None:
+    workspace = service.get_workspace(workspace_id)
+    assert workspace is not None
+    if snapshot_id not in workspace.snapshot_ids:
+        service.append_event(
+            EventEnvelope(
+                kind=EventKind.SNAPSHOT_PUBLISHED,
+                workspace_id=workspace_id,
+                aggregate_id=snapshot_id,
+                aggregate_kind="snapshot",
+                payload={
+                    "snapshot_id": snapshot_id,
+                    "artifact_uri": "artifact://sha256/" + "a" * 64,
+                },
+            )
+        )
     service.append_event(
         EventEnvelope(
             kind=EventKind.RUN_COMPLETED,
@@ -412,6 +443,7 @@ def test_planner_compose_priority_increases_with_frontier_novelty(tmp_path):
         store = SQLiteEventStore(str(tmp_path / f"{tags_for_second['topic']}-novelty.db"))
         service = ResearchOSService(store)
         _start_workspace(service, workspace_id="ws-novelty", objective="val_bpb")
+        _start_workspace(service, workspace_id="ws-other", objective="val_bpb")
         _append_run(
             service,
             workspace_id="ws-novelty",

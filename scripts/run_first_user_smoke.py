@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from dataclasses import field
 import json
 import os
 from pathlib import Path
@@ -10,7 +11,7 @@ import socket
 import subprocess
 import sys
 import time
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from research_os.settings import Settings
 
@@ -22,6 +23,8 @@ class SmokeResult:
     eval_client_output: str
     inference_client_output: str
     exported_brief_paths: list[str]
+    eval_workspace_provenance_excerpt: list[str] = field(default_factory=list)
+    inference_workspace_provenance_excerpt: list[str] = field(default_factory=list)
 
 
 def run_first_user_smoke(
@@ -113,6 +116,14 @@ def run_first_user_smoke(
         eval_client_output=eval_client_output,
         inference_client_output=inference_client_output,
         exported_brief_paths=[line for line in exported_briefs_output.splitlines() if line.strip()],
+        eval_workspace_provenance_excerpt=_extract_workspace_provenance_excerpt(
+            base_url=base_url,
+            workspace_id=_extract_fields(eval_client_output).get("workspace_id"),
+        ),
+        inference_workspace_provenance_excerpt=_extract_workspace_provenance_excerpt(
+            base_url=base_url,
+            workspace_id=_extract_fields(inference_client_output).get("workspace_id"),
+        ),
     )
     report_path = output_root / "first-user-smoke.md"
     report_path.write_text(build_smoke_report(result), encoding="utf-8")
@@ -151,6 +162,17 @@ def build_smoke_report(result: SmokeResult) -> str:
             "- Onboarded: the newcomer discovered the public repo and seeded effort path from the public surface.",
             *joined_lines,
             *participation_lines,
+            "",
+            "## Verifier-Ready Provenance",
+            "### Eval Sprint Workspace",
+            *(result.eval_workspace_provenance_excerpt if result.eval_workspace_provenance_excerpt else ["- Not available yet."]),
+            "",
+            "### Inference Sprint Workspace",
+            *(
+                result.inference_workspace_provenance_excerpt
+                if result.inference_workspace_provenance_excerpt
+                else ["- Not available yet."]
+            ),
             "",
             "## Eval Client Output",
             "```text",
@@ -197,6 +219,26 @@ def _participated_line(label: str, fields: dict[str, str]) -> str:
             f"`{claim}` and reproduction run `{reproduction}`."
         )
     return f"- Participated ({label}): durable contribution state not fully proven from client output."
+
+
+def _extract_workspace_provenance_excerpt(*, base_url: str, workspace_id: str | None) -> list[str]:
+    if not workspace_id:
+        return []
+    try:
+        request = Request(
+            f"{base_url}/api/v1/publications/workspaces/{workspace_id}/discussion",
+            headers={"accept": "application/json"},
+        )
+        with urlopen(request, timeout=10) as response:
+            body = json.loads(response.read().decode("utf-8"))
+        lines = [
+            line.strip()
+            for line in str(body.get("body", "")).splitlines()
+            if "manifest" in line.lower() or "provenance" in line.lower()
+        ]
+        return lines[:20] if lines else ["- No provenance fields are currently exposed in this workspace discussion."]
+    except Exception:
+        return ["- Provenance evidence fetch failed at build time."]
 
 
 def main() -> None:

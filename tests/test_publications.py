@@ -40,6 +40,12 @@ def test_workspace_discussion_publication_is_rendered_from_workspace_state(tmp_p
                     "snapshot_id": "snap-pub-1",
                     "artifact_uri": snapshot_artifact.uri,
                     "source_bundle_digest": snapshot_artifact.digest,
+                    "source_bundle_manifest_uri": "artifact://sha256/" + "a" * 64,
+                    "source_bundle_manifest_digest": "sha256:" + "a" * 64,
+                    "source_bundle_manifest_signature": "sig-workspace-demo",
+                    "source_bundle_manifest_signature_scheme": "ed25519",
+                    "source_bundle_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                    "source_bundle_manifest_provenance_version": "1",
                     "git_ref": "refs/workspaces/publisher-demo",
                 },
             },
@@ -76,6 +82,8 @@ def test_workspace_discussion_publication_is_rendered_from_workspace_state(tmp_p
     assert "Publication mirror workspace" in body
     assert "claim-pub-1" in body
     assert "snapshot.published" in body
+    assert "Manifest URI" in body
+    assert "openintention-artifact-manifest-v1" in body
 
 
 def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tmp_path):
@@ -111,6 +119,12 @@ def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tm
                     "parent_snapshot_ids": ["snap-base"],
                     "artifact_uri": snapshot_artifact.uri,
                     "source_bundle_digest": snapshot_artifact.digest,
+                    "source_bundle_manifest_uri": "artifact://sha256/" + "d" * 64,
+                    "source_bundle_manifest_digest": "sha256:" + "d" * 64,
+                    "source_bundle_manifest_signature": "sig-pr-demo",
+                    "source_bundle_manifest_signature_scheme": "ed25519",
+                    "source_bundle_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                    "source_bundle_manifest_provenance_version": "1",
                     "git_ref": "refs/workspaces/publisher-snapshot-demo",
                     "notes": "Try the improved optimizer schedule.",
                 },
@@ -156,6 +170,12 @@ def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tm
                     "candidate_snapshot_id": "snap-pr-1",
                     "objective": "val_bpb",
                     "platform": "A100",
+                    "candidate_snapshot_manifest_uri": "artifact://sha256/" + "d" * 64,
+                    "candidate_snapshot_manifest_digest": "sha256:" + "d" * 64,
+                    "candidate_snapshot_manifest_signature": "sig-pr-claim",
+                    "candidate_snapshot_manifest_signature_scheme": "ed25519",
+                    "candidate_snapshot_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                    "candidate_snapshot_manifest_provenance_version": "1",
                 },
             },
         ).status_code
@@ -170,6 +190,10 @@ def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tm
     assert "refs/workspaces/publisher-snapshot-demo" in body
     assert snapshot_artifact.digest in body
     assert str(snapshot_artifact.uri) in body
+    assert "Snapshot Provenance" in body
+    assert "Manifest URI" in body
+    assert "Candidate Claim Provenance" in body
+    assert "Manifest URI" in body
     assert "run-pr-1" in body
     assert "claim-pr-1" in body
 
@@ -248,6 +272,22 @@ def test_eval_effort_overview_publication_is_rendered_from_effort_state(tmp_path
             "actor_id": "participant-alpha",
         },
     ).json()["workspace_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-effort-1",
+                "aggregate_kind": "snapshot",
+                "payload": {
+                    "snapshot_id": "snap-effort-1",
+                    "artifact_uri": "artifact://sha256/" + "a" * 64,
+                },
+            },
+        ).status_code
+        == 201
+    )
     assert (
         client.post(
             "/api/v1/events",
@@ -335,6 +375,22 @@ def test_inference_effort_overview_publication_uses_inference_join_profile(tmp_p
             "effort_id": effort_id,
         },
     ).json()["workspace_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-inference-1",
+                "aggregate_kind": "snapshot",
+                "payload": {
+                    "snapshot_id": "snap-inference-1",
+                    "artifact_uri": "artifact://sha256/" + "a" * 64,
+                },
+            },
+        ).status_code
+        == 201
+    )
     assert (
         client.post(
             "/api/v1/events",

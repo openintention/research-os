@@ -5,8 +5,10 @@ from pathlib import Path
 import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+SRC_ROOT = REPO_ROOT / "src"
+for path in (SRC_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from research_os.ops.runtime_backup import create_runtime_backup  # noqa: E402
 from research_os.settings import Settings  # noqa: E402

@@ -28,6 +28,42 @@
         "null"
       ]
     },
+    "source_bundle_manifest_uri": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_bundle_manifest_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_bundle_manifest_signature": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_bundle_manifest_provenance_schema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_bundle_manifest_provenance_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_bundle_manifest_signature_scheme": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "git_ref": {
       "type": [
         "string",

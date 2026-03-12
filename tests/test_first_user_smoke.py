@@ -23,6 +23,8 @@ def test_build_smoke_report_includes_efforts_and_exported_briefs():
             ],
             eval_client_output="effort_name=Eval Sprint",
             inference_client_output="effort_name=Inference Sprint",
+            eval_workspace_provenance_excerpt=["- Eval provenance snippet"],
+            inference_workspace_provenance_excerpt=["- Inference provenance snippet"],
             exported_brief_paths=[
                 "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md",
                 "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md",
@@ -36,5 +38,8 @@ def test_build_smoke_report_includes_efforts_and_exported_briefs():
     assert "Participation Outcome" in report
     assert "Joined (Eval)" in report
     assert "Participated (Eval)" in report
+    assert "Verifier-Ready Provenance" in report
+    assert "- Eval provenance snippet" in report
+    assert "- Inference provenance snippet" in report
     assert "effort_name=Eval Sprint" in report
     assert "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md" in report

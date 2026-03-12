@@ -21,6 +21,7 @@ def test_build_join_report_includes_live_inspection_targets() -> None:
                 "claim_id": "claim-1",
                 "reproduction_run_id": "run-1",
                 "participant_role": "contributor",
+                "provenance_snippet": ["- none found"],
                 "output": "workspace_id=workspace-1\nclaim_id=claim-1\n",
             },
         )(),
@@ -57,6 +58,7 @@ def test_run_hosted_join_bootstraps_and_runs_hosted_path(monkeypatch, tmp_path: 
 
     monkeypatch.setattr("scripts.join_openintention.REPO_ROOT", fake_repo_root)
     monkeypatch.setattr("scripts.join_openintention._run_command", fake_run_command)
+    monkeypatch.setattr("scripts.join_openintention._extract_provenance", lambda workspace_id, base_url: ["- provenance: not present"])
 
     report_path = run_hosted_join(
         actor_id="aliargun",
@@ -112,6 +114,7 @@ def test_run_hosted_join_can_skip_nested_bootstrap(monkeypatch, tmp_path: Path) 
 
     monkeypatch.setattr("scripts.join_openintention.REPO_ROOT", fake_repo_root)
     monkeypatch.setattr("scripts.join_openintention._run_command", fake_run_command)
+    monkeypatch.setattr("scripts.join_openintention._extract_provenance", lambda workspace_id, base_url: ["- provenance: not present"])
 
     report_path = run_hosted_join(
         actor_id="aliargun",

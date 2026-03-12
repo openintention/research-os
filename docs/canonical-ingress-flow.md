@@ -127,11 +127,13 @@ The success condition is not "ran the command". It is:
 ### Step 6: Inspect the resulting evidence
 
 The newcomer should inspect at least one of:
-- `data/publications/launch/hosted-join/hosted-join.md`
 - `data/publications/launch/public-ingress/public-ingress-smoke.md`
 - `data/publications/launch/first-user-smoke.md`
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 - `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
+
+If the hosted join command was executed, also include:
+- `data/publications/launch/hosted-join/hosted-join.md`
 
 The flow is only successful if the newcomer can see concrete artifacts, not just terminal logs.
 
