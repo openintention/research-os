@@ -14,6 +14,10 @@ from research_os.effort_lifecycle import is_historical_proof_effort
 from research_os.effort_lifecycle import is_public_proof_effort
 from research_os.effort_lifecycle import proof_version
 from research_os.effort_lifecycle import split_current_and_historical_efforts
+from research_os.domain.models import ClaimSummary
+from research_os.domain.models import EffortView
+from research_os.domain.models import FrontierMember
+from research_os.domain.models import WorkspaceView
 
 DEFAULT_API_BASE_URL = "https://openintention-api-production.up.railway.app"
 
@@ -120,8 +124,6 @@ def _fetch_json(
 
 
 def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, object]]) -> str:
-    from research_os.domain.models import EffortView
-
     effort_models = [EffortView.model_validate(effort) for effort in efforts]
     current_efforts, historical_efforts = split_current_and_historical_efforts(effort_models)
     cards = "\n".join(
@@ -162,8 +164,6 @@ def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, obje
 
 
 def _render_effort_index_card(*, public_api_base_url: str, effort: dict[str, object]) -> str:
-    from research_os.domain.models import EffortView
-
     effort_model = EffortView.model_validate(effort)
     state = _effort_state_label(effort_model)
     return f"""
@@ -194,15 +194,32 @@ def _effort_detail_html(
     claims: list[dict[str, object]],
     frontier: dict[str, object],
 ) -> str:
-    from research_os.domain.models import EffortView
-
     effort_model = EffortView.model_validate(effort)
+    workspace_models = sorted(
+        (WorkspaceView.model_validate(workspace) for workspace in workspaces),
+        key=lambda workspace: workspace.updated_at,
+        reverse=True,
+    )
+    claim_models = sorted(
+        (ClaimSummary.model_validate(claim) for claim in claims),
+        key=lambda claim: claim.updated_at,
+        reverse=True,
+    )
+    frontier_members = [
+        FrontierMember.model_validate(member) for member in frontier.get("members", [])[:8]
+    ]
     state = _effort_state_label(effort_model)
     join_command = _join_command(effort, api_base_url=public_api_base_url)
     join_brief = _join_brief(effort)
-    recent_workspaces = "\n".join(_render_workspace_item(workspace) for workspace in workspaces[:6])
-    frontier_items = "\n".join(_render_frontier_item(member) for member in frontier.get("members", [])[:8])
-    claim_items = "\n".join(_render_claim_item(claim) for claim in claims[:8])
+    workspace_actor_map = {workspace.workspace_id: workspace.actor_id or "unknown" for workspace in workspace_models}
+    recent_handoffs = "\n".join(
+        _render_recent_handoff(workspace, public_api_base_url=public_api_base_url) for workspace in workspace_models[:6]
+    )
+    frontier_items = "\n".join(_render_frontier_item(member, workspace_actor_map) for member in frontier_members)
+    claim_items = "\n".join(_render_claim_item(claim, workspace_actor_map) for claim in claim_models[:8])
+    best_result = _best_result_summary(frontier_members, workspace_actor_map)
+    latest_claim = _latest_claim_summary(claim_models, workspace_actor_map)
+    next_move = _next_move_summary(effort_model, claim_models, frontier_members, workspace_actor_map)
     return _page_html(
         str(effort["name"]),
         f"""
@@ -216,24 +233,36 @@ def _effort_detail_html(
           </div>
         </section>
 
-        <section class="panel grid two">
-          <div>
-            <h2>Current state</h2>
-            <ul>
-              <li>Objective: <code>{escape(str(effort["objective"]))}</code></li>
-              <li>Platform: <code>{escape(str(effort_model.platform))}</code></li>
-              <li>Budget seconds: <code>{escape(str(effort_model.budget_seconds))}</code></li>
-              <li>Attached workspaces: <code>{len(workspaces)}</code></li>
-              <li>Claims in effort scope: <code>{len(claims)}</code></li>
-              <li>Frontier members: <code>{len(frontier.get("members", []))}</code></li>
-              {'<li>Lifecycle: <code>historical proof run</code></li>' if is_historical_proof_effort(effort_model) else ''}
-              {f'<li>Current successor: <code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
-              {f'<li>Proof version: <code>{escape(str(proof_version(effort_model)))}</code></li>' if is_public_proof_effort(effort_model) else ''}
+        <section class="panel grid two effort-summary-grid">
+          <div class="summary-stack">
+            <div class="summary-card">
+              <div class="effort-type">Best current result</div>
+              <p class="summary-headline">{escape(best_result)}</p>
+            </div>
+            <div class="summary-card">
+              <div class="effort-type">Latest claim signal</div>
+              <p class="summary-headline">{escape(latest_claim)}</p>
+            </div>
+            <div class="summary-card">
+              <div class="effort-type">Best next move</div>
+              <p class="summary-headline">{escape(next_move)}</p>
+            </div>
+            <ul class="state-pills">
+              <li><span>Objective</span><code>{escape(str(effort["objective"]))}</code></li>
+              <li><span>Platform</span><code>{escape(str(effort_model.platform))}</code></li>
+              <li><span>Budget</span><code>{escape(str(effort_model.budget_seconds))}s</code></li>
+              <li><span>Workspaces</span><code>{len(workspace_models)}</code></li>
+              <li><span>Claims</span><code>{len(claim_models)}</code></li>
+              <li><span>Frontier</span><code>{len(frontier_members)}</code></li>
+              {'<li><span>Lifecycle</span><code>historical proof run</code></li>' if is_historical_proof_effort(effort_model) else ''}
+              {f'<li><span>Successor</span><code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
+              {f'<li><span>Proof version</span><code>{escape(str(proof_version(effort_model)))}</code></li>' if is_public_proof_effort(effort_model) else ''}
             </ul>
-            <p class="footer-note">This page is rendered from live hosted control-plane state.</p>
+            <p class="footer-note">Rendered directly from live hosted control-plane state.</p>
           </div>
-          <div>
-            <h2>Join this effort</h2>
+          <div id="join-this-effort" class="summary-card join-summary-card">
+            <div class="effort-type">Join this effort</div>
+            <h2>Pick up the current line of work</h2>
             <p>Pick up the current line of work, then leave behind a workspace, a claim or reproduction, and an inspectable brief for the next participant.</p>
             <p class="command">{escape(join_command)}</p>
             <ul>
@@ -243,7 +272,28 @@ def _effort_detail_html(
           </div>
         </section>
 
-        <section class="panel grid two">
+        <section class="panel">
+          <div class="proof-result-header">
+            <div>
+              <div class="eyebrow">Recent handoffs</div>
+              <h2>What recent contributors left behind</h2>
+            </div>
+            <p class="section-lede">Each successful join should leave behind work the next person can inspect and continue without asking for local context.</p>
+          </div>
+          <div class="handoff-grid">
+            {recent_handoffs or '<p>No handoffs yet. Use the join command above to leave the first visible result.</p>'}
+          </div>
+        </section>
+
+        <section class="panel machine-state-panel">
+          <div class="proof-result-header">
+            <div>
+              <div class="eyebrow">Full live state</div>
+              <h2>Machine-readable frontier and claim state</h2>
+            </div>
+            <p class="section-lede">This lower section keeps the raw state visible for agents and technical users without making ids the first thing a human sees.</p>
+          </div>
+          <section class="grid two">
           <div>
             <h2>Frontier</h2>
             <ul class="link-list">
@@ -256,56 +306,144 @@ def _effort_detail_html(
               {claim_items or "<li>No claims recorded yet.</li>"}
             </ul>
           </div>
-        </section>
-
-        <section class="panel">
-          <h2>Recent workspace activity</h2>
-          <ul class="link-list">
-            {recent_workspaces or "<li>No workspaces attached yet.</li>"}
-          </ul>
+          </section>
         </section>
         """,
     )
 
 
-def _render_workspace_item(workspace: dict[str, object]) -> str:
-    actor_id = workspace.get("actor_id") or "unknown"
-    participant_role = workspace.get("participant_role") or "contributor"
+def _render_recent_handoff(workspace: WorkspaceView, *, public_api_base_url: str) -> str:
+    actor = workspace.actor_id or "unknown"
+    discussion_url = (
+        f"{public_api_base_url}/api/v1/publications/workspaces/{quote(workspace.workspace_id)}/discussion"
+    )
+    return f"""
+    <article class="result-summary-card handoff-card">
+      <div class="effort-type">Recent handoff</div>
+      <h3>{escape(actor)}</h3>
+      <p class="summary-headline">{escape(_workspace_handoff_summary(workspace))}</p>
+      <ul class="state-pills compact">
+        <li><span>Role</span><code>{escape(str(workspace.participant_role))}</code></li>
+        <li><span>Runs</span><code>{len(workspace.run_ids)}</code></li>
+        <li><span>Claims</span><code>{len(workspace.claim_ids)}</code></li>
+        <li><span>Reproductions</span><code>{workspace.reproduction_count}</code></li>
+      </ul>
+      <p class="handoff-meta">
+        Workspace <code>{escape(workspace.workspace_id)}</code> · updated <code>{escape(workspace.updated_at.isoformat())}</code>
+      </p>
+      <div class="card-links">
+        <a href="{escape(discussion_url)}">View discussion</a>
+        <a href="#join-this-effort">Continue from this effort</a>
+      </div>
+    </article>
+    """
+
+
+def _render_frontier_item(member: FrontierMember, workspace_actor_map: dict[str, str]) -> str:
+    actor = workspace_actor_map.get(member.workspace_id or "", "unknown")
     return (
         "<li>"
-        f"<code>{escape(str(workspace['name']))}</code> actor=<code>{escape(str(actor_id))}</code>, "
-        f"role=<code>{escape(str(participant_role))}</code>, "
-        f"runs=<code>{len(workspace.get('run_ids', []))}</code>, "
-        f"claims=<code>{len(workspace.get('claim_ids', []))}</code>, "
-        f"reproductions=<code>{escape(str(workspace.get('reproduction_count', 0)))}</code>, "
-        f"adoptions=<code>{escape(str(workspace.get('adoption_count', 0)))}</code>, "
-        f"updated=<code>{escape(str(workspace.get('updated_at', 'n/a')))}</code>"
+        f"<code>{escape(member.snapshot_id)}</code> from "
+        f"<code>{escape(actor)}</code>: "
+        f"<code>{escape(member.metric_name)}</code> = "
+        f"<code>{escape(_format_metric(member.metric_value))}</code> "
+        f"({escape(member.direction)}, claims={member.claim_count})"
         "</li>"
     )
 
 
-def _render_frontier_item(member: dict[str, object]) -> str:
+def _render_claim_item(claim: ClaimSummary, workspace_actor_map: dict[str, str]) -> str:
+    actor = workspace_actor_map.get(claim.workspace_id or "", "unknown")
     return (
         "<li>"
-        f"<code>{escape(str(member['snapshot_id']))}</code> from "
-        f"<code>{escape(str(member['workspace_id']))}</code>: "
-        f"<code>{escape(str(member['metric_name']))}</code> = "
-        f"<code>{escape(str(member['metric_value']))}</code> "
-        f"({escape(str(member['direction']))}, claims={escape(str(member.get('claim_count', 0)))})"
+        f"<code>{escape(claim.claim_id)}</code> from <code>{escape(actor)}</code> "
+        f"[{escape(str(claim.status))}] "
+        f"{escape(claim.statement)} "
+        f"(reproductions={claim.support_count}, contradictions={claim.contradiction_count})"
         "</li>"
     )
 
 
-def _render_claim_item(claim: dict[str, object]) -> str:
+def _best_result_summary(
+    frontier_members: list[FrontierMember],
+    workspace_actor_map: dict[str, str],
+) -> str:
+    if not frontier_members:
+        return "No frontier result yet. The next participant can leave the first visible result."
+
+    best = frontier_members[0]
+    actor = workspace_actor_map.get(best.workspace_id or "", "unknown")
     return (
-        "<li>"
-        f"<code>{escape(str(claim['claim_id']))}</code> "
-        f"[{escape(str(claim['status']))}] "
-        f"{escape(str(claim['statement']))} "
-        f"(reproductions={escape(str(claim.get('support_count', 0)))}, "
-        f"contradictions={escape(str(claim.get('contradiction_count', 0)))})"
-        "</li>"
+        f"{best.metric_name} {_format_metric(best.metric_value)} from {actor}. "
+        f"{best.claim_count} claim signal{'s' if best.claim_count != 1 else ''} attached."
     )
+
+
+def _latest_claim_summary(
+    claim_summaries: list[ClaimSummary],
+    workspace_actor_map: dict[str, str],
+) -> str:
+    if not claim_summaries:
+        return "No claims yet. The next participant can leave the first explicit claim."
+
+    latest = claim_summaries[0]
+    actor = workspace_actor_map.get(latest.workspace_id or "", "unknown")
+    return (
+        f"{actor} left a {latest.status} claim: "
+        f"{_trim_sentence(latest.statement, limit=120)}"
+    )
+
+
+def _next_move_summary(
+    effort: EffortView,
+    claim_summaries: list[ClaimSummary],
+    frontier_members: list[FrontierMember],
+    workspace_actor_map: dict[str, str],
+) -> str:
+    if claim_summaries:
+        target = sorted(
+            claim_summaries,
+            key=lambda claim: (claim.support_count, claim.updated_at),
+        )[0]
+        actor = workspace_actor_map.get(target.workspace_id or "", "unknown")
+        return f"Join {effort.name}, reproduce {actor}'s claim, then leave your own brief behind."
+
+    if frontier_members:
+        best = frontier_members[0]
+        actor = workspace_actor_map.get(best.workspace_id or "", "unknown")
+        return f"Join {effort.name}, inspect {actor}'s best result, and try to beat it or reproduce it."
+
+    return f"Join {effort.name} and leave the first visible run, claim, and brief."
+
+
+def _workspace_handoff_summary(workspace: WorkspaceView) -> str:
+    parts: list[str] = [f"{len(workspace.run_ids)} run{'s' if len(workspace.run_ids) != 1 else ''}"]
+    claim_count = len(workspace.claim_ids)
+    if claim_count:
+        parts.append(f"{claim_count} claim{'s' if claim_count != 1 else ''}")
+    if workspace.reproduction_count:
+        parts.append(
+            f"{workspace.reproduction_count} reproduction{'s' if workspace.reproduction_count != 1 else ''}"
+        )
+    if workspace.adoption_count:
+        parts.append(f"{workspace.adoption_count} adoption{'s' if workspace.adoption_count != 1 else ''}")
+
+    summary = ", ".join(parts[:-1])
+    if len(parts) > 1:
+        summary = f"{summary}, and {parts[-1]}" if summary else parts[-1]
+    else:
+        summary = parts[0]
+    return f"Left behind {summary} that the next participant can inspect and continue."
+
+
+def _trim_sentence(value: str, *, limit: int) -> str:
+    if len(value) <= limit:
+        return value
+    return value[: limit - 1].rstrip() + "…"
+
+
+def _format_metric(value: float) -> str:
+    return f"{value:.6f}"
 
 
 def _join_command(effort: dict[str, object], *, api_base_url: str) -> str:

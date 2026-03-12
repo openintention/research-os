@@ -872,9 +872,15 @@ li {
 
 .flow-card,
 .result-summary-card,
-.selected-effort {
+.selected-effort,
+.summary-card {
   background: var(--panel-2);
   border: 1px solid var(--line);
+}
+
+.summary-card {
+  display: grid;
+  gap: var(--space-2);
 }
 
 .join-layout {
@@ -1101,6 +1107,80 @@ li {
   align-content: start;
 }
 
+.effort-summary-grid {
+  align-items: start;
+}
+
+.summary-stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.summary-headline {
+  margin: 0;
+  color: #eef6ff;
+  font-size: 1.04rem;
+  line-height: 1.45;
+}
+
+.join-summary-card h2 {
+  margin-bottom: 0;
+}
+
+.state-pills {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.state-pills li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(9, 16, 24, 0.56);
+  line-height: 1.2;
+}
+
+.state-pills span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.state-pills code {
+  color: #edf7ff;
+}
+
+.state-pills.compact li {
+  padding: 8px 10px;
+}
+
+.handoff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.handoff-card h3 {
+  margin-bottom: 0;
+}
+
+.handoff-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.machine-state-panel {
+  background:
+    linear-gradient(180deg, rgba(13, 21, 31, 0.82), rgba(10, 16, 24, 0.88));
+}
+
 .result-summary-card .card-links {
   margin-top: auto;
   padding-top: var(--space-2);
@@ -1162,6 +1242,7 @@ a {
   .join-layout,
   .proof-result-header,
   .proof-result-grid,
+  .handoff-grid,
   .technical-footer-copy {
     grid-template-columns: 1fr;
   }
@@ -1193,6 +1274,15 @@ a {
   .card-links a {
     width: 100%;
     justify-content: center;
+  }
+
+  .state-pills {
+    gap: 8px;
+  }
+
+  .state-pills li {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 """
