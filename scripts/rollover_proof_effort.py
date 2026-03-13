@@ -34,6 +34,11 @@ def rollover_proof_effort(
     effort_name: str | None = None,
     actor_id: str = "openintention-operator",
     reason: str = "start a new proof window",
+    successor_name: str | None = None,
+    successor_summary: str | None = None,
+    successor_tags: dict[str, str] | None = None,
+    drop_successor_tags: set[str] | None = None,
+    proof_series: str | None = None,
 ) -> ProofEffortRolloverResult:
     api = HttpResearchOSApi(base_url.rstrip("/"))
     efforts = api.list_efforts()
@@ -41,7 +46,7 @@ def rollover_proof_effort(
     if source.get("successor_effort_id"):
         raise RuntimeError("proof effort already has a successor and is already historical")
 
-    series = str(source.get("tags", {}).get("proof_series") or source["effort_id"])
+    series = proof_series or str(source.get("tags", {}).get("proof_series") or source["effort_id"])
     source_version = _proof_version_from_payload(source)
     successor_version = max(
         [source_version]
@@ -51,26 +56,28 @@ def rollover_proof_effort(
             if item.get("tags", {}).get("proof_series") == series
         ]
     ) + 1
-    successor_name = next_proof_effort_name(str(source["name"]), successor_version)
-
-    successor_tags = dict(source.get("tags", {}))
-    successor_tags.update(
+    resolved_successor_name = successor_name or next_proof_effort_name(str(source["name"]), successor_version)
+    resolved_successor_tags = dict(source.get("tags", {}))
+    for key in drop_successor_tags or set():
+        resolved_successor_tags.pop(key, None)
+    resolved_successor_tags.update(successor_tags or {})
+    resolved_successor_tags.update(
         {
             "public_proof": "true",
             "proof_series": series,
             "proof_version": str(successor_version),
         }
     )
-    successor_tags.pop("proof_status", None)
+    resolved_successor_tags.pop("proof_status", None)
 
     created = api.create_effort(
         {
-            "name": successor_name,
+            "name": resolved_successor_name,
             "objective": source["objective"],
             "platform": source["platform"],
             "budget_seconds": source["budget_seconds"],
-            "summary": source.get("summary"),
-            "tags": successor_tags,
+            "summary": source.get("summary") if successor_summary is None else successor_summary,
+            "tags": resolved_successor_tags,
             "actor_id": actor_id,
         }
     )
@@ -101,7 +108,7 @@ def rollover_proof_effort(
         source_effort_id=str(source["effort_id"]),
         source_name=str(source["name"]),
         successor_effort_id=str(successor_effort_id),
-        successor_name=successor_name,
+        successor_name=resolved_successor_name,
         series=series,
         source_version=source_version,
         successor_version=successor_version,
@@ -136,6 +143,23 @@ def main() -> None:
     parser.add_argument("--effort-name", help="Existing proof effort name to roll over.")
     parser.add_argument("--actor-id", default="openintention-operator", help="Operator actor id.")
     parser.add_argument("--reason", default="start a new proof window", help="Human-readable rollover reason.")
+    parser.add_argument("--successor-name", help="Override the successor effort display name.")
+    parser.add_argument("--successor-summary", help="Override the successor effort summary.")
+    parser.add_argument("--proof-series", help="Override the proof-series identifier for source and successor.")
+    parser.add_argument(
+        "--set-tag",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Set or override a successor effort tag. Repeatable.",
+    )
+    parser.add_argument(
+        "--drop-tag",
+        action="append",
+        default=[],
+        metavar="KEY",
+        help="Remove a tag from the successor effort before applying overrides. Repeatable.",
+    )
     parser.add_argument(
         "--output-path",
         default="data/publications/launch/proof-effort-rollover/proof-effort-rollover.md",
@@ -151,6 +175,11 @@ def main() -> None:
         effort_name=args.effort_name,
         actor_id=args.actor_id,
         reason=args.reason,
+        successor_name=args.successor_name,
+        successor_summary=args.successor_summary,
+        successor_tags=_parse_tag_assignments(args.set_tag),
+        drop_successor_tags=set(args.drop_tag),
+        proof_series=args.proof_series,
     )
     output_path = Path(args.output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,3 +211,17 @@ def _proof_version_from_payload(effort: dict[str, object]) -> int:
 
     model = EffortView.model_validate(effort)
     return proof_version(model)
+
+
+def _parse_tag_assignments(values: list[str]) -> dict[str, str]:
+    assignments: dict[str, str] = {}
+    for raw in values:
+        key, separator, value = raw.partition("=")
+        if not separator or not key:
+            raise SystemExit(f"invalid --set-tag value: {raw!r}; expected KEY=VALUE")
+        assignments[key] = value
+    return assignments
+
+
+if __name__ == "__main__":
+    main()

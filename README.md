@@ -280,6 +280,20 @@ python3 scripts/rollover_proof_effort.py \
 That keeps the old effort visible as a historical proof run and creates a new successor effort for
 the next proof window.
 
+If the successor needs a new public name or a refreshed join surface, override it during rollover:
+
+```bash
+python3 scripts/rollover_proof_effort.py \
+  --base-url http://127.0.0.1:8000 \
+  --effort-id <legacy_effort_id> \
+  --successor-name "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)" \
+  --proof-series mlx-history-apple-silicon-300 \
+  --set-tag external_harness=mlx-history \
+  --set-tag effort_type=mlx_history \
+  --set-tag join_brief_path=README.md#real-overnight-autoresearch-worker \
+  --set-tag "join_command=python3 scripts/run_overnight_autoresearch_worker.py --repo-path <path_to_mlx_history> --runner-command '<external_harness_command>' --base-url http://127.0.0.1:8000"
+```
+
 For the full policy and a rehearsal command, see:
 - `docs/proof-effort-lifecycle.md`
 - `python3 scripts/run_proof_effort_rollover_smoke.py --base-url http://127.0.0.1:8000`

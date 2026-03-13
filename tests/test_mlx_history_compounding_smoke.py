@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from scripts.run_mlx_history_compounding_smoke import _build_imported_contribution_from_workspace
+from scripts.run_mlx_history_compounding_smoke import _ensure_effort
 from scripts.run_mlx_history_compounding_smoke import _find_existing_workspace
 from scripts.run_mlx_history_compounding_smoke import _record_adoption
 from research_os.domain.models import EventKind
@@ -155,3 +156,106 @@ def test_record_adoption_is_idempotent(monkeypatch) -> None:
 
     assert event_id == "existing-adoption"
     assert api.appended_payloads == []
+
+
+def test_ensure_effort_prefers_current_series_member_over_historical_and_legacy() -> None:
+    class FakeApi:
+        def __init__(self) -> None:
+            self.created_payloads: list[dict[str, object]] = []
+            self.efforts = [
+                {
+                    "effort_id": "effort-legacy",
+                    "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "budget_seconds": 300,
+                    "summary": "Legacy effort",
+                    "tags": {
+                        "external_harness": "autoresearch-mlx",
+                        "proof_status": "historical",
+                    },
+                    "successor_effort_id": "effort-current",
+                    "updated_at": "2026-03-11T12:00:00Z",
+                },
+                {
+                    "effort_id": "effort-old",
+                    "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "budget_seconds": 300,
+                    "summary": "Old historical proof run",
+                    "tags": {
+                        "external_harness": "mlx-history",
+                        "public_proof": "true",
+                        "proof_series": "mlx-history-apple-silicon-300",
+                        "proof_version": "1",
+                        "proof_status": "historical",
+                    },
+                    "successor_effort_id": "effort-current",
+                    "updated_at": "2026-03-11T13:00:00Z",
+                },
+                {
+                    "effort_id": "effort-current",
+                    "name": "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "budget_seconds": 300,
+                    "summary": "Current proof run",
+                    "tags": {
+                        "external_harness": "mlx-history",
+                        "public_proof": "true",
+                        "proof_series": "mlx-history-apple-silicon-300",
+                        "proof_version": "2",
+                    },
+                    "successor_effort_id": None,
+                    "updated_at": "2026-03-11T14:00:00Z",
+                },
+            ]
+
+        def list_efforts(self) -> list[dict[str, object]]:
+            return self.efforts
+
+        def create_effort(self, payload: dict[str, object]) -> dict[str, object]:
+            self.created_payloads.append(payload)
+            return {"effort_id": "effort-created"}
+
+    api = FakeApi()
+    effort = _ensure_effort(api, base_url="https://api.example.com")
+
+    assert effort["effort_id"] == "effort-current"
+    assert api.created_payloads == []
+
+
+def test_ensure_effort_creates_first_mlx_history_proof_when_missing() -> None:
+    class FakeApi:
+        def __init__(self) -> None:
+            self.created_payloads: list[dict[str, object]] = []
+            self.efforts: list[dict[str, object]] = []
+
+        def list_efforts(self) -> list[dict[str, object]]:
+            return list(self.efforts)
+
+        def create_effort(self, payload: dict[str, object]) -> dict[str, object]:
+            self.created_payloads.append(payload)
+            created = {
+                "effort_id": "effort-created",
+                "name": payload["name"],
+                "objective": payload["objective"],
+                "platform": payload["platform"],
+                "budget_seconds": payload["budget_seconds"],
+                "summary": payload["summary"],
+                "tags": payload["tags"],
+                "workspace_ids": [],
+                "successor_effort_id": None,
+                "updated_at": "2026-03-13T00:00:00Z",
+            }
+            self.efforts.append(created)
+            return {"effort_id": "effort-created"}
+
+    api = FakeApi()
+    effort = _ensure_effort(api, base_url="https://api.example.com")
+
+    assert effort["effort_id"] == "effort-created"
+    assert api.created_payloads[0]["tags"]["external_harness"] == "mlx-history"
+    assert api.created_payloads[0]["tags"]["proof_series"] == "mlx-history-apple-silicon-300"
+    assert "run_overnight_autoresearch_worker.py" in api.created_payloads[0]["tags"]["join_command"]

@@ -39,6 +39,21 @@ effort.
 The previous effort becomes a **historical proof run** and the new effort becomes the next **current
 proof effort**.
 
+If the successor also needs a refreshed public name or join path, set that at rollover time instead
+of editing the old effort in place:
+
+```bash
+python3 scripts/rollover_proof_effort.py \
+  --base-url http://127.0.0.1:8000 \
+  --effort-id <legacy_effort_id> \
+  --successor-name "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)" \
+  --proof-series mlx-history-apple-silicon-300 \
+  --set-tag external_harness=mlx-history \
+  --set-tag effort_type=mlx_history \
+  --set-tag join_brief_path=README.md#real-overnight-autoresearch-worker \
+  --set-tag "join_command=python3 scripts/run_overnight_autoresearch_worker.py --repo-path <path_to_mlx_history> --runner-command '<external_harness_command>' --base-url http://127.0.0.1:8000"
+```
+
 ## Public Surfaces
 
 After rollover:

@@ -15,6 +15,9 @@ for path in (SRC_ROOT, REPO_ROOT):
 
 from research_os.artifacts.local import LocalArtifactRegistry  # noqa: E402
 from clients.tiny_loop.api import HttpResearchOSApi  # noqa: E402
+from research_os.effort_lifecycle import is_historical_proof_effort  # noqa: E402
+from research_os.effort_lifecycle import proof_version  # noqa: E402
+from research_os.domain.models import EffortView  # noqa: E402
 from research_os.domain.models import EventKind  # noqa: E402
 from research_os.integrations.mlx_history import (  # noqa: E402
     MlxHistoryResult,
@@ -26,6 +29,7 @@ EFFORT_NAME = "MLX History Sprint: improve val_bpb on Apple Silicon"
 EFFORT_OBJECTIVE = "val_bpb"
 EFFORT_PLATFORM = "Apple-Silicon-MLX"
 EFFORT_BUDGET_SECONDS = 300
+EFFORT_PROOF_SERIES = "mlx-history-apple-silicon-300"
 EFFORT_SUMMARY = (
     "Shared MLX history effort for compounding Apple Silicon val_bpb improvements "
     "through adoption, continuation, and visible frontier progress."
@@ -227,7 +231,7 @@ def main() -> None:
 
 def _ensure_effort(api: HttpResearchOSApi, *, base_url: str) -> dict[str, object]:
     efforts = api.list_efforts()
-    effort = next((item for item in efforts if item["name"] == EFFORT_NAME), None)
+    effort = _select_current_effort(efforts)
     if effort is not None:
         return effort
 
@@ -244,7 +248,7 @@ def _ensure_effort(api: HttpResearchOSApi, *, base_url: str) -> dict[str, object
                 "external_harness": "mlx-history",
                 "seeded": "true",
                 "public_proof": "true",
-                "proof_series": "mlx-history-apple-silicon-300",
+                "proof_series": EFFORT_PROOF_SERIES,
                 "proof_version": "1",
                 "join_brief_path": "README.md#real-overnight-autoresearch-worker",
                 "join_command": (
@@ -257,6 +261,28 @@ def _ensure_effort(api: HttpResearchOSApi, *, base_url: str) -> dict[str, object
     )
     effort_id = created["effort_id"]
     return next(item for item in api.list_efforts() if item["effort_id"] == effort_id)
+
+
+def _select_current_effort(efforts: list[dict[str, object]]) -> dict[str, object] | None:
+    ranked: list[tuple[int, int, str, dict[str, object]]] = []
+    for effort in efforts:
+        tags = effort.get("tags", {})
+        if not isinstance(tags, dict) or tags.get("external_harness") != "mlx-history":
+            continue
+        model = EffortView.model_validate(effort)
+        if is_historical_proof_effort(model):
+            continue
+        ranked.append(
+            (
+                1 if tags.get("proof_series") == EFFORT_PROOF_SERIES else 0,
+                proof_version(model),
+                model.updated_at.isoformat(),
+                effort,
+            )
+        )
+    if not ranked:
+        return None
+    return max(ranked, key=lambda item: item[:3])[-1]
 
 
 def _import_contribution(

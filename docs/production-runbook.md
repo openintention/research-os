@@ -120,6 +120,9 @@ python3 scripts/rollover_proof_effort.py \
   --effort-name "Eval Sprint: improve validation loss under fixed budget"
 ```
 
+Use the same command with `--successor-name`, `--proof-series`, repeated `--set-tag`, and optional
+`--drop-tag` whenever a proof-series rollover also needs a refreshed external-harness join surface.
+
 Rehearsal path:
 
 ```bash
