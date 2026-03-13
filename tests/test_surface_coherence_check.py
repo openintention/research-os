@@ -15,6 +15,7 @@ def test_build_surface_coherence_report_describes_freshness_model() -> None:
             checked_files=["README.md", "apps/site/dist/index.html"],
             required_artifacts=[
                 "data/publications/launch/public-ingress/public-ingress-smoke.md",
+                "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
                 "apps/site/dist/index.html",
             ],
         )
@@ -56,6 +57,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
             [
                 "## Freshness model",
                 "python3 scripts/run_surface_coherence_check.py",
+                "python3 scripts/run_repeated_external_participation_proof.py --base-url https://api.openintention.io",
             ]
         ),
         "docs/launch-package/checklist.md": "\n".join(
@@ -70,6 +72,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
             [
                 "data/publications/launch/public-ingress/first-user-smoke.md",
                 "data/publications/launch/hosted-join/hosted-join.md",
+                "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
                 "python3 scripts/run_surface_coherence_check.py",
             ]
         ),
@@ -77,6 +80,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
             [
                 "data/publications/launch/public-ingress/public-ingress-smoke.md",
                 "data/publications/launch/public-ingress/first-user-smoke.md",
+                "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
                 "python3 scripts/run_surface_coherence_check.py",
             ]
         ),
@@ -87,12 +91,19 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
                 "Freshness model:",
                 "generated effort briefs packaged with this build",
                 "Open deterministic join proof",
+                "Open repeated hosted participation proof",
             ]
         ),
         "apps/site/dist/evidence/public-ingress-smoke.html": "\n".join(
             [
                 "Deterministic smoke report",
                 "not a live effort counter",
+            ]
+        ),
+        "apps/site/dist/evidence/repeated-external-participation.html": "\n".join(
+            [
+                "Hosted network proof",
+                "multiple distinct participants landing visible work",
             ]
         ),
         "apps/site/dist/evidence/eval-effort.html": "\n".join(
@@ -115,6 +126,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         ),
         "data/publications/launch/public-ingress/public-ingress-smoke.md": "# report",
         "data/publications/launch/public-ingress/first-user-smoke.md": "# report",
+        "data/publications/launch/repeated-external-participation/repeated-external-participation.md": "# report",
         "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md": "# eval",
         "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md": "# inference",
     }

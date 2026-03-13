@@ -9,6 +9,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     eval_brief = repo_root / "eval.md"
     inference_brief = repo_root / "inference.md"
     join_with_ai = repo_root / "join-with-ai.md"
+    repeated_participation = repo_root / "repeated-external-participation.md"
     smoke_report.write_text(
         "# First User Smoke Report\n\n## Participation Outcome\n- Joined (Eval): workspace-1\n- Participated (Eval): claim-1\n",
         encoding="utf-8",
@@ -22,6 +23,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
         encoding="utf-8",
     )
     join_with_ai.write_text("# Join With an AI Agent\nline\n", encoding="utf-8")
+    repeated_participation.write_text("# Repeated External Participation Proof\n\nline\n", encoding="utf-8")
 
     output_dir = repo_root / "dist"
     index_path = build_microsite(
@@ -32,6 +34,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
             eval_brief=eval_brief,
             inference_brief=inference_brief,
             join_with_ai=join_with_ai,
+            repeated_participation_report=repeated_participation,
         ),
         config=MicrositeConfig(repo_url="https://github.com/example/openintention"),
     )
@@ -65,6 +68,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Eval Sprint, the easiest first path." in html
     assert "What your first run leaves behind" in html
     assert "Bundled snapshot evidence" in html
+    assert "Open repeated hosted participation proof" in html
     assert "A successful join should leave behind visible work" in html
     assert "A recent public-surface join" in html
     assert "Each successful join leaves behind a workspace" in html
@@ -78,6 +82,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
+    assert "./evidence/repeated-external-participation.html" in html
     assert 'href="/efforts"' in html
     assert "curl -fsSL https://openintention.io/join | bash" in html
     assert "--profile inference-sprint" in html
@@ -99,9 +104,15 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert (output_dir / "evidence" / "join-with-ai.md").read_text(encoding="utf-8").startswith(
         "# Join With an AI Agent"
     )
+    assert (
+        output_dir / "evidence" / "repeated-external-participation.md"
+    ).read_text(encoding="utf-8").startswith("# Repeated External Participation Proof")
     assert (output_dir / "evidence" / "join-with-ai.html").exists()
+    assert (output_dir / "evidence" / "repeated-external-participation.html").exists()
     evidence_html = (output_dir / "evidence" / "join-with-ai.html").read_text(encoding="utf-8")
     assert "Open raw markdown" in evidence_html
     assert "Back to OpenIntention" in evidence_html
     assert "Repo brief" in evidence_html
     assert "../styles.css?v=" in evidence_html
+    repeated_html = (output_dir / "evidence" / "repeated-external-participation.html").read_text(encoding="utf-8")
+    assert "Hosted network proof" in repeated_html

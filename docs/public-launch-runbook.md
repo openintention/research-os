@@ -71,6 +71,16 @@ python3 scripts/run_shared_participation_smoke.py --base-url https://api.openint
 That command is the minimal proof that two separate participants can land into the same
 seeded eval effort on one shared control plane.
 
+Verify repeated hosted participation next:
+
+```bash
+python3 scripts/run_repeated_external_participation_proof.py --base-url https://api.openintention.io
+```
+
+That command lands multiple distinct participants through the canonical hosted endpoint,
+checks that their actor attribution is visible on the live effort pages, and writes the
+public proof report under `data/publications/launch/repeated-external-participation/`.
+
 Seed the current local state:
 
 ```bash

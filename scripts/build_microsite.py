@@ -22,6 +22,7 @@ class MicrositeEvidence:
     eval_brief: Path
     inference_brief: Path
     join_with_ai: Path
+    repeated_participation_report: Path
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,10 +76,12 @@ def build_microsite(
     copied_eval = evidence_dir / "eval-effort.md"
     copied_inference = evidence_dir / "inference-effort.md"
     copied_join_with_ai = evidence_dir / "join-with-ai.md"
+    copied_repeated_participation = evidence_dir / "repeated-external-participation.md"
     shutil.copyfile(evidence.smoke_report, copied_smoke)
     shutil.copyfile(evidence.eval_brief, copied_eval)
     shutil.copyfile(evidence.inference_brief, copied_inference)
     shutil.copyfile(evidence.join_with_ai, copied_join_with_ai)
+    shutil.copyfile(evidence.repeated_participation_report, copied_repeated_participation)
 
     participation_excerpt = _section_excerpt(evidence.smoke_report, heading="## Participation Outcome", lines=6)
     eval_effort = _parse_effort_overview(evidence.eval_brief)
@@ -106,6 +109,11 @@ def build_microsite(
     for html_name, markdown_path, title in (
         ("join-with-ai.html", copied_join_with_ai, "Join OpenIntention With an AI Agent"),
         ("public-ingress-smoke.html", copied_smoke, "Public ingress report"),
+        (
+            "repeated-external-participation.html",
+            copied_repeated_participation,
+            "Repeated hosted participation proof",
+        ),
         ("eval-effort.html", copied_eval, "Eval effort brief"),
         ("inference-effort.html", copied_inference, "Inference effort brief"),
     ):
@@ -142,6 +150,8 @@ def main() -> None:
             eval_brief=repo_root / "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md",
             inference_brief=repo_root / "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md",
             join_with_ai=repo_root / "docs" / "join-with-ai.md",
+            repeated_participation_report=repo_root
+            / "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
         ),
         config=MicrositeConfig(repo_url=args.repo_url),
     )
@@ -326,6 +336,7 @@ def _index_html(
             <div class="card-links">
               <a href="/efforts">Open live explorer</a>
               <a href="./evidence/public-ingress-smoke.html">Open deterministic join proof</a>
+              <a href="./evidence/repeated-external-participation.html">Open repeated hosted participation proof</a>
             </div>
           </div>
         </aside>
@@ -484,6 +495,7 @@ def _index_html(
         <ul class="link-list">
           <li><a href="/efforts">Live hosted explorer</a></li>
           <li><a href="./evidence/public-ingress-smoke.html">Deterministic ingress proof</a></li>
+          <li><a href="./evidence/repeated-external-participation.html">Repeated hosted participation proof</a></li>
           <li><a href="./evidence/eval-effort.html">Snapshot brief: Eval Sprint</a></li>
           <li><a href="./evidence/inference-effort.html">Snapshot brief: Inference Sprint</a></li>
           {repo_list_item}
@@ -589,6 +601,11 @@ def _evidence_page_intro(markdown_path: Path) -> tuple[str, str]:
         return (
             "Generated snapshot",
             "This brief is a generated snapshot from the last repo export bundled into this site. Use /efforts for live hosted state.",
+        )
+    if markdown_path.name == "repeated-external-participation.md":
+        return (
+            "Hosted network proof",
+            "This report shows multiple distinct participants landing visible work through the canonical hosted network.",
         )
     if markdown_path.name == "join-with-ai.md":
         return (

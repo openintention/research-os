@@ -14,10 +14,12 @@ class SurfaceCoherenceResult:
 REQUIRED_ARTIFACTS = (
     "data/publications/launch/public-ingress/public-ingress-smoke.md",
     "data/publications/launch/public-ingress/first-user-smoke.md",
+    "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
     "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md",
     "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md",
     "apps/site/dist/index.html",
     "apps/site/dist/evidence/public-ingress-smoke.html",
+    "apps/site/dist/evidence/repeated-external-participation.html",
     "apps/site/dist/evidence/eval-effort.html",
     "apps/site/dist/evidence/inference-effort.html",
     "apps/site/dist/evidence/join-with-ai.html",
@@ -45,6 +47,7 @@ REQUIRED_PHRASES = {
     "docs/public-launch-runbook.md": [
         "## Freshness model",
         "python3 scripts/run_surface_coherence_check.py",
+        "python3 scripts/run_repeated_external_participation_proof.py --base-url https://api.openintention.io",
     ],
     "docs/launch-package/checklist.md": [
         "python3 scripts/run_surface_coherence_check.py",
@@ -55,11 +58,13 @@ REQUIRED_PHRASES = {
     "docs/launch-package/evidence.md": [
         "data/publications/launch/public-ingress/first-user-smoke.md",
         "data/publications/launch/hosted-join/hosted-join.md",
+        "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
         "python3 scripts/run_surface_coherence_check.py",
     ],
     "docs/launch-package/README.md": [
         "data/publications/launch/public-ingress/public-ingress-smoke.md",
         "data/publications/launch/public-ingress/first-user-smoke.md",
+        "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
         "python3 scripts/run_surface_coherence_check.py",
     ],
     "apps/site/dist/index.html": [
@@ -68,10 +73,15 @@ REQUIRED_PHRASES = {
         "Freshness model:",
         "generated effort briefs packaged with this build",
         "Open deterministic join proof",
+        "Open repeated hosted participation proof",
     ],
     "apps/site/dist/evidence/public-ingress-smoke.html": [
         "Deterministic smoke report",
         "not a live effort counter",
+    ],
+    "apps/site/dist/evidence/repeated-external-participation.html": [
+        "Hosted network proof",
+        "multiple distinct participants landing visible work",
     ],
     "apps/site/dist/evidence/eval-effort.html": [
         "Generated snapshot",

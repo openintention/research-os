@@ -9,11 +9,13 @@ This launch package should point to generated evidence, not only prose.
 - `data/publications/launch/public-ingress/public-ingress-smoke.md`
 - `data/publications/launch/public-ingress/first-user-smoke.md`
 - `data/publications/launch/hosted-join/hosted-join.md` when the hosted join path is exercised
+- `data/publications/launch/repeated-external-participation/repeated-external-participation.md`
 
 ## Regeneration command
 
 ```bash
 python3 scripts/run_public_ingress_smoke.py
+python3 scripts/run_repeated_external_participation_proof.py --base-url https://api.openintention.io
 python3 scripts/export_effort_briefs.py
 python3 scripts/build_microsite.py
 python3 scripts/run_surface_coherence_check.py
@@ -47,4 +49,5 @@ Canonical public repo:
 - one excerpt from the eval effort brief
 - one excerpt from the inference effort brief
 - one short snippet from `data/publications/launch/public-ingress/first-user-smoke.md`
+- one short excerpt from `data/publications/launch/repeated-external-participation/repeated-external-participation.md`
 - one exact local command that someone else can run

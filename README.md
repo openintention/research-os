@@ -236,6 +236,16 @@ make smoke-shared-participation BASE_URL=https://api.openintention.io
 
 That report is written under `data/publications/launch/shared-participation/`.
 
+To prove repeated external participation on the canonical hosted network:
+
+```bash
+python3 scripts/run_repeated_external_participation_proof.py --base-url https://api.openintention.io
+```
+
+That proof lands multiple distinct participants through the canonical hosted endpoint,
+checks that their actor IDs are visible on the live effort pages, and writes a public
+report under `data/publications/launch/repeated-external-participation/`.
+
 If you want your own machine to keep contributing to one hosted effort during a bounded local
 window, use the nightly contribution runner:
 

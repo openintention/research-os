@@ -27,3 +27,9 @@ def read_json(url: str, *, timeout: float = 20.0, headers: Mapping[str, str] | N
     request = build_request(url, headers=headers)
     with urlopen(request, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def read_text(url: str, *, timeout: float = 20.0, headers: Mapping[str, str] | None = None) -> str:
+    request = build_request(url, headers=headers)
+    with urlopen(request, timeout=timeout) as response:
+        return response.read().decode("utf-8")
