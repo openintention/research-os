@@ -77,6 +77,10 @@ main() {{
         mode="nightly"
         shift
         ;;
+      --worker)
+        mode="worker"
+        shift
+        ;;
       *)
         pass_args+=("$1")
         shift
@@ -115,6 +119,11 @@ main() {{
   if [ "$mode" = "nightly" ]; then
     log "starting nightly contribution window"
     exec "$OPENINTENTION_VENV_DIR/bin/python" scripts/run_nightly_contribution_window.py "${{pass_args[@]}}"
+  fi
+
+  if [ "$mode" = "worker" ]; then
+    log "starting overnight autoresearch worker"
+    exec "$OPENINTENTION_VENV_DIR/bin/python" scripts/run_overnight_autoresearch_worker.py "${{pass_args[@]}}"
   fi
 
   log "joining the hosted effort"

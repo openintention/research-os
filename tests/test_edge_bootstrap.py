@@ -15,7 +15,7 @@ def test_edge_join_command_uses_public_join_route() -> None:
     )
 
 
-def test_render_edge_bootstrap_script_prefers_python311_and_supports_nightly() -> None:
+def test_render_edge_bootstrap_script_prefers_python311_and_supports_worker_modes() -> None:
     script = render_edge_bootstrap_script(
         site_url="https://openintention.io/",
         repo_url="https://github.com/openintention/research-os.git",
@@ -28,3 +28,4 @@ def test_render_edge_bootstrap_script_prefers_python311_and_supports_nightly() -
     assert 'printf \'%s\\n\' "python3.11"' in script
     assert 'exec "$OPENINTENTION_VENV_DIR/bin/python" scripts/join_openintention.py --no-bootstrap "${pass_args[@]}"' in script
     assert 'exec "$OPENINTENTION_VENV_DIR/bin/python" scripts/run_nightly_contribution_window.py "${pass_args[@]}"' in script
+    assert 'exec "$OPENINTENTION_VENV_DIR/bin/python" scripts/run_overnight_autoresearch_worker.py "${pass_args[@]}"' in script

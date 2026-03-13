@@ -69,7 +69,10 @@ def run_production_smoke(
         effort_name = str(effort["name"])
         effort_page_url = f"{site_url.rstrip('/')}/efforts/{effort_id}"
         effort_page_html = _require_text(effort_page_url, must_include=effort_name)
-        if "Current state" not in effort_page_html:
+        if (
+            "Full live state" not in effort_page_html
+            and "Machine-readable frontier and claim state" not in effort_page_html
+        ):
             raise RuntimeError(f"effort page missing current-state section: {effort_page_url}")
         effort_page_urls.append(effort_page_url)
 

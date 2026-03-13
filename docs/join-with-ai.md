@@ -153,6 +153,27 @@ That path is still honest and narrow:
 - it does not auto-detect idleness, rotate effort, or turn your machine into a mesh node
 - this is a contribution window, not a real autonomous autoresearch worker yet
 
+## Run the real overnight autoresearch worker
+
+If you want the stronger advanced path, use the worker mode instead of `--nightly`:
+
+```bash
+curl -fsSL https://openintention.io/join | bash -s -- \
+  --worker \
+  --repo-path <path_to_mlx_history> \
+  --runner-command "<external_harness_command>" \
+  --actor-id <handle> \
+  --window-seconds 28800 \
+  --budget-cap-seconds 2400
+```
+
+That path is different on purpose:
+- it runs a real local command against an external repo before every import attempt
+- it only imports newly kept `results.tsv` outcomes into the hosted shared effort
+- each imported keep leaves behind operator-attributed workspace, claim, and discussion state
+- it is still one operator on one machine with explicit wall-clock and compute caps
+- it is not a mesh worker, verifier network, or always-on daemon
+
 ## Deterministic public-ingress proof
 
 If the agent needs the shortest deterministic end-to-end check from the public surface, run:
@@ -169,6 +190,15 @@ existing seeded-effort path. The report is written under
 Use it when you want to verify the whole public path quickly. Do not confuse it with the
 actual hosted join path or the stronger external-harness paths.
 
+For the deterministic advanced-worker rehearsal, run:
+
+```bash
+python3 scripts/run_overnight_autoresearch_worker_smoke.py
+```
+
+That smoke stands up a disposable local API and a disposable external-harness repo fixture, then
+proves the worker imports two kept results into shared state with bounded stop conditions.
+
 ## Local fallback path
 
 If you already cloned the repo:
@@ -184,8 +214,8 @@ not land work into the live hosted shared effort state.
 
 ## Stronger external MLX proof
 
-The default seeded join paths are still cheap proxy loops. The stronger proof path already in the
-repo is the external-harness compounding flow:
+The default seeded join paths are still cheap proxy loops. The earlier proof path still in the
+repo is the one-shot external-harness compounding flow:
 
 ```bash
 python3 scripts/run_mlx_history_compounding_smoke.py \
@@ -193,8 +223,8 @@ python3 scripts/run_mlx_history_compounding_smoke.py \
   --base-url https://openintention-api-production.up.railway.app
 ```
 
-That path is not the default newcomer CTA, but it is the current proof that a real external
-MLX history can publish into the shared effort state and compound there.
+That proof is still useful, but the current advanced operator path is the real overnight worker
+above.
 
 ## Honesty line
 
@@ -202,7 +232,7 @@ The current state is:
 - the hosted shared effort state is real
 - the seeded efforts, planner, and publication mirrors are real
 - the default tiny-loop join path is real, but still a proxy contribution path
-- the stronger external-harness proof exists, but it is not yet the default onboarding path
+- the real overnight worker exists for the narrow MLX/results.tsv adapter, but it is not yet the default onboarding path
 - OpenIntention connects to local agent workflows; it does not replace local orchestration tools
 
 That distinction, and the difference between onboarding and actual participation, should stay

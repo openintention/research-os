@@ -38,6 +38,7 @@ def test_site_server_serves_generated_index_and_evidence(tmp_path):
     assert "curl -fsSL" not in join_response.text
     assert "OPENINTENTION_REPO_URL" in join_response.text
     assert "scripts/join_openintention.py --no-bootstrap" in join_response.text
+    assert "scripts/run_overnight_autoresearch_worker.py" in join_response.text
 
     join_sh_response = client.get("/join.sh")
     assert join_sh_response.status_code == 200
@@ -145,6 +146,10 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                     "objective": "val_bpb",
                     "platform": "Apple-Silicon-MLX",
                     "budget_seconds": 300,
+                    "tags": {
+                        "external_harness": "mlx-history",
+                        "worker_mode": "overnight-autoresearch",
+                    },
                     "updated_at": "2026-03-11T13:47:23Z",
                 },
                 {
@@ -159,6 +164,9 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                     "objective": "val_bpb",
                     "platform": "Apple-Silicon-MLX",
                     "budget_seconds": 300,
+                    "tags": {
+                        "external_harness": "mlx-history",
+                    },
                     "updated_at": "2026-03-11T13:47:22Z",
                 },
             ]
@@ -312,8 +320,9 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert response.status_code == 200
     assert "MLX History Sprint: improve val_bpb on Apple Silicon" in response.text
     assert "Live external-harness proof" in response.text
-    assert "README.md#external-mlx-compounding-proof" in response.text
-    assert "python3 scripts/run_mlx_history_compounding_smoke.py" in response.text
+    assert "README.md#real-overnight-autoresearch-worker" in response.text
+    assert "python3 scripts/run_overnight_autoresearch_worker.py" in response.text
+    assert "&lt;external_harness_command&gt;" in response.text
     assert "Best current result" in response.text
     assert "Latest claim signal" in response.text
     assert "Best next move" in response.text
@@ -327,6 +336,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "1 adoption" in response.text
     assert "Best-so-far progression" in response.text
     assert "Starting point" in response.text
+    assert "mlx-history:overnight-autoresearch" in response.text
     assert "New best #1" in response.text
     assert "Latest public handoff" in response.text
     assert "Recent handoffs" in response.text

@@ -289,8 +289,8 @@ def _index_html(
             OpenIntention gives small research loops a shared place to land.
           </p>
           <p class="footer-note">
-            Shared effort state is live today. The starter loop is still a cheap proxy. A stronger
-            external-harness path already exists in the repo.
+            Shared effort state is live today. The starter loop is still a cheap proxy. A real
+            overnight worker for the stronger external-harness path now exists in the repo.
           </p>
         </div>
         <aside class="hero-proof">

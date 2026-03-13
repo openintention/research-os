@@ -571,6 +571,7 @@ def _render_workspace_proof_meta(workspace: WorkspaceView) -> str:
     return f"""
     <ul class="state-pills compact">
       <li><span>Role</span><code>{escape(str(workspace.participant_role))}</code></li>
+      <li><span>Path</span><code>{escape(_workspace_execution_label(workspace))}</code></li>
       <li><span>Runs</span><code>{len(workspace.run_ids)}</code></li>
       <li><span>Claims</span><code>{len(workspace.claim_ids)}</code></li>
       <li><span>Reproductions</span><code>{workspace.reproduction_count}</code></li>
@@ -712,6 +713,13 @@ def _is_better_run_event(candidate: EventEnvelope, existing: EventEnvelope) -> b
 
 def _join_command(effort: dict[str, object], *, api_base_url: str) -> str:
     tags = effort.get("tags", {})
+    if tags.get("external_harness") == "mlx-history":
+        return (
+            "python3 scripts/run_overnight_autoresearch_worker.py "
+            "--repo-path <path_to_mlx_history> "
+            "--runner-command '<external_harness_command>' "
+            f"--base-url {api_base_url}"
+        )
     if explicit := tags.get("join_command"):
         return str(explicit)
 
@@ -726,11 +734,22 @@ def _join_command(effort: dict[str, object], *, api_base_url: str) -> str:
 
 def _join_brief(effort: dict[str, object]) -> str:
     tags = effort.get("tags", {})
+    if tags.get("external_harness") == "mlx-history":
+        return "README.md#real-overnight-autoresearch-worker"
     if explicit := tags.get("join_brief_path"):
         return str(explicit)
-    if tags.get("external_harness") == "mlx-history":
-        return "README.md#external-mlx-compounding-proof"
     return "docs/seeded-efforts.md"
+
+
+def _workspace_execution_label(workspace: WorkspaceView) -> str:
+    if workspace.tags.get("simulated_contribution") == "true":
+        return "proxy"
+    if harness := workspace.tags.get("external_harness"):
+        worker_mode = workspace.tags.get("worker_mode")
+        if worker_mode:
+            return f"{harness}:{worker_mode}"
+        return harness
+    return "standard"
 
 
 def _effort_state_label(effort) -> dict[str, str]:

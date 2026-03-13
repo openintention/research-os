@@ -13,6 +13,7 @@ for path in (SRC_ROOT, REPO_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from research_os.artifacts.local import LocalArtifactRegistry  # noqa: E402
 from clients.tiny_loop.api import HttpResearchOSApi  # noqa: E402
 from research_os.domain.models import EventKind  # noqa: E402
 from research_os.integrations.mlx_history import (  # noqa: E402
@@ -72,6 +73,8 @@ def run_mlx_history_compounding_smoke(
     normalized_base_url = base_url.rstrip("/")
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
+    artifact_root = output_root / "artifacts"
+    artifact_root.mkdir(parents=True, exist_ok=True)
 
     api = HttpResearchOSApi(normalized_base_url)
     effort = _ensure_effort(api, base_url=normalized_base_url)
@@ -89,6 +92,7 @@ def run_mlx_history_compounding_smoke(
         baseline=baseline,
         candidate=alpha_result,
         repo_url=repo_url,
+        artifact_root=artifact_root,
     )
     beta = _import_contribution(
         api,
@@ -98,6 +102,7 @@ def run_mlx_history_compounding_smoke(
         baseline=alpha_result,
         candidate=beta_result,
         repo_url=repo_url,
+        artifact_root=artifact_root,
     )
     adoption_event_id = _record_adoption(api, from_contribution=alpha, to_contribution=beta)
 
@@ -241,10 +246,11 @@ def _ensure_effort(api: HttpResearchOSApi, *, base_url: str) -> dict[str, object
                 "public_proof": "true",
                 "proof_series": "mlx-history-apple-silicon-300",
                 "proof_version": "1",
-                "join_brief_path": "README.md#external-mlx-compounding-proof",
+                "join_brief_path": "README.md#real-overnight-autoresearch-worker",
                 "join_command": (
-                    "python3 scripts/run_mlx_history_compounding_smoke.py "
-                    f"--repo-path <path_to_mlx_history> --base-url {base_url}"
+                    "python3 scripts/run_overnight_autoresearch_worker.py "
+                    f"--repo-path <path_to_mlx_history> --runner-command '<external_harness_command>' "
+                    f"--base-url {base_url}"
                 ),
             },
         }
@@ -262,13 +268,17 @@ def _import_contribution(
     baseline: MlxHistoryResult,
     candidate: MlxHistoryResult,
     repo_url: str,
+    artifact_root: str | Path,
+    workspace_tags: dict[str, str] | None = None,
+    event_tags: dict[str, str] | None = None,
 ) -> ImportedContribution:
     workspace_label = f"{workspace_name}-{candidate.commit}"
-    if existing_workspace := _find_existing_workspace(
+    existing_workspace = _find_existing_workspace(
         api.list_workspaces(effort_id=effort_id),
         name=workspace_label,
         actor_id=actor_id,
-    ):
+    )
+    if existing_workspace:
         return _build_imported_contribution_from_workspace(
             existing_workspace,
             actor_id=actor_id,
@@ -276,6 +286,35 @@ def _import_contribution(
             baseline=baseline,
             candidate=candidate,
         )
+
+    artifact_registry = LocalArtifactRegistry(artifact_root)
+    baseline_artifact = _put_result_artifact(
+        artifact_registry,
+        repo_url=repo_url,
+        result=baseline,
+        baseline_commit=None,
+        actor_id=actor_id,
+    )
+    candidate_artifact = _put_result_artifact(
+        artifact_registry,
+        repo_url=repo_url,
+        result=candidate,
+        baseline_commit=baseline.commit,
+        actor_id=actor_id,
+    )
+    default_workspace_tags = {
+        "external_harness": "mlx-history",
+        "execution_path": "external-harness",
+        "imported": "true",
+        "baseline_commit": baseline.commit,
+        "candidate_commit": candidate.commit,
+    }
+    default_event_tags = {
+        "external_harness": "mlx-history",
+        "execution_path": "external-harness",
+        "baseline_commit": baseline.commit,
+        "candidate_commit": candidate.commit,
+    }
 
     workspace = api.create_workspace(
         {
@@ -288,7 +327,7 @@ def _import_contribution(
                 f"Imported MLX history result `{candidate.commit}` building on "
                 f"`{baseline.commit}`."
             ),
-            "tags": {"external_harness": "mlx-history", "imported": "true"},
+            "tags": {**default_workspace_tags, **(workspace_tags or {})},
             "actor_id": actor_id,
         }
     )
@@ -309,12 +348,21 @@ def _import_contribution(
             "payload": {
                 "snapshot_id": baseline_snapshot_id,
                 "parent_snapshot_ids": [],
-                "artifact_uri": commit_url(repo_url, baseline.commit),
-                "source_bundle_digest": baseline.commit,
+                "artifact_uri": baseline_artifact.uri,
+                "source_bundle_digest": baseline_artifact.digest,
+                "source_bundle_manifest_uri": baseline_artifact.uri,
+                "source_bundle_manifest_digest": baseline_artifact.digest,
+                "source_bundle_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                "source_bundle_manifest_provenance_version": "1",
                 "git_ref": baseline.commit,
                 "notes": baseline.description,
             },
-            "tags": {"external_harness": "mlx-history", "commit": baseline.commit},
+            "tags": {
+                **default_event_tags,
+                **(event_tags or {}),
+                "commit": baseline.commit,
+                "artifact_commit_url": commit_url(repo_url, baseline.commit),
+            },
         }
     )
     api.append_event(
@@ -327,12 +375,21 @@ def _import_contribution(
             "payload": {
                 "snapshot_id": candidate_snapshot_id,
                 "parent_snapshot_ids": [baseline_snapshot_id],
-                "artifact_uri": commit_url(repo_url, candidate.commit),
-                "source_bundle_digest": candidate.commit,
+                "artifact_uri": candidate_artifact.uri,
+                "source_bundle_digest": candidate_artifact.digest,
+                "source_bundle_manifest_uri": candidate_artifact.uri,
+                "source_bundle_manifest_digest": candidate_artifact.digest,
+                "source_bundle_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                "source_bundle_manifest_provenance_version": "1",
                 "git_ref": candidate.commit,
                 "notes": candidate.description,
             },
-            "tags": {"external_harness": "mlx-history", "commit": candidate.commit},
+            "tags": {
+                **default_event_tags,
+                **(event_tags or {}),
+                "commit": candidate.commit,
+                "artifact_commit_url": commit_url(repo_url, candidate.commit),
+            },
         }
     )
     api.append_event(
@@ -356,7 +413,11 @@ def _import_contribution(
                 "external_harness": "mlx-history",
                 "description": candidate.description,
             },
-            "tags": {"external_harness": "mlx-history", "commit": candidate.commit},
+            "tags": {
+                **default_event_tags,
+                **(event_tags or {}),
+                "commit": candidate.commit,
+            },
         }
     )
     api.append_event(
@@ -381,8 +442,16 @@ def _import_contribution(
                 "delta": candidate.val_bpb - baseline.val_bpb,
                 "confidence": 0.7,
                 "evidence_run_ids": [run_id],
+                "candidate_snapshot_manifest_uri": candidate_artifact.uri,
+                "candidate_snapshot_manifest_digest": candidate_artifact.digest,
+                "candidate_snapshot_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                "candidate_snapshot_manifest_provenance_version": "1",
             },
-            "tags": {"external_harness": "mlx-history", "commit": candidate.commit},
+            "tags": {
+                **default_event_tags,
+                **(event_tags or {}),
+                "commit": candidate.commit,
+            },
         }
     )
 
@@ -491,6 +560,36 @@ def _build_imported_contribution_from_workspace(
         run_id=f"{scope}-run-{candidate.commit}",
         metric_value=candidate.val_bpb,
         delta=candidate.val_bpb - baseline.val_bpb,
+    )
+
+
+def _put_result_artifact(
+    artifact_registry: LocalArtifactRegistry,
+    *,
+    repo_url: str,
+    result: MlxHistoryResult,
+    baseline_commit: str | None,
+    actor_id: str,
+):
+    manifest = {
+        "schema": "openintention-mlx-history-artifact-v1",
+        "repo_url": repo_url,
+        "commit": result.commit,
+        "commit_url": commit_url(repo_url, result.commit),
+        "status": result.status,
+        "description": result.description,
+        "metric_name": "val_bpb",
+        "metric_value": result.val_bpb,
+        "memory_gb": result.memory_gb,
+        "objective": EFFORT_OBJECTIVE,
+        "platform": EFFORT_PLATFORM,
+        "execution_path": "external-harness",
+        "external_harness": "mlx-history",
+        "actor_id": actor_id,
+        "baseline_commit": baseline_commit,
+    }
+    return artifact_registry.put_bytes(
+        json.dumps(manifest, sort_keys=True, indent=2).encode("utf-8")
     )
 
 

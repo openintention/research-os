@@ -24,6 +24,7 @@ def render_workspace_discussion(
 ) -> PublicationView:
     recent_events = sorted(events, key=lambda event: event.occurred_at, reverse=True)[:5]
     claim_lines = _render_claim_lines(claims)
+    execution_lines = _render_execution_lines(workspace)
     provenance_lines = _render_workspace_provenance_lines(events=events, claims=claims)
     event_lines = [
         f"- `{event.kind}` at {event.occurred_at.isoformat()} on `{event.aggregate_id or event.workspace_id}`"
@@ -41,6 +42,8 @@ def render_workspace_discussion(
             f"- Budget seconds: `{workspace.budget_seconds}`",
             f"- Updated at: `{workspace.updated_at.isoformat()}`",
             *(["- Description: " + workspace.description] if workspace.description else []),
+            *(["", "## Execution Path"] if execution_lines else []),
+            *execution_lines,
             "",
             "## State",
             f"- Snapshots: {len(workspace.snapshot_ids)}",
@@ -96,6 +99,7 @@ def render_snapshot_pull_request(
         f"- Objective: `{workspace.objective}`",
         f"- Platform: `{workspace.platform}`",
         f"- Budget seconds: `{workspace.budget_seconds}`",
+        *_render_execution_lines(workspace),
         "",
         "## Snapshot",
         f"- Snapshot ID: `{payload['snapshot_id']}`",
@@ -150,6 +154,7 @@ def render_effort_overview(
             f"- `{workspace.name}` ({workspace.workspace_id}) "
             f"actor={workspace.actor_id or 'unknown'}, "
             f"role={workspace.participant_role}, "
+            f"path={_workspace_execution_label(workspace)}, "
             f"runs={len(workspace.run_ids)}, claims={len(workspace.claim_ids)}, "
             f"reproductions={workspace.reproduction_count}, "
             f"updated={workspace.updated_at.isoformat()}"
@@ -221,6 +226,44 @@ def _render_claim_lines(claims: list[ClaimSummary]) -> list[str]:
         )
         for claim in ordered_claims
     ]
+
+
+def _render_execution_lines(workspace: WorkspaceView) -> list[str]:
+    tags = workspace.tags
+    if tags.get("simulated_contribution") == "true":
+        effort_type = tags.get("effort_type")
+        label = "proxy"
+        if effort_type:
+            label = f"proxy ({effort_type})"
+        return [f"- Execution path: `{label}`"]
+
+    harness = tags.get("external_harness")
+    if harness is None:
+        return []
+
+    lines = [
+        "- Execution path: `external-harness`",
+        f"- Harness: `{harness}`",
+    ]
+    if worker_mode := tags.get("worker_mode"):
+        lines.append(f"- Worker mode: `{worker_mode}`")
+    if candidate_commit := tags.get("candidate_commit"):
+        lines.append(f"- Candidate commit: `{candidate_commit}`")
+    if baseline_commit := tags.get("baseline_commit"):
+        lines.append(f"- Baseline commit: `{baseline_commit}`")
+    return lines
+
+
+def _workspace_execution_label(workspace: WorkspaceView) -> str:
+    tags = workspace.tags
+    if tags.get("simulated_contribution") == "true":
+        return "proxy"
+    if harness := tags.get("external_harness"):
+        worker_mode = tags.get("worker_mode")
+        if worker_mode:
+            return f"external-harness:{harness}:{worker_mode}"
+        return f"external-harness:{harness}"
+    return "standard"
 
 
 def _is_manifest_field_present(payload: dict[str, object], manifest_prefix: str) -> bool:
@@ -377,6 +420,15 @@ def _render_manifest_metadata_lines(
 
 
 def _render_effort_join_command(effort: EffortView, *, public_base_url: str | None = None) -> str:
+    if effort.tags.get("external_harness") == "mlx-history":
+        base_arg = f" --base-url {shlex.quote(public_base_url)}" if public_base_url else ""
+        return (
+            "python3 scripts/run_overnight_autoresearch_worker.py "
+            "--repo-path <path_to_mlx_history> "
+            "--runner-command '<external_harness_command>'"
+            f"{base_arg}"
+        )
+
     if explicit_command := effort.tags.get("join_command"):
         return explicit_command
 
@@ -392,10 +444,10 @@ def _render_effort_join_command(effort: EffortView, *, public_base_url: str | No
 
 
 def _render_effort_join_brief(effort: EffortView) -> str:
+    if effort.tags.get("external_harness") == "mlx-history":
+        return "README.md#real-overnight-autoresearch-worker"
     if explicit_brief := effort.tags.get("join_brief_path"):
         return explicit_brief
-    if effort.tags.get("external_harness") == "mlx-history":
-        return "README.md#external-mlx-compounding-proof"
     return "docs/seeded-efforts.md"
 
 

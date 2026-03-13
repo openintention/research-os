@@ -347,6 +347,15 @@ python3 scripts/run_public_ingress_smoke.py
 For hosted shared participation, use `scripts/run_shared_participation_smoke.py`. It verifies
 that two separate participants can append into the same seeded eval effort on one shared API.
 
+For the deterministic advanced-path rehearsal, use:
+
+```bash
+python3 scripts/run_overnight_autoresearch_worker_smoke.py
+```
+
+That stands up a disposable local API, runs a real external command against a disposable
+`results.tsv` fixture repo, and proves the bounded worker imports new kept results into shared state.
+
 For the current hosted production floor, use:
 
 ```bash
@@ -357,6 +366,33 @@ python3 scripts/run_production_smoke.py \
 
 That combines the public-ingress smoke, the hosted shared-participation smoke, and a live effort
 explorer check into one report under `data/publications/launch/production-smoke/`.
+
+## Real Overnight Autoresearch Worker
+
+The advanced path is now a bounded overnight worker for a real external harness repo.
+
+It keeps the same machine/operator model as `autoresearch`, but the shared source of truth stays in
+the OpenIntention event log instead of a local branch tip. Each imported kept result leaves behind a
+workspace, claim, live discussion link, and content-addressed artifact manifest in the shared effort.
+
+```bash
+python3 scripts/run_overnight_autoresearch_worker.py \
+  --base-url https://openintention-api-production.up.railway.app \
+  --repo-path /path/to/mlx-history \
+  --runner-command "<external_harness_command>" \
+  --actor-id aliargun
+# or
+make overnight-worker \
+  BASE_URL=https://openintention-api-production.up.railway.app \
+  SITE_URL=https://openintention.io \
+  REPO_PATH=/path/to/mlx-history \
+  RUNNER_COMMAND="<external_harness_command>"
+```
+
+This path is intentionally separate from the seeded nightly contribution window:
+- `scripts/run_nightly_contribution_window.py` remains the cheap proxy loop
+- `scripts/run_overnight_autoresearch_worker.py` is the advanced external-harness path
+- both are bounded by explicit time/loop limits; neither is a mesh or always-on daemon
 
 ## External MLX Compounding Proof
 
@@ -427,6 +463,8 @@ src/research_os/            # domain models, event store, projections, planner, 
 scripts/seed_demo.py        # local demo data
 scripts/build_microsite.py  # build the static microsite from current evidence
 scripts/join_openintention.py # one-command hosted seeded-effort join path
+scripts/run_overnight_autoresearch_worker.py # bounded advanced worker for real external harness repos
+scripts/run_overnight_autoresearch_worker_smoke.py # deterministic disposable smoke for the advanced worker
 scripts/run_public_ingress_smoke.py # verify the live site/repo participation path end to end
 tests/                      # starter test suite
 adapters/distributed/       # internal notes for a future distributed adapter seam

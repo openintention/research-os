@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-mlx-history smoke-production backup-runtime restore-runtime backup-production build-microsite
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window overnight-worker export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-overnight-worker smoke-mlx-history smoke-production backup-runtime restore-runtime backup-production build-microsite
 
 PYTHON ?= python3
 
@@ -32,6 +32,9 @@ tiny-loop:
 nightly-window:
 	$(PYTHON) scripts/run_nightly_contribution_window.py --base-url $(BASE_URL) --site-url $(SITE_URL)
 
+overnight-worker:
+	$(PYTHON) scripts/run_overnight_autoresearch_worker.py --base-url $(BASE_URL) --site-url $(SITE_URL) --repo-path $(REPO_PATH) --runner-command "$(RUNNER_COMMAND)"
+
 export-effort-briefs:
 	$(PYTHON) scripts/export_effort_briefs.py
 
@@ -46,6 +49,9 @@ smoke-shared-participation:
 
 smoke-nightly-window:
 	$(PYTHON) scripts/run_nightly_contribution_window_smoke.py --base-url $(BASE_URL) --site-url $(SITE_URL)
+
+smoke-overnight-worker:
+	$(PYTHON) scripts/run_overnight_autoresearch_worker_smoke.py
 
 smoke-mlx-history:
 	$(PYTHON) scripts/run_mlx_history_compounding_smoke.py --base-url $(BASE_URL) --repo-path $(REPO_PATH)

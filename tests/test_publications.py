@@ -80,10 +80,75 @@ def test_workspace_discussion_publication_is_rendered_from_workspace_state(tmp_p
     assert "Discussion: publisher-demo" in body
     assert "Role: `contributor`" in body
     assert "Publication mirror workspace" in body
+    assert "Execution Path" not in body
     assert "claim-pub-1" in body
     assert "snapshot.published" in body
     assert "Manifest URI" in body
     assert "openintention-artifact-manifest-v1" in body
+
+
+def test_workspace_discussion_publication_surfaces_external_harness_execution_path(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-workspace-external-harness.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    artifact_registry = LocalArtifactRegistry(settings.artifact_root)
+    snapshot_artifact = artifact_registry.put_bytes(b"external harness snapshot bundle")
+
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "mlx-history-worker-4161af3",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "description": "Worker-imported external harness contribution",
+            "tags": {
+                "external_harness": "mlx-history",
+                "execution_path": "external-harness",
+                "worker_mode": "overnight-autoresearch",
+                "baseline_commit": "383abb4",
+                "candidate_commit": "4161af3",
+            },
+            "actor_id": "aliargun",
+        },
+    ).json()["workspace_id"]
+
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-worker-1",
+                "aggregate_kind": "snapshot",
+                "actor_id": "aliargun",
+                "payload": {
+                    "snapshot_id": "snap-worker-1",
+                    "artifact_uri": snapshot_artifact.uri,
+                    "source_bundle_digest": snapshot_artifact.digest,
+                    "source_bundle_manifest_uri": snapshot_artifact.uri,
+                    "source_bundle_manifest_digest": snapshot_artifact.digest,
+                    "source_bundle_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                    "source_bundle_manifest_provenance_version": "1",
+                    "git_ref": "4161af3",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/workspaces/{workspace_id}/discussion")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "## Execution Path" in body
+    assert "Execution path: `external-harness`" in body
+    assert "Harness: `mlx-history`" in body
+    assert "Worker mode: `overnight-autoresearch`" in body
+    assert "Candidate commit: `4161af3`" in body
+    assert "Baseline commit: `383abb4`" in body
 
 
 def test_snapshot_pull_request_publication_is_rendered_from_snapshot_and_runs(tmp_path):
@@ -452,7 +517,7 @@ def test_effort_overview_publication_uses_configured_public_base_url(tmp_path):
     assert "--actor-id <handle>" in body
 
 
-def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
+def test_effort_overview_publication_prefers_worker_join_command_for_external_harness(tmp_path):
     settings = Settings(
         db_path=str(tmp_path / "publication-effort-explicit-join-command.db"),
         artifact_root=str(tmp_path / "artifacts"),
@@ -468,13 +533,14 @@ def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
             "objective": "val_bpb",
             "platform": "Apple-Silicon-MLX",
             "budget_seconds": 300,
-                "summary": "Compounding external harness effort.",
-                "tags": {
-                    "effort_type": "mlx_history",
-                    "join_brief_path": "README.md#external-mlx-compounding-proof",
-                    "join_command": (
-                        "python3 scripts/run_mlx_history_compounding_smoke.py "
-                        "--repo-path <path_to_mlx_history> "
+            "summary": "Compounding external harness effort.",
+            "tags": {
+                "effort_type": "mlx_history",
+                "external_harness": "mlx-history",
+                "join_brief_path": "README.md#real-overnight-autoresearch-worker",
+                "join_command": (
+                    "python3 scripts/run_mlx_history_compounding_smoke.py "
+                    "--repo-path <path_to_mlx_history> "
                     "--base-url https://openintention-api-production.up.railway.app"
                 ),
             },
@@ -484,8 +550,9 @@ def test_effort_overview_publication_uses_explicit_join_command_tag(tmp_path):
     response = client.get(f"/api/v1/publications/efforts/{effort_id}")
     assert response.status_code == 200
     body = response.json()["body"]
-    assert "README.md#external-mlx-compounding-proof" in body
-    assert "python3 scripts/run_mlx_history_compounding_smoke.py" in body
+    assert "README.md#real-overnight-autoresearch-worker" in body
+    assert "python3 scripts/run_overnight_autoresearch_worker.py" in body
+    assert "--runner-command '<external_harness_command>'" in body
     assert "clients.tiny_loop.run" not in body
 
 
@@ -516,8 +583,8 @@ def test_effort_overview_publication_infers_mlx_history_brief_for_legacy_efforts
     response = client.get(f"/api/v1/publications/efforts/{effort_id}")
     assert response.status_code == 200
     body = response.json()["body"]
-    assert "README.md#external-mlx-compounding-proof" in body
-    assert "python3 scripts/run_mlx_history_compounding_smoke.py" in body
+    assert "README.md#real-overnight-autoresearch-worker" in body
+    assert "python3 scripts/run_overnight_autoresearch_worker.py" in body
     assert "docs/seeded-efforts.md" not in body
 
 
