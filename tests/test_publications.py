@@ -655,3 +655,168 @@ def test_effort_overview_publication_marks_historical_proof_runs(tmp_path):
     body = response.json()["body"]
     assert "Proof state: `historical`" in body
     assert successor_id in body
+
+
+def test_effort_overview_publication_carries_forward_proof_series_context_for_current_successor(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-effort-current-proof-context.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+        public_base_url="https://openintention-api-production.up.railway.app",
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    artifact_registry = LocalArtifactRegistry(settings.artifact_root)
+    snapshot_artifact = artifact_registry.put_bytes(b"mlx history proof context")
+
+    historical_effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "summary": "Historical proof run.",
+            "tags": {
+                "external_harness": "autoresearch-mlx",
+                "public_proof": "true",
+                "proof_series": "mlx-history-apple-silicon-300",
+                "proof_version": "1",
+            },
+        },
+    ).json()["effort_id"]
+    current_effort_id = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "summary": "Current proof run.",
+            "tags": {
+                "external_harness": "mlx-history",
+                "public_proof": "true",
+                "proof_series": "mlx-history-apple-silicon-300",
+                "proof_version": "2",
+            },
+        },
+    ).json()["effort_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "effort.rolled_over",
+                "aggregate_id": historical_effort_id,
+                "aggregate_kind": "effort",
+                "payload": {
+                    "effort_id": historical_effort_id,
+                    "successor_effort_id": current_effort_id,
+                },
+                "tags": {
+                    "public_proof": "true",
+                    "proof_series": "mlx-history-apple-silicon-300",
+                    "proof_version": "1",
+                    "proof_status": "historical",
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    workspace_id = client.post(
+        "/api/v1/workspaces",
+        json={
+            "name": "mlx-history-beta-5efc7aa",
+            "objective": "val_bpb",
+            "platform": "Apple-Silicon-MLX",
+            "budget_seconds": 300,
+            "effort_id": historical_effort_id,
+            "actor_id": "mlx-beta",
+            "tags": {
+                "external_harness": "autoresearch-mlx",
+            },
+        },
+    ).json()["workspace_id"]
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "snapshot.published",
+                "workspace_id": workspace_id,
+                "aggregate_id": "snap-beta",
+                "aggregate_kind": "snapshot",
+                "actor_id": "mlx-beta",
+                "payload": {
+                    "snapshot_id": "snap-beta",
+                    "artifact_uri": snapshot_artifact.uri,
+                    "source_bundle_digest": snapshot_artifact.digest,
+                    "source_bundle_manifest_uri": snapshot_artifact.uri,
+                    "source_bundle_manifest_digest": snapshot_artifact.digest,
+                    "source_bundle_manifest_provenance_schema": "openintention-artifact-manifest-v1",
+                    "source_bundle_manifest_provenance_version": "1",
+                    "git_ref": "5efc7aa",
+                },
+            },
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "run.completed",
+                "workspace_id": workspace_id,
+                "aggregate_id": "run-beta",
+                "aggregate_kind": "run",
+                "actor_id": "mlx-beta",
+                "payload": {
+                    "run_id": "run-beta",
+                    "snapshot_id": "snap-beta",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "budget_seconds": 300,
+                    "metric_name": "val_bpb",
+                    "metric_value": 1.807902,
+                    "direction": "min",
+                    "status": "success",
+                },
+            },
+        ).status_code
+        == 201
+    )
+    assert (
+        client.post(
+            "/api/v1/events",
+            json={
+                "kind": "claim.asserted",
+                "workspace_id": workspace_id,
+                "aggregate_id": "claim-beta",
+                "aggregate_kind": "claim",
+                "actor_id": "mlx-beta",
+                "payload": {
+                    "claim_id": "claim-beta",
+                    "statement": "reduce depth from 8 to 4",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-beta",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "evidence_run_ids": ["run-beta"],
+                },
+            },
+        ).status_code
+        == 201
+    )
+
+    response = client.get(f"/api/v1/publications/efforts/{current_effort_id}")
+    assert response.status_code == 200
+    body = response.json()["body"]
+    assert "## Proof Context" in body
+    assert "Best current result: `val_bpb` = `1.807902` from `mlx-beta`" in body
+    assert "Latest claim signal: `mlx-beta` left a `pending` claim: reduce depth from 8 to 4" in body
+    assert "Latest visible handoff: Left behind 1 run, and 1 claim" in body
+    assert "Current proof window is fresh" in body
+    assert "Claims in current window: 0" in body
+    assert "Proof-series visible handoffs: 1" in body
+    assert "## Proof-Series Workspaces" in body
+    assert "window=carried" in body
+    assert "## Proof-Series Claim Signals" in body
+    assert "`claim-beta` from `mlx-beta`" in body

@@ -21,6 +21,7 @@ from research_os.domain.models import (
     WorkspaceCreated,
     WorkspaceView,
 )
+from research_os.effort_lifecycle import is_historical_proof_effort, is_public_proof_effort, proof_series
 from research_os.ledger.protocol import EventStore
 from research_os.planner.heuristics import recommend_next
 from research_os.projections.efforts import build_effort_views
@@ -800,13 +801,33 @@ class ResearchOSService:
         if effort is None:
             return None
 
-        workspaces = self.list_workspaces(effort_id=effort_id)
-        workspace_ids = {workspace.workspace_id for workspace in workspaces}
-        claims = [
+        current_workspaces = self.list_workspaces(effort_id=effort_id)
+        workspace_ids = {workspace.workspace_id for workspace in current_workspaces}
+        current_claims = [
             claim
             for claim in self.store.list_claims(objective=effort.objective, platform=effort.platform)
             if claim.workspace_id in workspace_ids
         ]
+        display_workspaces = list(current_workspaces)
+        display_claims = list(current_claims)
+        carries_forward_proof_series = False
+        series = proof_series(effort)
+        if is_public_proof_effort(effort) and not is_historical_proof_effort(effort) and series:
+            for related_effort in self.list_efforts():
+                if related_effort.effort_id == effort_id or proof_series(related_effort) != series:
+                    continue
+                for workspace in self.list_workspaces(effort_id=related_effort.effort_id):
+                    if workspace.workspace_id in workspace_ids:
+                        continue
+                    display_workspaces.append(workspace)
+                    workspace_ids.add(workspace.workspace_id)
+            if len(display_workspaces) > len(current_workspaces):
+                carries_forward_proof_series = True
+                display_claims = [
+                    claim
+                    for claim in self.store.list_claims(objective=effort.objective, platform=effort.platform)
+                    if claim.workspace_id in workspace_ids
+                ]
         frontier = self.store.get_frontier(
             objective=effort.objective,
             platform=effort.platform,
@@ -815,8 +836,11 @@ class ResearchOSService:
         )
         return render_effort_overview(
             effort,
-            workspaces=workspaces,
-            claims=claims,
+            workspaces=display_workspaces,
+            claims=display_claims,
+            current_workspaces=current_workspaces,
+            current_claims=current_claims,
+            carries_forward_proof_series=carries_forward_proof_series,
             frontier=frontier,
             public_base_url=self.public_base_url,
         )

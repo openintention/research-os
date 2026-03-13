@@ -145,15 +145,23 @@ def render_effort_overview(
     *,
     workspaces: list[WorkspaceView],
     claims: list[ClaimSummary],
+    current_workspaces: list[WorkspaceView] | None = None,
+    current_claims: list[ClaimSummary] | None = None,
+    carries_forward_proof_series: bool = False,
     frontier: FrontierView,
     public_base_url: str | None = None,
 ) -> PublicationView:
+    current_workspaces = list(workspaces if current_workspaces is None else current_workspaces)
+    current_claims = list(claims if current_claims is None else current_claims)
+    current_workspace_ids = {workspace.workspace_id for workspace in current_workspaces}
     ordered_workspaces = sorted(workspaces, key=lambda workspace: workspace.updated_at, reverse=True)
+    workspace_actor_map = {workspace.workspace_id: workspace.actor_id or "unknown" for workspace in ordered_workspaces}
     workspace_lines = [
         (
             f"- `{workspace.name}` ({workspace.workspace_id}) "
             f"actor={workspace.actor_id or 'unknown'}, "
             f"role={workspace.participant_role}, "
+            f"window={'current' if workspace.workspace_id in current_workspace_ids else 'carried'}, "
             f"path={_workspace_execution_label(workspace)}, "
             f"runs={len(workspace.run_ids)}, claims={len(workspace.claim_ids)}, "
             f"reproductions={workspace.reproduction_count}, "
@@ -164,16 +172,35 @@ def render_effort_overview(
 
     frontier_lines = [
         (
-            f"- `{member.snapshot_id}` from `{member.workspace_id}`: "
+            f"- `{member.snapshot_id}` from `{workspace_actor_map.get(member.workspace_id or '', 'unknown')}` "
+            f"(`{member.workspace_id}`): "
             f"`{member.metric_name}` = `{member.metric_value}` "
             f"({member.direction}, claims={member.claim_count})"
         )
         for member in frontier.members[:5]
     ] or ["- No frontier members recorded yet."]
 
-    claim_lines = _render_claim_lines(claims)
+    claim_lines = _render_effort_claim_lines(claims, workspace_actor_map=workspace_actor_map)
     join_command = _render_effort_join_command(effort, public_base_url=public_base_url)
     join_brief = _render_effort_join_brief(effort)
+    current_state_lines = [
+        f"- Attached workspaces: {len(current_workspaces)}",
+        (
+            f"- Claims in current window: {len(current_claims)}"
+            if carries_forward_proof_series
+            else f"- Claims in effort scope: {len(current_claims)}"
+        ),
+        f"- Frontier members: {len(frontier.members)}",
+        f"- Updated at: `{effort.updated_at.isoformat()}`",
+    ]
+    if carries_forward_proof_series:
+        current_state_lines.extend(
+            [
+                f"- Proof-series visible handoffs: {len(workspaces)}",
+                f"- Proof-series claim signals: {len(claims)}",
+                "- Current proof window is fresh, so the proof context below is carried forward from earlier proof windows in the same series.",
+            ]
+        )
     body = "\n".join(
         [
             f"# Effort: {effort.name}",
@@ -185,19 +212,21 @@ def render_effort_overview(
             *(["- Summary: " + effort.summary] if effort.summary else []),
             *_render_effort_lifecycle_lines(effort),
             "",
-            "## Current State",
-            f"- Attached workspaces: {len(workspaces)}",
-            f"- Claims in effort scope: {len(claims)}",
-            f"- Frontier members: {len(frontier.members)}",
-            f"- Updated at: `{effort.updated_at.isoformat()}`",
+            "## Proof Context",
+            f"- Best current result: {_render_effort_best_result_line(frontier, workspace_actor_map=workspace_actor_map)}",
+            f"- Latest claim signal: {_render_effort_latest_claim_line(claims, workspace_actor_map=workspace_actor_map)}",
+            f"- Latest visible handoff: {_render_effort_latest_handoff_line(ordered_workspaces, current_workspace_ids=current_workspace_ids, carries_forward_proof_series=carries_forward_proof_series)}",
             "",
-            "## Active Workspaces",
+            "## Current State",
+            *current_state_lines,
+            "",
+            "## " + ("Proof-Series Workspaces" if carries_forward_proof_series else "Active Workspaces"),
             *workspace_lines,
             "",
             "## Frontier Highlights",
             *frontier_lines,
             "",
-            "## Claim Signals",
+            "## " + ("Proof-Series Claim Signals" if carries_forward_proof_series else "Claim Signals"),
             *claim_lines,
             "",
             "## Join",
@@ -226,6 +255,93 @@ def _render_claim_lines(claims: list[ClaimSummary]) -> list[str]:
         )
         for claim in ordered_claims
     ]
+
+
+def _render_effort_claim_lines(
+    claims: list[ClaimSummary],
+    *,
+    workspace_actor_map: dict[str, str],
+) -> list[str]:
+    if not claims:
+        return ["- No claims recorded yet."]
+
+    ordered_claims = _sort_claims(claims)
+    return [
+        (
+            f"- `{claim.claim_id}` from `{workspace_actor_map.get(claim.workspace_id or '', 'unknown')}` "
+            f"[{claim.status}] {claim.statement} "
+            f"(support={claim.support_count}, contradictions={claim.contradiction_count})"
+        )
+        for claim in ordered_claims
+    ]
+
+
+def _render_effort_best_result_line(
+    frontier: FrontierView,
+    *,
+    workspace_actor_map: dict[str, str],
+) -> str:
+    if not frontier.members:
+        return "No frontier result yet. The next participant can leave the first visible result."
+    best = frontier.members[0]
+    actor = workspace_actor_map.get(best.workspace_id or "", "unknown")
+    return (
+        f"`{best.metric_name}` = `{best.metric_value}` from `{actor}` "
+        f"with `{best.claim_count}` claim signal{'s' if best.claim_count != 1 else ''}."
+    )
+
+
+def _render_effort_latest_claim_line(
+    claims: list[ClaimSummary],
+    *,
+    workspace_actor_map: dict[str, str],
+) -> str:
+    if not claims:
+        return "No claims yet. The next participant can leave the first explicit claim."
+    latest = _sort_claims(claims)[0]
+    actor = workspace_actor_map.get(latest.workspace_id or "", "unknown")
+    return f"`{actor}` left a `{latest.status}` claim: {_trim_sentence(latest.statement, limit=120)}"
+
+
+def _render_effort_latest_handoff_line(
+    workspaces: list[WorkspaceView],
+    *,
+    current_workspace_ids: set[str],
+    carries_forward_proof_series: bool,
+) -> str:
+    if not workspaces:
+        return "No visible handoff yet."
+    latest = workspaces[0]
+    suffix = ""
+    if carries_forward_proof_series and latest.workspace_id not in current_workspace_ids:
+        suffix = " Carried forward from an earlier proof window in this series."
+    return _workspace_handoff_summary(latest) + suffix
+
+
+def _workspace_handoff_summary(workspace: WorkspaceView) -> str:
+    parts: list[str] = [f"{len(workspace.run_ids)} run{'s' if len(workspace.run_ids) != 1 else ''}"]
+    claim_count = len(workspace.claim_ids)
+    if claim_count:
+        parts.append(f"{claim_count} claim{'s' if claim_count != 1 else ''}")
+    if workspace.reproduction_count:
+        parts.append(
+            f"{workspace.reproduction_count} reproduction{'s' if workspace.reproduction_count != 1 else ''}"
+        )
+    if workspace.adoption_count:
+        parts.append(f"{workspace.adoption_count} adoption{'s' if workspace.adoption_count != 1 else ''}")
+
+    summary = ", ".join(parts[:-1])
+    if len(parts) > 1:
+        summary = f"{summary}, and {parts[-1]}" if summary else parts[-1]
+    else:
+        summary = parts[0]
+    return f"Left behind {summary} that the next participant can inspect and continue."
+
+
+def _trim_sentence(value: str, *, limit: int) -> str:
+    if len(value) <= limit:
+        return value
+    return value[: limit - 1].rstrip() + "…"
 
 
 def _render_execution_lines(workspace: WorkspaceView) -> list[str]:
