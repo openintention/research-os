@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from research_os.effort_lifecycle import is_historical_proof_effort
 from research_os.effort_lifecycle import is_public_proof_effort
+from research_os.effort_lifecycle import proof_series
 from research_os.effort_lifecycle import proof_version
 from research_os.effort_lifecycle import split_current_and_historical_efforts
 from research_os.domain.models import ClaimSummary
@@ -53,6 +54,16 @@ class EffortProof:
     progress_milestones: list[ProgressMilestone]
     summary_line: str
     latest_handoff_line: str
+
+
+@dataclass(frozen=True, slots=True)
+class EffortProofSurfaceContext:
+    current_workspaces: list[WorkspaceView]
+    current_claims: list[ClaimSummary]
+    display_workspaces: list[WorkspaceView]
+    display_claims: list[ClaimSummary]
+    display_workspace_events: dict[str, list[EventEnvelope]]
+    carries_forward: bool
 
 
 def create_site_app(
@@ -115,9 +126,10 @@ def create_site_app(
     @app.get("/efforts/{effort_id}", include_in_schema=False, response_class=HTMLResponse)
     def effort_detail(effort_id: str) -> str:
         efforts = _fetch_json(normalized_fetch_api_base_url, "/api/v1/efforts")
-        effort = next((item for item in efforts if item["effort_id"] == effort_id), None)
-        if effort is None:
+        effort_payload = next((item for item in efforts if item["effort_id"] == effort_id), None)
+        if effort_payload is None:
             raise HTTPException(status_code=404, detail="effort not found")
+        effort = EffortView.model_validate(effort_payload)
 
         workspaces = _fetch_json(
             normalized_fetch_api_base_url,
@@ -138,23 +150,27 @@ def create_site_app(
         claims = _fetch_json(
             normalized_fetch_api_base_url,
             "/api/v1/claims",
-            query={"objective": effort["objective"], "platform": effort["platform"]},
+            query={"objective": effort.objective, "platform": effort.platform},
         )
-        workspace_ids = {workspace["workspace_id"] for workspace in workspaces}
-        effort_claims = [claim for claim in claims if claim.get("workspace_id") in workspace_ids]
         frontier = _fetch_json(
             normalized_fetch_api_base_url,
-            f"/api/v1/frontiers/{quote(effort['objective'])}/{quote(effort['platform'])}",
-            query={"budget_seconds": effort["budget_seconds"]},
+            f"/api/v1/frontiers/{quote(effort.objective)}/{quote(effort.platform)}",
+            query={"budget_seconds": effort.budget_seconds},
+        )
+        proof_surface = _build_effort_proof_surface_context(
+            api_base_url=normalized_fetch_api_base_url,
+            effort=effort,
+            all_efforts=efforts,
+            current_workspaces=workspaces,
+            current_workspace_events=workspace_events,
+            all_claims=claims,
         )
 
         return _effort_detail_html(
             public_api_base_url=normalized_public_api_base_url,
             effort=effort,
-            workspaces=workspaces,
-            claims=effort_claims,
+            proof_surface=proof_surface,
             frontier=frontier,
-            workspace_events=workspace_events,
         )
 
     return app
@@ -239,55 +255,159 @@ def _render_effort_index_card(*, public_api_base_url: str, effort: dict[str, obj
     """
 
 
-def _effort_detail_html(
+def _build_effort_proof_surface_context(
     *,
-    public_api_base_url: str,
-    effort: dict[str, object],
-    workspaces: list[dict[str, object]],
-    claims: list[dict[str, object]],
-    frontier: dict[str, object],
-    workspace_events: dict[str, list[EventEnvelope]],
-) -> str:
-    effort_model = EffortView.model_validate(effort)
-    workspace_models = sorted(
-        (WorkspaceView.model_validate(workspace) for workspace in workspaces),
+    api_base_url: str,
+    effort: EffortView,
+    all_efforts: list[dict[str, object]],
+    current_workspaces: list[dict[str, object]],
+    current_workspace_events: dict[str, list[EventEnvelope]],
+    all_claims: list[dict[str, object]],
+) -> EffortProofSurfaceContext:
+    current_workspace_models = sorted(
+        (WorkspaceView.model_validate(workspace) for workspace in current_workspaces),
         key=lambda workspace: workspace.updated_at,
         reverse=True,
     )
-    claim_models = sorted(
-        (ClaimSummary.model_validate(claim) for claim in claims),
+    current_workspace_ids = {workspace.workspace_id for workspace in current_workspace_models}
+    current_claim_models = sorted(
+        (
+            ClaimSummary.model_validate(claim)
+            for claim in all_claims
+            if claim.get("workspace_id") in current_workspace_ids
+        ),
         key=lambda claim: claim.updated_at,
         reverse=True,
     )
+    display_workspaces = list(current_workspace_models)
+    display_workspace_events = dict(current_workspace_events)
+    carries_forward = False
+
+    series = proof_series(effort)
+    if is_public_proof_effort(effort) and not is_historical_proof_effort(effort) and series:
+        related_efforts = [
+            EffortView.model_validate(item)
+            for item in all_efforts
+            if item.get("effort_id") != effort.effort_id
+            and proof_series(EffortView.model_validate(item)) == series
+        ]
+        for related_effort in related_efforts:
+            related_workspaces = _fetch_json(
+                api_base_url,
+                "/api/v1/workspaces",
+                query={"effort_id": related_effort.effort_id},
+            )
+            for workspace in related_workspaces:
+                workspace_model = WorkspaceView.model_validate(workspace)
+                if workspace_model.workspace_id in current_workspace_ids:
+                    continue
+                display_workspaces.append(workspace_model)
+                display_workspace_events[workspace_model.workspace_id] = [
+                    EventEnvelope.model_validate(event)
+                    for event in _fetch_json(
+                        api_base_url,
+                        "/api/v1/events",
+                        query={"workspace_id": workspace_model.workspace_id, "limit": 10_000},
+                    )
+                ]
+                carries_forward = True
+
+        display_workspaces = sorted(
+            display_workspaces,
+            key=lambda workspace: workspace.updated_at,
+            reverse=True,
+        )
+
+    display_workspace_ids = {workspace.workspace_id for workspace in display_workspaces}
+    display_claim_models = sorted(
+        (
+            ClaimSummary.model_validate(claim)
+            for claim in all_claims
+            if claim.get("workspace_id") in display_workspace_ids
+        ),
+        key=lambda claim: claim.updated_at,
+        reverse=True,
+    )
+    return EffortProofSurfaceContext(
+        current_workspaces=current_workspace_models,
+        current_claims=current_claim_models,
+        display_workspaces=display_workspaces,
+        display_claims=display_claim_models,
+        display_workspace_events=display_workspace_events,
+        carries_forward=carries_forward,
+    )
+
+
+def _effort_detail_html(
+    *,
+    public_api_base_url: str,
+    effort: EffortView,
+    proof_surface: EffortProofSurfaceContext,
+    frontier: dict[str, object],
+) -> str:
+    current_workspace_models = proof_surface.current_workspaces
+    current_claim_models = proof_surface.current_claims
+    display_workspace_models = proof_surface.display_workspaces
+    display_claim_models = proof_surface.display_claims
     frontier_members = [
         FrontierMember.model_validate(member) for member in frontier.get("members", [])[:8]
     ]
-    state = _effort_state_label(effort_model)
-    join_command = _join_command(effort, api_base_url=public_api_base_url)
-    join_brief = _join_brief(effort)
-    workspace_actor_map = {workspace.workspace_id: workspace.actor_id or "unknown" for workspace in workspace_models}
-    proof = _build_effort_proof(workspace_models, workspace_events)
+    state = _effort_state_label(effort)
+    join_command = _join_command(effort.model_dump(mode="json"), api_base_url=public_api_base_url)
+    join_brief = _join_brief(effort.model_dump(mode="json"))
+    workspace_actor_map = {
+        workspace.workspace_id: workspace.actor_id or "unknown" for workspace in display_workspace_models
+    }
+    proof = _build_effort_proof(
+        display_workspace_models,
+        proof_surface.display_workspace_events,
+        scope_label="proof series" if proof_surface.carries_forward else "effort",
+    )
     recent_handoffs = "\n".join(
-        _render_recent_handoff(workspace, public_api_base_url=public_api_base_url) for workspace in workspace_models[:6]
+        _render_recent_handoff(
+            workspace,
+            public_api_base_url=public_api_base_url,
+            is_current_window=workspace.workspace_id in {item.workspace_id for item in current_workspace_models},
+        )
+        for workspace in display_workspace_models[:6]
     )
     frontier_items = "\n".join(_render_frontier_item(member, workspace_actor_map) for member in frontier_members)
-    claim_items = "\n".join(_render_claim_item(claim, workspace_actor_map) for claim in claim_models[:8])
+    claim_items = "\n".join(_render_claim_item(claim, workspace_actor_map) for claim in display_claim_models[:8])
     best_result = _best_result_summary(frontier_members, workspace_actor_map)
-    latest_claim = _latest_claim_summary(claim_models, workspace_actor_map)
-    next_move = _next_move_summary(effort_model, claim_models, frontier_members, workspace_actor_map)
+    latest_claim = _latest_claim_summary(display_claim_models, workspace_actor_map)
+    next_move = _next_move_summary(effort, display_claim_models, frontier_members, workspace_actor_map)
     progress_items = "\n".join(_render_progress_milestone(step) for step in proof.progress_milestones)
     latest_workspace = proof.latest_workspace
+    current_workspace_ids = {workspace.workspace_id for workspace in current_workspace_models}
+    carried_workspace_count = len(display_workspace_models) - len(current_workspace_models)
+    proof_summary_line = proof.summary_line
+    if proof_surface.carries_forward and not current_workspace_models:
+        proof_summary_line += " The current proof window is fresh, so this context is carried forward from earlier proof windows in the same series."
+    elif proof_surface.carries_forward:
+        proof_summary_line += " Earlier proof windows in the same series are carried forward here so the line of work stays visible."
     latest_discussion_url = (
         f"{public_api_base_url}/api/v1/publications/workspaces/{quote(latest_workspace.workspace_id)}/discussion"
         if latest_workspace is not None
         else None
     )
+    carry_forward_note = ""
+    if proof_surface.carries_forward:
+        carry_forward_note = (
+            f'<p class="footer-note">Current window workspaces: <code>{len(current_workspace_models)}</code>. '
+            f'The proof cards below carry forward <code>{carried_workspace_count}</code> earlier handoff'
+            f'{"s" if carried_workspace_count != 1 else ""} from this proof series.</p>'
+        )
+    machine_state_lede = (
+        "This lower section keeps raw state visible for agents and technical users while carrying forward earlier proof-window context in the same proof series."
+        if proof_surface.carries_forward
+        else "This lower section keeps the raw state visible for agents and technical users without making ids the first thing a human sees."
+    )
     return _page_html(
-        str(effort["name"]),
+        str(effort.name),
         f"""
         <section class="hero">
           <div class="eyebrow">{escape(state["label"])}</div>
-          <h1>{escape(str(effort_model.name))}</h1>
+          <h1>{escape(str(effort.name))}</h1>
           <p class="lede">{escape(state["description"])}</p>
           <div class="hero-actions">
             <a class="button primary" href="/">Back to OpenIntention</a>
@@ -310,16 +430,18 @@ def _effort_detail_html(
               <p class="summary-headline">{escape(next_move)}</p>
             </div>
             <ul class="state-pills">
-              <li><span>Objective</span><code>{escape(str(effort["objective"]))}</code></li>
-              <li><span>Platform</span><code>{escape(str(effort_model.platform))}</code></li>
-              <li><span>Budget</span><code>{escape(str(effort_model.budget_seconds))}s</code></li>
-              <li><span>Workspaces</span><code>{len(workspace_models)}</code></li>
-              <li><span>Claims</span><code>{len(claim_models)}</code></li>
+              <li><span>Objective</span><code>{escape(str(effort.objective))}</code></li>
+              <li><span>Platform</span><code>{escape(str(effort.platform))}</code></li>
+              <li><span>Budget</span><code>{escape(str(effort.budget_seconds))}s</code></li>
+              <li><span>{'Current window' if proof_surface.carries_forward else 'Workspaces'}</span><code>{len(current_workspace_models)}</code></li>
+              <li><span>{'Current claims' if proof_surface.carries_forward else 'Claims'}</span><code>{len(current_claim_models)}</code></li>
               <li><span>Frontier</span><code>{len(frontier_members)}</code></li>
-              {'<li><span>Lifecycle</span><code>historical proof run</code></li>' if is_historical_proof_effort(effort_model) else ''}
-              {f'<li><span>Successor</span><code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
-              {f'<li><span>Proof version</span><code>{escape(str(proof_version(effort_model)))}</code></li>' if is_public_proof_effort(effort_model) else ''}
+              {f'<li><span>Series proof</span><code>{len(display_workspace_models)}</code></li>' if proof_surface.carries_forward else ''}
+              {'<li><span>Lifecycle</span><code>historical proof run</code></li>' if is_historical_proof_effort(effort) else ''}
+              {f'<li><span>Successor</span><code>{escape(str(effort.successor_effort_id))}</code></li>' if effort.successor_effort_id else ''}
+              {f'<li><span>Proof version</span><code>{escape(str(proof_version(effort)))}</code></li>' if is_public_proof_effort(effort) else ''}
             </ul>
+            {carry_forward_note}
             <p class="footer-note">Rendered directly from live hosted control-plane state.</p>
           </div>
           <div id="join-this-effort" class="summary-card join-summary-card">
@@ -337,7 +459,7 @@ def _effort_detail_html(
         <section class="panel">
           <div class="eyebrow">Compounding proof</div>
           <h2>Visible work is stacking up on this effort</h2>
-          <p class="section-lede">{escape(proof.summary_line)}</p>
+          <p class="section-lede">{escape(proof_summary_line)}</p>
           <ul class="state-pills proof-stat-pills">
             <li><span>Contributors</span><code>{proof.contributor_count}</code></li>
             <li><span>Visible handoffs</span><code>{proof.visible_handoff_count}</code></li>
@@ -364,7 +486,10 @@ def _effort_detail_html(
               <h3>{escape(latest_workspace.actor_id or "unknown") if latest_workspace else "No public handoff yet"}</h3>
               <p class="summary-headline">{escape(proof.latest_handoff_line)}</p>
               {
-                  _render_workspace_proof_meta(latest_workspace)
+                  _render_workspace_proof_meta(
+                      latest_workspace,
+                      is_current_window=latest_workspace.workspace_id in current_workspace_ids,
+                  )
                   if latest_workspace is not None
                   else '<p class="footer-note">Use the join command above to leave the first hosted handoff on this effort.</p>'
               }
@@ -394,16 +519,16 @@ def _effort_detail_html(
         <section class="panel machine-state-panel">
           <div class="eyebrow">Full live state</div>
           <h2>Machine-readable frontier and claim state</h2>
-          <p class="section-lede">This lower section keeps the raw state visible for agents and technical users without making ids the first thing a human sees.</p>
+          <p class="section-lede">{escape(machine_state_lede)}</p>
           <section class="grid two">
           <div>
-            <h2>Frontier</h2>
+            <h2>{'Frontier context' if proof_surface.carries_forward else 'Frontier'}</h2>
             <ul class="link-list">
               {frontier_items or "<li>No frontier members yet.</li>"}
             </ul>
           </div>
           <div>
-            <h2>Claim signals</h2>
+            <h2>{'Proof-series claim signals' if proof_surface.carries_forward else 'Claim signals'}</h2>
             <ul class="link-list">
               {claim_items or "<li>No claims recorded yet.</li>"}
             </ul>
@@ -414,7 +539,12 @@ def _effort_detail_html(
     )
 
 
-def _render_recent_handoff(workspace: WorkspaceView, *, public_api_base_url: str) -> str:
+def _render_recent_handoff(
+    workspace: WorkspaceView,
+    *,
+    public_api_base_url: str,
+    is_current_window: bool,
+) -> str:
     actor = workspace.actor_id or "unknown"
     discussion_url = (
         f"{public_api_base_url}/api/v1/publications/workspaces/{quote(workspace.workspace_id)}/discussion"
@@ -425,6 +555,7 @@ def _render_recent_handoff(workspace: WorkspaceView, *, public_api_base_url: str
       <h3>{escape(actor)}</h3>
       <p class="summary-headline">{escape(_workspace_handoff_summary(workspace))}</p>
       <ul class="state-pills compact">
+        <li><span>Window</span><code>{'current' if is_current_window else 'carried'}</code></li>
         <li><span>Role</span><code>{escape(str(workspace.participant_role))}</code></li>
         <li><span>Runs</span><code>{len(workspace.run_ids)}</code></li>
         <li><span>Claims</span><code>{len(workspace.claim_ids)}</code></li>
@@ -444,6 +575,8 @@ def _render_recent_handoff(workspace: WorkspaceView, *, public_api_base_url: str
 def _build_effort_proof(
     workspaces: list[WorkspaceView],
     workspace_events: dict[str, list[EventEnvelope]],
+    *,
+    scope_label: str = "effort",
 ) -> EffortProof:
     actor_counts = Counter(workspace.actor_id or "unknown" for workspace in workspaces)
     visible_handoffs = sum(
@@ -470,7 +603,10 @@ def _build_effort_proof(
         _workspace_handoff_summary(latest_workspace) if latest_workspace is not None else "No public handoff yet."
     )
     if contributor_count == 0:
-        summary_line = "No public handoffs yet. The first participant can leave the initial hosted result on this effort."
+        summary_line = (
+            f"No public handoffs yet on this {scope_label}. "
+            "The first participant can leave the initial hosted result."
+        )
     else:
         summary_bits = [
             f"{contributor_count} contributor{'s' if contributor_count != 1 else ''}",
@@ -493,7 +629,7 @@ def _build_effort_proof(
             summary_bits.append(
                 f"{repeat_contributor_count} repeat contributor{'s' if repeat_contributor_count != 1 else ''}"
             )
-        summary_line = "This effort already has " + ", ".join(summary_bits) + "."
+        summary_line = f"This {scope_label} already has " + ", ".join(summary_bits) + "."
 
     return EffortProof(
         contributor_count=contributor_count,
@@ -567,9 +703,10 @@ def _render_progress_milestone(step: ProgressMilestone) -> str:
     """
 
 
-def _render_workspace_proof_meta(workspace: WorkspaceView) -> str:
+def _render_workspace_proof_meta(workspace: WorkspaceView, *, is_current_window: bool) -> str:
     return f"""
     <ul class="state-pills compact">
+      <li><span>Window</span><code>{'current' if is_current_window else 'carried'}</code></li>
       <li><span>Role</span><code>{escape(str(workspace.participant_role))}</code></li>
       <li><span>Path</span><code>{escape(_workspace_execution_label(workspace))}</code></li>
       <li><span>Runs</span><code>{len(workspace.run_ids)}</code></li>
@@ -577,7 +714,7 @@ def _render_workspace_proof_meta(workspace: WorkspaceView) -> str:
       <li><span>Reproductions</span><code>{workspace.reproduction_count}</code></li>
       <li><span>Workspace</span><code>{escape(_short_id(workspace.workspace_id))}</code></li>
     </ul>
-    <p class="handoff-meta">Updated <code>{escape(_format_timestamp(workspace.updated_at))}</code> on the hosted effort page.</p>
+    <p class="handoff-meta">Updated <code>{escape(_format_timestamp(workspace.updated_at))}</code> on the hosted effort page{'' if is_current_window else '; carried forward from an earlier proof window in this series'}.</p>
     """
 
 

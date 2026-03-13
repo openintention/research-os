@@ -348,6 +348,235 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "snap-beta" in response.text
 
 
+def test_site_server_carries_forward_proof_series_context_for_fresh_successor(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    def fake_fetch_json(api_base_url: str, path: str, *, query=None):
+        assert api_base_url == "http://api.internal:8080"
+        if path == "/api/v1/efforts":
+            return [
+                {
+                    "effort_id": "effort-current",
+                    "name": "MLX History Sprint: improve val_bpb on Apple Silicon (proof v2)",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "budget_seconds": 300,
+                    "workspace_ids": [],
+                    "tags": {
+                        "external_harness": "mlx-history",
+                        "public_proof": "true",
+                        "proof_series": "mlx-history-apple-silicon-300",
+                        "proof_version": "2",
+                    },
+                    "successor_effort_id": None,
+                    "updated_at": "2026-03-13T07:36:43Z",
+                },
+                {
+                    "effort_id": "effort-old",
+                    "name": "Autoresearch MLX Sprint: improve val_bpb on Apple Silicon",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "budget_seconds": 300,
+                    "workspace_ids": ["workspace-alpha", "workspace-beta"],
+                    "tags": {
+                        "external_harness": "autoresearch-mlx",
+                        "public_proof": "true",
+                        "proof_series": "mlx-history-apple-silicon-300",
+                        "proof_version": "1",
+                        "proof_status": "historical",
+                    },
+                    "successor_effort_id": "effort-current",
+                    "updated_at": "2026-03-11T13:47:22Z",
+                },
+            ]
+        if path == "/api/v1/workspaces":
+            if query == {"effort_id": "effort-current"}:
+                return []
+            if query == {"effort_id": "effort-old"}:
+                return [
+                    {
+                        "workspace_id": "workspace-beta",
+                        "name": "mlx-history-beta-5efc7aa",
+                        "actor_id": "mlx-beta",
+                        "participant_role": "contributor",
+                        "run_ids": ["run-beta"],
+                        "claim_ids": ["claim-beta"],
+                        "reproduction_count": 1,
+                        "adoption_count": 1,
+                        "objective": "val_bpb",
+                        "platform": "Apple-Silicon-MLX",
+                        "budget_seconds": 300,
+                        "tags": {
+                            "external_harness": "mlx-history",
+                            "worker_mode": "overnight-autoresearch",
+                        },
+                        "updated_at": "2026-03-11T13:47:23Z",
+                    },
+                    {
+                        "workspace_id": "workspace-alpha",
+                        "name": "mlx-history-alpha-4161af3",
+                        "actor_id": "mlx-alpha",
+                        "participant_role": "contributor",
+                        "run_ids": ["run-alpha"],
+                        "claim_ids": ["claim-alpha"],
+                        "reproduction_count": 0,
+                        "adoption_count": 0,
+                        "objective": "val_bpb",
+                        "platform": "Apple-Silicon-MLX",
+                        "budget_seconds": 300,
+                        "tags": {
+                            "external_harness": "mlx-history",
+                        },
+                        "updated_at": "2026-03-11T13:47:22Z",
+                    },
+                ]
+            raise AssertionError(query)
+        if path == "/api/v1/claims":
+            assert query == {"objective": "val_bpb", "platform": "Apple-Silicon-MLX"}
+            return [
+                {
+                    "claim_id": "claim-beta",
+                    "workspace_id": "workspace-beta",
+                    "status": "pending",
+                    "statement": "reduce depth from 8 to 4",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-beta",
+                    "objective": "val_bpb",
+                    "platform": "Apple-Silicon-MLX",
+                    "support_count": 1,
+                    "contradiction_count": 0,
+                    "updated_at": "2026-03-11T13:47:23Z",
+                }
+            ]
+        if path == "/api/v1/events":
+            if query == {"workspace_id": "workspace-beta", "limit": 10_000}:
+                return [
+                    {
+                        "event_id": "event-beta-run",
+                        "kind": "run.completed",
+                        "occurred_at": "2026-03-11T13:47:21Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "run-beta",
+                        "aggregate_kind": "run",
+                        "actor_id": "mlx-beta",
+                        "payload": {
+                            "run_id": "run-beta",
+                            "snapshot_id": "snap-beta",
+                            "metric_name": "val_bpb",
+                            "metric_value": 1.807902,
+                            "direction": "min",
+                            "status": "success",
+                        },
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-claim",
+                        "kind": "claim.asserted",
+                        "occurred_at": "2026-03-11T13:47:22Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "claim-beta",
+                        "aggregate_kind": "claim",
+                        "actor_id": "mlx-beta",
+                        "payload": {"claim_id": "claim-beta"},
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-repro",
+                        "kind": "claim.reproduced",
+                        "occurred_at": "2026-03-11T13:47:23Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "claim-beta",
+                        "aggregate_kind": "claim",
+                        "actor_id": "mlx-beta",
+                        "payload": {"claim_id": "claim-beta"},
+                        "tags": {},
+                    },
+                    {
+                        "event_id": "event-beta-adopt",
+                        "kind": "adoption.recorded",
+                        "occurred_at": "2026-03-11T13:47:24Z",
+                        "workspace_id": "workspace-beta",
+                        "aggregate_id": "claim-beta",
+                        "aggregate_kind": "claim",
+                        "actor_id": "mlx-beta",
+                        "payload": {"claim_id": "claim-beta"},
+                        "tags": {},
+                    },
+                ]
+            if query == {"workspace_id": "workspace-alpha", "limit": 10_000}:
+                return [
+                    {
+                        "event_id": "event-alpha-run",
+                        "kind": "run.completed",
+                        "occurred_at": "2026-03-11T13:47:20Z",
+                        "workspace_id": "workspace-alpha",
+                        "aggregate_id": "run-alpha",
+                        "aggregate_kind": "run",
+                        "actor_id": "mlx-alpha",
+                        "payload": {
+                            "run_id": "run-alpha",
+                            "snapshot_id": "snap-alpha",
+                            "metric_name": "val_bpb",
+                            "metric_value": 2.533728,
+                            "direction": "min",
+                            "status": "success",
+                        },
+                        "tags": {},
+                    }
+                ]
+            raise AssertionError(query)
+        if path == "/api/v1/frontiers/val_bpb/Apple-Silicon-MLX":
+            assert query == {"budget_seconds": 300}
+            return {
+                "members": [
+                    {
+                        "snapshot_id": "snap-beta",
+                        "workspace_id": "workspace-beta",
+                        "run_id": "run-beta",
+                        "objective": "val_bpb",
+                        "platform": "Apple-Silicon-MLX",
+                        "budget_seconds": 300,
+                        "metric_name": "val_bpb",
+                        "metric_value": 1.807902,
+                        "direction": "min",
+                        "claim_count": 1,
+                        "last_updated_at": "2026-03-11T13:47:23Z",
+                    }
+                ]
+            }
+        raise AssertionError(f"unexpected path: {path}")
+
+    monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
+    client = TestClient(
+        create_site_app(
+            dist_dir,
+            api_base_url="https://api.example.com",
+            api_fetch_base_url="http://api.internal:8080",
+        )
+    )
+
+    response = client.get("/efforts/effort-current")
+    assert response.status_code == 200
+    assert "Current window</span><code>0</code>" in response.text
+    assert "Series proof</span><code>2</code>" in response.text
+    assert "proof cards below carry forward" in response.text
+    assert "This proof series already has 2 contributors" in response.text
+    assert "current proof window is fresh" in response.text.lower()
+    assert "mlx-beta" in response.text
+    assert "from <code>unknown</code>" not in response.text
+    assert "Window</span><code>carried</code>" in response.text
+    assert "carried forward from an earlier proof window in this series" in response.text
+    assert "Proof-series claim signals" in response.text
+    assert "reduce depth from 8 to 4" in response.text
+
+
 def test_site_server_prefers_private_fetch_base_without_leaking_it(monkeypatch, tmp_path):
     dist_dir = tmp_path / "dist"
     assets_dir = dist_dir / "assets"
