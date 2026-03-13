@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass, field
-import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
-from urllib.request import urlopen
+
+from research_os.http import read_json
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -237,8 +237,7 @@ def _extract_provenance(workspace_id: str | None, base_url: str) -> list[str]:
 
 def _fetch_workspace_discussion(base_url: str, workspace_id: str) -> str:
     url = f"{base_url.rstrip('/')}/api/v1/publications/workspaces/{workspace_id}/discussion"
-    with urlopen(url, timeout=10) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    payload = read_json(url, timeout=10)
     return str(payload.get("body", ""))
 
 

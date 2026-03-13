@@ -11,8 +11,10 @@ import socket
 import subprocess
 import sys
 import time
-from urllib.request import Request, urlopen
+from urllib.request import urlopen
 
+from research_os.http import build_request
+from research_os.http import read_json
 from research_os.settings import Settings
 
 
@@ -225,7 +227,7 @@ def _extract_workspace_provenance_excerpt(*, base_url: str, workspace_id: str | 
     if not workspace_id:
         return []
     try:
-        request = Request(
+        request = build_request(
             f"{base_url}/api/v1/publications/workspaces/{workspace_id}/discussion",
             headers={"accept": "application/json"},
         )
@@ -272,15 +274,14 @@ def _run_command(command: list[str], *, env: dict[str, str]) -> str:
 
 
 def _get_json(url: str) -> list[dict[str, object]]:
-    with urlopen(url, timeout=10) as response:
-        return json.loads(response.read().decode("utf-8"))
+    return read_json(url, timeout=10)
 
 
 def _wait_for_healthz(base_url: str, *, timeout_seconds: float = 10.0) -> None:
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         try:
-            with urlopen(f"{base_url}/healthz", timeout=1):
+            with urlopen(build_request(f"{base_url}/healthz"), timeout=1):
                 return
         except OSError:
             time.sleep(0.1)

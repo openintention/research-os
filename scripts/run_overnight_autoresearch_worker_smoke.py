@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-import json
 import os
 from pathlib import Path
 import shutil
@@ -18,6 +17,8 @@ for path in (SRC_ROOT, REPO_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from research_os.http import build_request  # noqa: E402
+from research_os.http import read_json  # noqa: E402
 from research_os.settings import Settings  # noqa: E402
 from scripts.run_overnight_autoresearch_worker import run_overnight_autoresearch_worker  # noqa: E402
 
@@ -205,7 +206,7 @@ def _wait_for_healthz(base_url: str) -> None:
     deadline = time.time() + 10
     while time.time() < deadline:
         try:
-            with urlopen(f"{base_url}/healthz", timeout=1) as response:
+            with urlopen(build_request(f"{base_url}/healthz"), timeout=1) as response:
                 if response.status == 200:
                     return
         except Exception:
@@ -224,8 +225,7 @@ def _excerpt(path: Path, *, lines: int) -> str:
 
 
 def _resolve_effort_page_hint(base_url: str) -> str:
-    with urlopen(f"{base_url}/api/v1/efforts", timeout=10) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    payload = read_json(f"{base_url}/api/v1/efforts", timeout=10)
     effort_id = payload[0]["effort_id"] if payload else "<generated_effort_id>"
     return f"https://openintention.io/efforts/{effort_id}"
 

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 from urllib import error, request
 
+from research_os.http import build_request
+
 
 class ResearchOSApi(Protocol):
     def list_efforts(self) -> list[dict[str, Any]]: ...
@@ -73,7 +75,7 @@ class HttpResearchOSApi:
         if payload is not None:
             body = json.dumps(payload).encode("utf-8")
             headers["content-type"] = "application/json"
-        req = request.Request(
+        req = build_request(
             url=f"{self.base_url.rstrip('/')}{path}",
             data=body,
             headers=headers,

@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import sys
-from urllib.request import urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -17,6 +16,7 @@ from research_os.artifacts.local import LocalArtifactRegistry  # noqa: E402
 from clients.tiny_loop.api import HttpResearchOSApi  # noqa: E402
 from research_os.effort_lifecycle import is_historical_proof_effort  # noqa: E402
 from research_os.effort_lifecycle import proof_version  # noqa: E402
+from research_os.http import read_json  # noqa: E402
 from research_os.domain.models import EffortView  # noqa: E402
 from research_os.domain.models import EventKind  # noqa: E402
 from research_os.integrations.mlx_history import (  # noqa: E402
@@ -620,8 +620,7 @@ def _put_result_artifact(
 
 
 def _get_json(url: str) -> dict[str, object] | list[dict[str, object]]:
-    with urlopen(url, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
+    return read_json(url, timeout=20)
 
 
 if __name__ == "__main__":

@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-import json
 from pathlib import Path
 import sys
-from urllib.request import urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -20,6 +18,7 @@ from clients.tiny_loop.experiment import (  # noqa: E402
     run_tiny_loop_experiment,
     run_verifier_reproduction,
 )
+from research_os.http import read_json  # noqa: E402
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,8 +188,7 @@ def _excerpt(body: str, *, lines: int) -> str:
 
 
 def _get_json(url: str) -> dict[str, object] | list[dict[str, object]]:
-    with urlopen(url, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
+    return read_json(url, timeout=20)
 
 
 def _extract_provenance_lines(markdown: str) -> list[str]:
