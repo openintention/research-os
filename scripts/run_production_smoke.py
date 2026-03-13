@@ -27,6 +27,7 @@ class ProductionSmokeResult:
     public_ingress_report: str
     shared_participation_report: str
     effort_names: list[str]
+    homepage_url: str
     effort_page_urls: list[str]
 
 
@@ -41,6 +42,11 @@ def run_production_smoke(
     output_root.mkdir(parents=True, exist_ok=True)
 
     _require_text(f"{api_base_url.rstrip('/')}/healthz", must_include="ok")
+    homepage_url = f"{site_url.rstrip('/')}/"
+    homepage_html = _require_text(homepage_url, must_include="Hosted effort explorer is live")
+    for phrase in ("Snapshot evidence bundled", "Freshness model:", "Open deterministic join proof"):
+        if phrase not in homepage_html:
+            raise RuntimeError(f"homepage missing freshness phrase `{phrase}`: {homepage_url}")
     public_ingress_report = run_public_ingress_smoke(
         site_url=site_url,
         output_dir=str(output_root / "public-ingress"),
@@ -82,6 +88,7 @@ def run_production_smoke(
         public_ingress_report=str(public_ingress_report),
         shared_participation_report=str(shared_participation_report),
         effort_names=effort_names,
+        homepage_url=homepage_url,
         effort_page_urls=effort_page_urls,
     )
     report_path = output_root / "production-smoke.md"
@@ -101,9 +108,11 @@ def build_production_smoke_report(result: ProductionSmokeResult) -> str:
             f"- API: `{result.api_base_url}`",
             "",
             "## Executed Checks",
+            f"- Homepage freshness copy: `{result.homepage_url}`",
             f"- Public ingress smoke: `{result.public_ingress_report}`",
             f"- Shared participation smoke: `{result.shared_participation_report}`",
             "- Hosted API healthz returned 200",
+            "- Hosted homepage distinguishes live hosted state, bundled snapshot evidence, and deterministic smoke proofs",
             "- Hosted effort explorer index rendered current effort state",
             "- Hosted effort detail pages rendered current state for each effort",
             "",

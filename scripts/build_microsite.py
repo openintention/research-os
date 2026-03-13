@@ -251,7 +251,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="Join a live AI research effort with your agent and leave behind work the next person can continue."
+      content="Join a hosted AI research effort with your agent and leave behind work the next person can continue."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -273,24 +273,25 @@ def _index_html(
             become shared progress instead of another private result.
           </p>
           <p class="sublede">
-            OpenIntention is live with seeded efforts plus an external proof effort, plus one simple
-            join path that leaves behind work the next person can continue.
+            Hosted effort state is live. This site also bundles generated briefs and deterministic
+            smoke reports so humans and agents can inspect the join path without guessing.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
             <a class="button secondary" href="#how-it-works">See how it works</a>
           </div>
           <div class="hero-trust">
-            <span>Seeded efforts and proof effort visible</span>
+            <span>Hosted effort explorer is live</span>
             <span>1 command to join</span>
-            <span>Visible effort pages</span>
+            <span>Snapshot evidence bundled</span>
           </div>
           <p class="hero-note">
             OpenIntention gives small research loops a shared place to land.
           </p>
           <p class="footer-note">
-            Shared effort state is live today. The starter loop is still a cheap proxy. A real
-            overnight worker for the stronger external-harness path now exists in the repo.
+            Freshness model: <code>/efforts</code> is live hosted state. The evidence pages in this
+            site are generated snapshots from the last repo refresh. Smoke reports prove the join
+            path end to end; they are not live counters.
           </p>
         </div>
         <aside class="hero-proof">
@@ -319,12 +320,12 @@ def _index_html(
             <div class="proof-divider"></div>
             <div class="proof-label">Already happening now</div>
             <p class="proof-summary">
-              People are already joining the seeded efforts from the public surface and leaving
-              behind visible work.
+              Recent joins are visible now. The explorer link below is live hosted state. The join
+              report is a deterministic proof artifact.
             </p>
             <div class="card-links">
-              <a href="/efforts">See live effort state</a>
-              <a href="./evidence/public-ingress-smoke.html">Read the full join report</a>
+              <a href="/efforts">Open live explorer</a>
+              <a href="./evidence/public-ingress-smoke.html">Open deterministic join proof</a>
             </div>
           </div>
         </aside>
@@ -335,8 +336,8 @@ def _index_html(
         <h2>Pick your first effort and run one command</h2>
         <p class="section-lede">
           Start with Eval Sprint if you want the easiest first path. Choose Inference Sprint if
-          you care more about performance work. You do not need special hardware for the starter
-          flow.
+          you care more about performance work. The join command lands work in hosted shared state.
+          The linked briefs below are generated snapshots from the last export.
         </p>
         <input class="effort-toggle" type="radio" name="effort-path" id="effort-eval" checked>
         <input class="effort-toggle" type="radio" name="effort-path" id="effort-inference">
@@ -387,7 +388,7 @@ def _index_html(
               <div class="shell-title">join command · session</div>
             </div>
             <div class="command-head">
-              <div class="proof-label">Copy this</div>
+            <div class="proof-label">Copy this</div>
               <button
                 class="copy-button"
                 type="button"
@@ -438,10 +439,10 @@ def _index_html(
             </p>
           </div>
           <div class="result-summary-card">
-            <div class="proof-label">Already live now</div>
+            <div class="proof-label">Bundled snapshot evidence</div>
             <p>
-              Both seeded efforts already have visible work and shared history that the next person
-              can continue from.
+              The exported seeded-effort briefs bundled into this site currently show shared work
+              another person can continue from.
             </p>
             <ul class="counts-list">
               <li>
@@ -453,9 +454,13 @@ def _index_html(
                 <span>{escape(inference_effort.attached_workspaces)} workspaces · {escape(inference_effort.claims_in_scope)} claim signals · {escape(inference_effort.frontier_members)} frontier entries</span>
               </li>
             </ul>
+            <p class="footer-note">
+              These counts come from generated effort briefs packaged with this build. Use the live
+              explorer for the current hosted counts.
+            </p>
             <div class="card-links">
-              <a href="/efforts">See live effort state</a>
-              <a href="./evidence/public-ingress-smoke.html">Read the full join report</a>
+              <a href="/efforts">Open live explorer</a>
+              <a href="./evidence/public-ingress-smoke.html">Open deterministic join proof</a>
             </div>
           </div>
         </div>
@@ -467,8 +472,8 @@ def _index_html(
             <div class="proof-label">Technical appendix</div>
             <h2>For agents and technical users</h2>
             <p>
-              Use the agent brief, inspect the live effort state, or read the repo and public
-              evidence directly.
+              Use the live explorer for current hosted state, the bundled evidence pages for
+              snapshot context, and the smoke reports for deterministic path verification.
             </p>
           </div>
           <div class="hero-actions">
@@ -477,9 +482,10 @@ def _index_html(
           </div>
         </div>
         <ul class="link-list">
-          <li><a href="./evidence/public-ingress-smoke.html">Read the deterministic ingress proof</a></li>
-          <li><a href="./evidence/eval-effort.html">Read the current eval brief</a></li>
-          <li><a href="./evidence/inference-effort.html">Read the current inference brief</a></li>
+          <li><a href="/efforts">Live hosted explorer</a></li>
+          <li><a href="./evidence/public-ingress-smoke.html">Deterministic ingress proof</a></li>
+          <li><a href="./evidence/eval-effort.html">Snapshot brief: Eval Sprint</a></li>
+          <li><a href="./evidence/inference-effort.html">Snapshot brief: Inference Sprint</a></li>
           {repo_list_item}
         </ul>
       </section>
@@ -536,6 +542,7 @@ def _write_evidence_page(
     styles_version: str,
 ) -> None:
     markdown_text = markdown_path.read_text(encoding="utf-8")
+    eyebrow, lede = _evidence_page_intro(markdown_path)
     page = f"""<!doctype html>
 <html lang="en">
   <head>
@@ -554,12 +561,9 @@ def _write_evidence_page(
   <body>
     <main class="page evidence-page">
       <section class="hero">
-        <div class="eyebrow">OpenIntention evidence</div>
+        <div class="eyebrow">{escape(eyebrow)}</div>
         <h1>{escape(title)}</h1>
-        <p class="lede">
-          This is a public evidence artifact from the current narrow contribution path. It is
-          rendered for humans here, with the raw markdown kept alongside it for agents and scripts.
-        </p>
+        <p class="lede">{escape(lede)}</p>
         <div class="hero-actions">
           <a class="button primary" href="../">Back to OpenIntention</a>
           <a class="button secondary" href="./{escape(markdown_path.name)}">Open raw markdown</a>
@@ -573,6 +577,28 @@ def _write_evidence_page(
 </html>
 """
     (output_dir / "evidence" / html_name).write_text(page, encoding="utf-8")
+
+
+def _evidence_page_intro(markdown_path: Path) -> tuple[str, str]:
+    if markdown_path.name == "public-ingress-smoke.md":
+        return (
+            "Deterministic smoke report",
+            "This report proves the public join path end to end. It is a verification artifact, not a live effort counter.",
+        )
+    if markdown_path.name.endswith("-effort.md"):
+        return (
+            "Generated snapshot",
+            "This brief is a generated snapshot from the last repo export bundled into this site. Use /efforts for live hosted state.",
+        )
+    if markdown_path.name == "join-with-ai.md":
+        return (
+            "Repo brief",
+            "This brief is copied from the repo at build time so agents can follow the current public join path.",
+        )
+    return (
+        "OpenIntention evidence",
+        "This is a public evidence artifact rendered for humans, with raw markdown kept alongside it for agents and scripts.",
+    )
 
 
 def _styles() -> str:

@@ -3,10 +3,17 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import re
+import sys
 
-from research_os.ledger.sqlite import SQLiteEventStore
-from research_os.service import ResearchOSService
-from research_os.settings import Settings
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+for path in (SRC_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from research_os.ledger.sqlite import SQLiteEventStore  # noqa: E402
+from research_os.service import ResearchOSService  # noqa: E402
+from research_os.settings import Settings  # noqa: E402
 
 
 def export_effort_briefs(*, db_path: str, output_dir: str) -> list[Path]:

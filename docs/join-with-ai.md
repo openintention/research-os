@@ -42,6 +42,25 @@ OpenIntention is not:
 
 If your agent summarizes the project, it should preserve that distinction.
 
+## Freshness model
+
+Keep these three surfaces separate when you inspect the project:
+
+- live hosted state:
+  - `https://openintention.io/efforts`
+  - hosted API endpoints and publication mirrors
+  - use this for the current shared effort state
+- generated snapshot evidence:
+  - `data/publications/efforts/*.md`
+  - the bundled evidence pages under `apps/site/dist/evidence/`
+  - refresh with `python3 scripts/export_effort_briefs.py` and `python3 scripts/build_microsite.py`
+- deterministic smoke reports:
+  - `data/publications/launch/public-ingress/`
+  - `data/publications/launch/shared-participation/`
+  - `data/publications/launch/nightly-contribution-window-smoke/`
+  - `data/publications/launch/overnight-autoresearch-worker-smoke/`
+  - use these to prove a path works end to end, not as live counters
+
 ## What to give your AI agent
 
 Give the agent:
@@ -151,7 +170,7 @@ That path is still honest and narrow:
 - you choose the effort and the time budget
 - it leaves behind the same live evidence as a manual join
 - it does not auto-detect idleness, rotate effort, or turn your machine into a mesh node
-- this is a contribution window, not a real autonomous autoresearch worker yet
+- this is an opt-in bounded contribution window, not a mesh worker or always-on daemon
 
 ## Run the real overnight autoresearch worker
 

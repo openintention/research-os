@@ -46,10 +46,14 @@ Launch constraint to remember:
 The package expects these generated artifacts:
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 - `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
-- `data/publications/launch/first-user-smoke.md`
+- `data/publications/launch/public-ingress/public-ingress-smoke.md`
+- `data/publications/launch/public-ingress/first-user-smoke.md`
 
 Regenerate them with:
 
 ```bash
-python3 scripts/run_first_user_smoke.py
+python3 scripts/run_public_ingress_smoke.py
+python3 scripts/export_effort_briefs.py
+python3 scripts/build_microsite.py
+python3 scripts/run_surface_coherence_check.py
 ```

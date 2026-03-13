@@ -15,6 +15,7 @@ def test_build_production_smoke_report_includes_public_and_shared_checks() -> No
                 "Eval Sprint: improve validation loss under fixed budget",
                 "MLX History Sprint: compound kept improvements on Apple Silicon",
             ],
+            homepage_url="https://openintention.io/",
             effort_page_urls=[
                 "https://openintention.io/efforts/effort-eval",
                 "https://openintention.io/efforts/effort-mlx",
@@ -24,6 +25,7 @@ def test_build_production_smoke_report_includes_public_and_shared_checks() -> No
 
     assert "Production Smoke Report" in report
     assert "Hosted Surface" in report
+    assert "Homepage freshness copy" in report
     assert "public-ingress-smoke.md" in report
     assert "shared-participation-smoke.md" in report
     assert "MLX History Sprint" in report

@@ -18,7 +18,7 @@
 # First User Smoke Report
 
 ## Base URL
-- `http://127.0.0.1:52750`
+- `http://127.0.0.1:56854`
 
 ## Discovered Efforts
 - `Inference Sprint: improve flash-path throughput on H100` `tokens_per_second` on `H100` (300s)
@@ -26,10 +26,10 @@
 
 ## Participation Outcome
 - Onboarded: the newcomer discovered the public repo and seeded effort path from the public surface.
-- Joined (Eval): workspace `252563cd-e94f-4953-b184-3f1b7143a707` attached to effort `Eval Sprint: improve validation loss under fixed budget`.
-- Joined (Inference): workspace `079cf355-6f9d-4880-82e9-0dcac03d1bd4` attached to effort `Inference Sprint: improve flash-path throughput on H100`.
-- Participated (Eval): workspace `252563cd-e94f-4953-b184-3f1b7143a707` left behind claim `claim-quadratic-001` and reproduction run `run-candidate-repro-001`.
-- Participated (Inference): workspace `079cf355-6f9d-4880-82e9-0dcac03d1bd4` left behind claim `claim-quadratic-001` and reproduction run `run-candidate-repro-001`.
+- Joined (Eval): workspace `977d23eb-e87a-42dc-af47-38863916ad2d` attached to effort `Eval Sprint: improve validation loss under fixed budget`.
+- Joined (Inference): workspace `f7aa4fe2-eba6-4cf6-a023-06d6eeb6488a` attached to effort `Inference Sprint: improve flash-path throughput on H100`.
+- Participated (Eval): workspace `977d23eb-e87a-42dc-af47-38863916ad2d` left behind claim `977d23eb-claim-quadratic-001` and reproduction run `977d23eb-run-candidate-repro-001`.
+- Participated (Inference): workspace `f7aa4fe2-eba6-4cf6-a023-06d6eeb6488a` left behind claim `f7aa4fe2-claim-quadratic-001` and reproduction run `f7aa4fe2-run-candidate-repro-001`.
 
 ## Eval Client Output
 ```text

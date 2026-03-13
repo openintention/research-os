@@ -39,20 +39,21 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Join a live AI research effort with your agent." in html
-    assert "Seeded efforts and proof effort visible" in html
+    assert "Hosted effort explorer is live" in html
     assert "1 command to join" in html
-    assert "Visible effort pages" in html
+    assert "Snapshot evidence bundled" in html
     assert "For ML engineers, benchmark tinkerers, and agent-native builders" in html
     assert "OpenIntention gives small research loops a shared place to land." in html
+    assert "Freshness model:" in html
     assert "See how it works" in html
     assert "What you get back" in html
     assert "A visible workspace" in html
     assert "A visible result" in html
     assert "A handoff" in html
-    assert "Read the full join report" in html
+    assert "Open deterministic join proof" in html
     assert "./styles.css?v=" in html
     assert "Pick your first effort and run one command" in html
-    assert "You do not need special hardware for the starter" in html
+    assert "The linked briefs below are generated snapshots from the last export." in html
     assert "Best first path" in html
     assert "Alternative path" in html
     assert "Start here if you want the easiest first contribution." in html
@@ -63,7 +64,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "This starts with" in html
     assert "Eval Sprint, the easiest first path." in html
     assert "What your first run leaves behind" in html
-    assert "Already live now" in html
+    assert "Bundled snapshot evidence" in html
     assert "A successful join should leave behind visible work" in html
     assert "A recent public-surface join" in html
     assert "Each successful join leaves behind a workspace" in html
@@ -73,7 +74,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "2 workspaces" in html
     assert "For agents and technical users" in html
     assert "Technical appendix" in html
-    assert "Use the agent brief, inspect the live effort state" in html
+    assert "Use the live explorer for current hosted state" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
@@ -83,6 +84,9 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "data-copy-eval=" in html
     assert "data-copy-inference=" in html
     assert "Open the agent brief" in html
+    assert "These counts come from generated effort briefs packaged with this build." in html
+    assert "Both seeded efforts already have visible work" not in html
+    assert "Already live now" not in html
     assert "What an effort is" not in html
     assert "What we are trying to prove" not in html
     assert "What we are inviting you into" not in html
@@ -99,4 +103,5 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     evidence_html = (output_dir / "evidence" / "join-with-ai.html").read_text(encoding="utf-8")
     assert "Open raw markdown" in evidence_html
     assert "Back to OpenIntention" in evidence_html
+    assert "Repo brief" in evidence_html
     assert "../styles.css?v=" in evidence_html

@@ -22,6 +22,25 @@ Current seeded efforts:
 - `Eval Sprint: improve validation loss under fixed budget`
 - `Inference Sprint: improve flash-path throughput on H100`
 
+## Freshness model
+
+Use the public evidence surfaces this way:
+
+- live hosted state:
+  - `https://openintention.io/efforts`
+  - hosted API endpoints and publication mirrors
+  - this is the current shared effort state
+- generated snapshot evidence:
+  - `data/publications/efforts/*.md`
+  - `apps/site/dist/evidence/*.html`
+  - refresh with `python3 scripts/export_effort_briefs.py` and `python3 scripts/build_microsite.py`
+- deterministic smoke reports:
+  - `data/publications/launch/public-ingress/`
+  - `data/publications/launch/shared-participation/`
+  - `data/publications/launch/nightly-contribution-window-smoke/`
+  - `data/publications/launch/overnight-autoresearch-worker-smoke/`
+  - use these to prove paths and messaging, not as live counters
+
 ## Operator flow
 
 Verify the actual public ingress path first:
@@ -81,6 +100,13 @@ make export-effort-briefs
 The exported markdown files land in:
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 - `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
+
+Refresh the bundled microsite snapshot after exporting the briefs:
+
+```bash
+python3 scripts/build_microsite.py
+python3 scripts/run_surface_coherence_check.py
+```
 
 ## What to share publicly
 

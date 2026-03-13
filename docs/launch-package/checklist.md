@@ -6,13 +6,19 @@ Before posting publicly:
 - do not post unless an external AI agent can infer the participation path from the public materials alone
 - run `python3 scripts/run_public_ingress_smoke.py`
 - run `python3 scripts/run_first_user_smoke.py`
+- run `python3 scripts/export_effort_briefs.py`
 - run `python3 scripts/build_microsite.py`
+- run `python3 scripts/run_surface_coherence_check.py`
 - if you need to override the canonical repo link, rebuild with `OPENINTENTION_REPO_URL=<public_repo_url> python3 scripts/build_microsite.py`
-- confirm `data/publications/launch/first-user-smoke.md` exists
 - confirm `data/publications/launch/public-ingress/public-ingress-smoke.md` exists
+- confirm `data/publications/launch/public-ingress/first-user-smoke.md` exists
 - confirm both effort briefs were regenerated under `data/publications/efforts/`
 - confirm `apps/site/dist/index.html` exists
 - confirm `apps/site/dist/assets/favicon.svg` exists
+- confirm the launch surface uses the current freshness model:
+  - `/efforts` is live hosted state
+  - bundled evidence pages are generated snapshots
+  - smoke reports are deterministic proofs, not live counters
 - confirm the founder-post copy still matches the current repo reality
 - confirm the transparency line is present:
   - built collaboratively with AI assistance

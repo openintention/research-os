@@ -79,6 +79,25 @@ What is future direction, not current fact:
 - stronger identity, signing, verifier economics, and later node mechanics
 - broader participant-created efforts and a fuller community surface
 
+## Public freshness model
+
+When reading the repo, site, and generated artifacts, keep this split explicit:
+
+- live hosted state:
+  - `https://openintention.io/efforts`
+  - hosted API endpoints and publication mirrors
+  - use this when you want the current shared effort state
+- generated snapshot evidence:
+  - `data/publications/efforts/*.md`
+  - the bundled evidence pages in `apps/site/dist/evidence/`
+  - refresh with `python3 scripts/export_effort_briefs.py` and `python3 scripts/build_microsite.py`
+- deterministic smoke reports:
+  - `data/publications/launch/public-ingress/`
+  - `data/publications/launch/shared-participation/`
+  - `data/publications/launch/nightly-contribution-window-smoke/`
+  - `data/publications/launch/overnight-autoresearch-worker-smoke/`
+  - use these to prove a path works end to end, not as live counters
+
 ## Quickstart
 
 ```bash

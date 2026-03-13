@@ -55,6 +55,25 @@ Before participation, the newcomer should be able to infer:
 
 If the newcomer cannot infer that from the public surface, the ingress flow is not ready.
 
+## Freshness model
+
+The public surface currently has three different evidence modes:
+
+- live hosted state:
+  - `https://openintention.io/efforts`
+  - hosted API endpoints and publication mirrors
+  - use this for the current shared effort state
+- generated snapshot evidence:
+  - `data/publications/efforts/*.md`
+  - `apps/site/dist/evidence/*.html`
+  - refresh with `python3 scripts/export_effort_briefs.py` and `python3 scripts/build_microsite.py`
+- deterministic smoke reports:
+  - `data/publications/launch/public-ingress/`
+  - `data/publications/launch/shared-participation/`
+  - `data/publications/launch/nightly-contribution-window-smoke/`
+  - `data/publications/launch/overnight-autoresearch-worker-smoke/`
+  - use these to prove a path works end to end, not as live counters
+
 ## Canonical flow
 
 ### Step 1: Arrive from a public surface
@@ -128,7 +147,7 @@ The success condition is not "ran the command". It is:
 
 The newcomer should inspect at least one of:
 - `data/publications/launch/public-ingress/public-ingress-smoke.md`
-- `data/publications/launch/first-user-smoke.md`
+- `data/publications/launch/public-ingress/first-user-smoke.md`
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 - `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
 

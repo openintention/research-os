@@ -6,23 +6,24 @@ This launch package should point to generated evidence, not only prose.
 
 - `data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md`
 - `data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md`
-- `data/publications/launch/first-user-smoke.md`
 - `data/publications/launch/public-ingress/public-ingress-smoke.md`
+- `data/publications/launch/public-ingress/first-user-smoke.md`
+- `data/publications/launch/hosted-join/hosted-join.md` when the hosted join path is exercised
 
 ## Regeneration command
 
 ```bash
 python3 scripts/run_public_ingress_smoke.py
-python3 scripts/run_first_user_smoke.py
+python3 scripts/export_effort_briefs.py
+python3 scripts/build_microsite.py
+python3 scripts/run_surface_coherence_check.py
 ```
 
 Those commands should:
 - start from the live public site and repo and verify the newcomer path end to end
-- seed the local state
-- run the eval proxy contribution
-- run the inference proxy contribution
-- export the effort briefs
-- write a first-user smoke report
+- refresh the canonical seeded-effort briefs used by the bundled microsite
+- refresh the bundled evidence surface
+- verify that docs, snapshot evidence, and smoke reports stay aligned
 
 To rebuild the static microsite evidence surface after that:
 
@@ -45,5 +46,5 @@ Canonical public repo:
 
 - one excerpt from the eval effort brief
 - one excerpt from the inference effort brief
-- one short snippet from `first-user-smoke.md`
+- one short snippet from `data/publications/launch/public-ingress/first-user-smoke.md`
 - one exact local command that someone else can run
