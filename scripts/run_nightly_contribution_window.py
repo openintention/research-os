@@ -26,7 +26,7 @@ from clients.tiny_loop.experiment import (  # noqa: E402
     run_tiny_loop_experiment,
 )
 
-DEFAULT_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_BASE_URL = "https://api.openintention.io"
 DEFAULT_SITE_URL = "https://openintention.io"
 DEFAULT_WINDOW_SECONDS = 8 * 60 * 60
 DEFAULT_INTERVAL_SECONDS = 10

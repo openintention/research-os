@@ -13,7 +13,7 @@ It is intentionally small and only covers the real deployed shape:
 - Railway project: `openintention`
 - API service: `openintention-api`
 - Site service: `openintention-site`
-- API base URL: `https://openintention-api-production.up.railway.app`
+- API base URL: `https://api.openintention.io`
 - Public site URL: `https://openintention.io`
 - Mounted volume: `/data` on `openintention-api`
 
@@ -24,14 +24,14 @@ It is intentionally small and only covers the real deployed shape:
 ```bash
 RESEARCH_OS_DB_PATH=/data/research_os.db
 RESEARCH_OS_ARTIFACT_ROOT=/data/artifacts
-RESEARCH_OS_PUBLIC_BASE_URL=https://openintention-api-production.up.railway.app
+RESEARCH_OS_PUBLIC_BASE_URL=https://api.openintention.io
 RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS=true
 ```
 
 ### Site
 
 ```bash
-OPENINTENTION_API_BASE_URL=https://openintention-api-production.up.railway.app
+OPENINTENTION_API_BASE_URL=https://api.openintention.io
 OPENINTENTION_API_FETCH_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:8080
 OPENINTENTION_REPO_URL=https://github.com/openintention/research-os
 ```
@@ -83,7 +83,7 @@ railway logs --service openintention-site --lines 200 --json
 Quick live checks:
 
 ```bash
-curl -fsSL https://openintention-api-production.up.railway.app/healthz
+curl -fsSL https://api.openintention.io/healthz
 curl -fsSL https://openintention.io/efforts | head
 ```
 
@@ -100,7 +100,7 @@ Run the production smoke floor:
 ```bash
 python3 scripts/run_production_smoke.py \
   --site-url https://openintention.io \
-  --api-base-url https://openintention-api-production.up.railway.app
+  --api-base-url https://api.openintention.io
 ```
 
 This should produce:
@@ -116,7 +116,7 @@ Operator command:
 
 ```bash
 python3 scripts/rollover_proof_effort.py \
-  --base-url https://openintention-api-production.up.railway.app \
+  --base-url https://api.openintention.io \
   --effort-name "Eval Sprint: improve validation loss under fixed budget"
 ```
 

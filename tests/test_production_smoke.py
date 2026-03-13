@@ -8,7 +8,7 @@ def test_build_production_smoke_report_includes_public_and_shared_checks() -> No
     report = build_production_smoke_report(
         ProductionSmokeResult(
             site_url="https://openintention.io",
-            api_base_url="https://openintention-api-production.up.railway.app",
+            api_base_url="https://api.openintention.io",
             public_ingress_report="data/publications/launch/production-smoke/public-ingress/public-ingress-smoke.md",
             shared_participation_report="data/publications/launch/production-smoke/shared-participation/shared-participation-smoke.md",
             effort_names=[

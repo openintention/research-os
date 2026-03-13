@@ -30,7 +30,7 @@ from scripts.run_mlx_history_compounding_smoke import (  # noqa: E402
     _record_adoption,
 )
 
-DEFAULT_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_BASE_URL = "https://api.openintention.io"
 DEFAULT_SITE_URL = "https://openintention.io"
 DEFAULT_WINDOW_SECONDS = 8 * 60 * 60
 DEFAULT_INTERVAL_SECONDS = 15 * 60

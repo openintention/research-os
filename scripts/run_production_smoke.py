@@ -17,7 +17,7 @@ from scripts.run_shared_participation_smoke import run_shared_participation_smok
 
 
 DEFAULT_SITE_URL = "https://openintention.io"
-DEFAULT_API_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_API_BASE_URL = "https://api.openintention.io"
 
 
 @dataclass(frozen=True, slots=True)

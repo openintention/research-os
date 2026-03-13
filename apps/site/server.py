@@ -25,7 +25,7 @@ from research_os.domain.models import FrontierMember
 from research_os.domain.models import WorkspaceView
 from research_os.edge_bootstrap import render_edge_bootstrap_script
 
-DEFAULT_API_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_API_BASE_URL = "https://api.openintention.io"
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
 
 

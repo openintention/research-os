@@ -521,7 +521,7 @@ def test_effort_overview_publication_prefers_worker_join_command_for_external_ha
     settings = Settings(
         db_path=str(tmp_path / "publication-effort-explicit-join-command.db"),
         artifact_root=str(tmp_path / "artifacts"),
-        public_base_url="https://openintention-api-production.up.railway.app",
+        public_base_url="https://api.openintention.io",
     )
     app = create_app(settings)
     client = TestClient(app)
@@ -541,7 +541,7 @@ def test_effort_overview_publication_prefers_worker_join_command_for_external_ha
                 "join_command": (
                     "python3 scripts/run_mlx_history_compounding_smoke.py "
                     "--repo-path <path_to_mlx_history> "
-                    "--base-url https://openintention-api-production.up.railway.app"
+                    "--base-url https://api.openintention.io"
                 ),
             },
         },
@@ -661,7 +661,7 @@ def test_effort_overview_publication_carries_forward_proof_series_context_for_cu
     settings = Settings(
         db_path=str(tmp_path / "publication-effort-current-proof-context.db"),
         artifact_root=str(tmp_path / "artifacts"),
-        public_base_url="https://openintention-api-production.up.railway.app",
+        public_base_url="https://api.openintention.io"
     )
     app = create_app(settings)
     client = TestClient(app)

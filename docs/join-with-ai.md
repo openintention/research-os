@@ -239,7 +239,7 @@ repo is the one-shot external-harness compounding flow:
 ```bash
 python3 scripts/run_mlx_history_compounding_smoke.py \
   --repo-path <path_to_mlx_history> \
-  --base-url https://openintention-api-production.up.railway.app
+  --base-url https://api.openintention.io
 ```
 
 That proof is still useful, but the current advanced operator path is the real overnight worker

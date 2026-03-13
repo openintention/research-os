@@ -12,7 +12,7 @@ from urllib.request import urlopen
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_BASE_URL = "https://api.openintention.io"
 DEFAULT_SITE_URL = "https://openintention.io"
 
 

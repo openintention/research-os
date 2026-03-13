@@ -12,7 +12,7 @@ for path in (SRC_ROOT, REPO_ROOT):
 
 from scripts.run_nightly_contribution_window import run_nightly_contribution_window  # noqa: E402
 
-DEFAULT_BASE_URL = "https://openintention-api-production.up.railway.app"
+DEFAULT_BASE_URL = "https://api.openintention.io"
 DEFAULT_SITE_URL = "https://openintention.io"
 
 

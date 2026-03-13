@@ -18,7 +18,7 @@ from research_os.integrations.mlx_history import MlxHistoryResult
 def test_build_compounding_report_highlights_adoption_and_next_step() -> None:
     report = build_compounding_report(
         CompoundingMlxHistoryResult(
-            base_url="https://openintention-api-production.up.railway.app",
+            base_url="https://api.openintention.io",
             effort_id="effort-mlx",
             effort_name="MLX History Sprint: improve val_bpb on Apple Silicon",
             alpha=ImportedContribution(

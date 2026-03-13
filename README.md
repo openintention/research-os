@@ -188,7 +188,7 @@ Use these environment variables on the hosted API service:
 ```bash
 RESEARCH_OS_DB_PATH=/data/research_os.db
 RESEARCH_OS_ARTIFACT_ROOT=/data/artifacts
-RESEARCH_OS_PUBLIC_BASE_URL=https://openintention-api-production.up.railway.app
+RESEARCH_OS_PUBLIC_BASE_URL=https://api.openintention.io
 RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS=true
 ```
 
@@ -229,9 +229,9 @@ That role is visible in:
 To prove that one contributor and one verifier can land work into the same shared effort state:
 
 ```bash
-python3 scripts/run_shared_participation_smoke.py --base-url https://openintention-api-production.up.railway.app
+python3 scripts/run_shared_participation_smoke.py --base-url https://api.openintention.io
 # or
-make smoke-shared-participation BASE_URL=https://openintention-api-production.up.railway.app
+make smoke-shared-participation BASE_URL=https://api.openintention.io
 ```
 
 That report is written under `data/publications/launch/shared-participation/`.
@@ -258,9 +258,9 @@ It is the first `opt-in local machine to one shared effort overnight` path.
 For the deterministic hosted rehearsal:
 
 ```bash
-python3 scripts/run_nightly_contribution_window_smoke.py --base-url https://openintention-api-production.up.railway.app
+python3 scripts/run_nightly_contribution_window_smoke.py --base-url https://api.openintention.io
 # or
-make smoke-nightly-window BASE_URL=https://openintention-api-production.up.railway.app SITE_URL=https://openintention.io
+make smoke-nightly-window BASE_URL=https://api.openintention.io SITE_URL=https://openintention.io
 ```
 
 That report is written under `data/publications/launch/nightly-contribution-window-smoke/`.
@@ -331,7 +331,7 @@ routes can fetch live effort state at request time. On Railway, use the `DOCKERF
 `docker/site.Dockerfile`, then set:
 
 ```bash
-OPENINTENTION_API_BASE_URL=https://openintention-api-production.up.railway.app
+OPENINTENTION_API_BASE_URL=https://api.openintention.io
 OPENINTENTION_API_FETCH_BASE_URL=http://${{openintention-api.RAILWAY_PRIVATE_DOMAIN}}:8080
 ```
 
@@ -394,7 +394,7 @@ For the current hosted production floor, use:
 ```bash
 python3 scripts/run_production_smoke.py \
   --site-url https://openintention.io \
-  --api-base-url https://openintention-api-production.up.railway.app
+  --api-base-url https://api.openintention.io
 ```
 
 That combines the public-ingress smoke, the hosted shared-participation smoke, and a live effort
@@ -410,13 +410,13 @@ workspace, claim, live discussion link, and content-addressed artifact manifest 
 
 ```bash
 python3 scripts/run_overnight_autoresearch_worker.py \
-  --base-url https://openintention-api-production.up.railway.app \
+  --base-url https://api.openintention.io \
   --repo-path /path/to/mlx-history \
   --runner-command "<external_harness_command>" \
   --actor-id aliargun
 # or
 make overnight-worker \
-  BASE_URL=https://openintention-api-production.up.railway.app \
+  BASE_URL=https://api.openintention.io \
   SITE_URL=https://openintention.io \
   REPO_PATH=/path/to/mlx-history \
   RUNNER_COMMAND="<external_harness_command>"
@@ -438,11 +438,11 @@ a markdown report showing what compounded and what the next participant should c
 
 ```bash
 python3 scripts/run_mlx_history_compounding_smoke.py \
-  --base-url https://openintention-api-production.up.railway.app \
+  --base-url https://api.openintention.io \
   --repo-path /path/to/mlx-history
 # or
 make smoke-mlx-history \
-  BASE_URL=https://openintention-api-production.up.railway.app \
+  BASE_URL=https://api.openintention.io \
   REPO_PATH=/path/to/mlx-history
 ```
 
