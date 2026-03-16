@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from typing import Any, Protocol
-from urllib import error, request
+from urllib import error
 
 from research_os.http import build_request
+from research_os.http import open_url
 
 
 class ResearchOSApi(Protocol):
@@ -82,7 +83,7 @@ class HttpResearchOSApi:
             method=method,
         )
         try:
-            with request.urlopen(req, timeout=self.timeout_seconds) as response:
+            with open_url(req, timeout=self.timeout_seconds) as response:
                 return json.loads(response.read().decode("utf-8"))
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8")

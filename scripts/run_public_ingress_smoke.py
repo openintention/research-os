@@ -8,7 +8,15 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from urllib.request import Request, urlopen
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+for path in (SRC_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from research_os.http import build_request  # noqa: E402
+from research_os.http import open_url  # noqa: E402
 
 
 DEFAULT_SITE_URL = "https://openintention.io"
@@ -134,11 +142,10 @@ def extract_public_repo_url(landing_html: str) -> str:
 
 
 def fetch_text(url: str) -> str:
-    request = Request(
+    request = build_request(
         url,
-        headers={"User-Agent": "OpenIntentionAgent/0.1 (+https://github.com/openintention/research-os)"},
     )
-    with urlopen(request, timeout=20) as response:
+    with open_url(request, timeout=20) as response:
         return response.read().decode("utf-8")
 
 

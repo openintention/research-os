@@ -4,7 +4,6 @@ import argparse
 from dataclasses import dataclass
 from pathlib import Path
 import sys
-from urllib.request import Request, urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -12,6 +11,8 @@ for path in (SRC_ROOT, REPO_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from research_os.http import build_request  # noqa: E402
+from research_os.http import open_url  # noqa: E402
 from scripts.run_public_ingress_smoke import run_public_ingress_smoke  # noqa: E402
 from scripts.run_shared_participation_smoke import run_shared_participation_smoke  # noqa: E402
 
@@ -155,16 +156,16 @@ def main() -> None:
 
 
 def _get_json(url: str) -> list[dict[str, object]] | dict[str, object]:
-    request = Request(url, headers={"User-Agent": "OpenIntentionSmoke/0.1"})
-    with urlopen(request, timeout=20) as response:
+    request = build_request(url, headers={"User-Agent": "OpenIntentionSmoke/0.1"})
+    with open_url(request, timeout=20) as response:
         import json
 
         return json.loads(response.read().decode("utf-8"))
 
 
 def _require_text(url: str, *, must_include: str) -> str:
-    request = Request(url, headers={"User-Agent": "OpenIntentionSmoke/0.1"})
-    with urlopen(request, timeout=20) as response:
+    request = build_request(url, headers={"User-Agent": "OpenIntentionSmoke/0.1"})
+    with open_url(request, timeout=20) as response:
         text = response.read().decode("utf-8")
     if must_include not in text:
         raise RuntimeError(f"expected `{must_include}` in {url}")

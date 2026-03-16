@@ -6,7 +6,6 @@ from html import escape
 import os
 from pathlib import Path
 from urllib.parse import quote, urlencode
-from urllib.request import urlopen
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
@@ -24,6 +23,8 @@ from research_os.domain.models import EventKind
 from research_os.domain.models import FrontierMember
 from research_os.domain.models import WorkspaceView
 from research_os.edge_bootstrap import render_edge_bootstrap_script
+from research_os.http import build_request
+from research_os.http import open_url
 
 DEFAULT_API_BASE_URL = "https://api.openintention.io"
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
@@ -186,7 +187,8 @@ def _fetch_json(
     query: dict[str, object] | None = None,
 ) -> list[dict[str, object]] | dict[str, object]:
     query_string = f"?{urlencode(query)}" if query else ""
-    with urlopen(f"{api_base_url}{path}{query_string}", timeout=30) as response:
+    request = build_request(f"{api_base_url}{path}{query_string}")
+    with open_url(request, timeout=30) as response:
         import json
 
         return json.loads(response.read().decode("utf-8"))
