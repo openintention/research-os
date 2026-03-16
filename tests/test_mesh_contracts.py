@@ -20,6 +20,8 @@ def test_node_identity_schema_declares_first_mesh_identity_contract() -> None:
     assert schema["properties"]["identity_version"]["const"] == 1
     assert "signing_keys" in schema["required"]
     assert "capabilities" in schema["required"]
+    assert "lease_fail" in schema["properties"]["capabilities"]["items"]["enum"]
+    assert "lease_complete" in schema["properties"]["capabilities"]["items"]["enum"]
 
 
 def test_network_envelope_schema_preserves_signed_transport_boundary() -> None:

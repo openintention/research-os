@@ -51,6 +51,8 @@
           "lease_acquire",
           "lease_renew",
           "lease_release",
+          "lease_fail",
+          "lease_complete",
           "verify_claim",
           "explore_effort",
           "publish_summary"

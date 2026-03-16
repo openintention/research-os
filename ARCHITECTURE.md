@@ -116,6 +116,10 @@ For `event.append`, the hosted API may verify a signed
 has to pass the existing service-layer validation and only becomes authoritative after append to
 the immutable event log.
 
+For `/api/v1/leases/*`, the hosted API may verify signed lease envelopes at ingress for acquire,
+renew, release, fail, and complete operations, but the resulting lease state remains coordination
+metadata above planner work items rather than lineage truth.
+
 ## Near-term extension path
 
 1. Materialize projections into tables instead of scanning the event log.

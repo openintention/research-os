@@ -14,7 +14,12 @@
       }
     ],
     "capabilities": [
-      "event_append"
+      "event_append",
+      "lease_acquire",
+      "lease_renew",
+      "lease_release",
+      "lease_fail",
+      "lease_complete"
     ],
     "operator_hint": "Replace or extend this allowlist through operator-managed deployment config.",
     "created_at": "2026-03-16T00:00:00Z"

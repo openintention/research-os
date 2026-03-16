@@ -31,6 +31,7 @@ from research_os.network.ingress import (
     EnvelopeReplayError,
     EnvelopeVerificationError,
     EventAppendIngressVerifier,
+    LeaseCommandIngressVerifier,
     TrustedNodeRegistry,
 )
 from research_os.network.sqlite import SQLiteNetworkEnvelopeStore
@@ -70,6 +71,13 @@ def create_app(
         ),
         receipt_store=SQLiteNetworkEnvelopeStore(settings.db_path),
     )
+    lease_ingress_verifier = LeaseCommandIngressVerifier(
+        trusted_nodes=TrustedNodeRegistry.from_sources(
+            path=settings.network_trusted_nodes_path,
+            inline_json=settings.network_trusted_nodes_json,
+        ),
+        receipt_store=SQLiteNetworkEnvelopeStore(settings.db_path),
+    )
     if settings.bootstrap_seeded_efforts:
         ensure_seeded_efforts(service, actor_id=settings.bootstrap_actor_id)
 
@@ -81,6 +89,7 @@ def create_app(
     app.state.service = service
     app.state.artifact_registry = LocalArtifactRegistry(settings.artifact_root)
     app.state.ingress_verifier = ingress_verifier
+    app.state.lease_ingress_verifier = lease_ingress_verifier
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -175,51 +184,57 @@ def create_app(
         return service.recommend_next(request)
 
     @app.post("/api/v1/leases/acquire", response_model=Lease)
-    def acquire_lease(payload: dict[str, object]) -> Lease:
-        try:
-            command = LeaseCommand.model_validate({"action": "acquire", **payload})
-            return service.acquire_lease(command)
-        except ValidationError as exc:
-            raise HTTPException(status_code=422, detail=exc.errors()) from exc
-        except LeaseIngestionError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        except LeaseConflictError as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+    async def acquire_lease(request: Request) -> Lease:
+        body = await _decode_json_body(request)
+        return _run_lease_command(
+            handler=lambda lease_id, command: service.acquire_lease(command),
+            lease_ingress_verifier=lease_ingress_verifier,
+            action="acquire",
+            payload=body,
+        )
 
     @app.post("/api/v1/leases/{lease_id}/renew", response_model=Lease)
-    def renew_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+    async def renew_lease(lease_id: str, request: Request) -> Lease:
+        body = await _decode_json_body(request)
         return _run_lease_command(
             service.renew_lease,
+            lease_ingress_verifier=lease_ingress_verifier,
             lease_id=lease_id,
             action="renew",
-            payload=payload,
+            payload=body,
         )
 
     @app.post("/api/v1/leases/{lease_id}/release", response_model=Lease)
-    def release_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+    async def release_lease(lease_id: str, request: Request) -> Lease:
+        body = await _decode_json_body(request)
         return _run_lease_command(
             service.release_lease,
+            lease_ingress_verifier=lease_ingress_verifier,
             lease_id=lease_id,
             action="release",
-            payload=payload,
+            payload=body,
         )
 
     @app.post("/api/v1/leases/{lease_id}/fail", response_model=Lease)
-    def fail_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+    async def fail_lease(lease_id: str, request: Request) -> Lease:
+        body = await _decode_json_body(request)
         return _run_lease_command(
             service.fail_lease,
+            lease_ingress_verifier=lease_ingress_verifier,
             lease_id=lease_id,
             action="fail",
-            payload=payload,
+            payload=body,
         )
 
     @app.post("/api/v1/leases/{lease_id}/complete", response_model=Lease)
-    def complete_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+    async def complete_lease(lease_id: str, request: Request) -> Lease:
+        body = await _decode_json_body(request)
         return _run_lease_command(
             service.complete_lease,
+            lease_ingress_verifier=lease_ingress_verifier,
             lease_id=lease_id,
             action="complete",
-            payload=payload,
+            payload=body,
         )
 
     @app.get("/api/v1/publications/workspaces/{workspace_id}/discussion", response_model=PublicationView)
@@ -250,23 +265,50 @@ def create_app(
 
 
 def _run_lease_command(
-    handler: Callable[[str, LeaseCommand], Lease],
+    handler: Callable[[str | None, LeaseCommand], Lease],
     *,
-    lease_id: str,
+    lease_ingress_verifier: LeaseCommandIngressVerifier,
+    lease_id: str | None = None,
     action: str,
     payload: dict[str, object],
 ) -> Lease:
     try:
+        if _looks_like_signed_network_envelope(payload):
+            envelope = SignedNetworkEnvelope.model_validate(payload)
+            return lease_ingress_verifier.verify_and_record(
+                envelope,
+                raw_envelope=payload,
+                lease_id=lease_id,
+                apply_command=lambda command: handler(lease_id, command),
+            )
         command = LeaseCommand.model_validate({**payload, "action": action, "lease_id": lease_id})
         return handler(lease_id, command)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.errors()) from exc
     except LeaseNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except EnvelopeVerificationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except EnvelopeReplayError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except LeaseIngestionError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except LeaseConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+async def _decode_json_body(request: Request) -> dict[str, object]:
+    try:
+        body = await request.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="request body must be valid JSON") from exc
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=422, detail="request body must be a JSON object")
+    return body
+
+
+def _looks_like_signed_network_envelope(payload: dict[str, object]) -> bool:
+    return payload.get("envelope_schema") == "openintention-network-envelope-v1"
 
 
 app = create_app()

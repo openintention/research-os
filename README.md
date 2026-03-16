@@ -142,8 +142,11 @@ API ingress is now validated before append:
 - runs and claims must reference known workspace snapshots/runs instead of implicit placeholders
 - signed `openintention-network-envelope-v1` `event.append` requests can be verified at the edge
   against a trusted node allowlist
+- signed `openintention-network-envelope-v1` lease commands can also be verified at the edge for
+  `lease.acquire`, `lease.renew`, `lease.release`, `lease.fail`, and `lease.complete`
 - signed ingress does not replace event-log authority; the inner event must still pass the current
-  service-layer validation before append
+  service-layer validation before append, and signed lease commands still only update bounded
+  coordination metadata above planner work items
 
 Planner recommendations now include lease-ready metadata:
 - `planner_fingerprint`

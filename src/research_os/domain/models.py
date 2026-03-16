@@ -35,6 +35,8 @@ class NodeCapability(StrEnum):
     LEASE_ACQUIRE = "lease_acquire"
     LEASE_RENEW = "lease_renew"
     LEASE_RELEASE = "lease_release"
+    LEASE_FAIL = "lease_fail"
+    LEASE_COMPLETE = "lease_complete"
     VERIFY_CLAIM = "verify_claim"
     EXPLORE_EFFORT = "explore_effort"
     PUBLISH_SUMMARY = "publish_summary"
