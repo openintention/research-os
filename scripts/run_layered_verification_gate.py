@@ -257,13 +257,13 @@ def _layer_l0(gate_root: Path) -> LayerDefinition:
             AutomatedCheck(
                 check_id="ruff",
                 label="Ruff check",
-                command=("ruff", "check", "."),
+                command=(sys.executable, "-m", "ruff", "check", "."),
                 pass_criteria=("No lint violations.",),
             ),
             AutomatedCheck(
                 check_id="pytest",
                 label="Pytest suite",
-                command=("pytest", "-q"),
+                command=(sys.executable, "-m", "pytest", "-q"),
                 pass_criteria=("All deterministic tests pass.",),
             ),
         ),

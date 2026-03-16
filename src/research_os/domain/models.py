@@ -30,6 +30,75 @@ class ParticipantRole(StrEnum):
     VERIFIER = "verifier"
 
 
+class NodeCapability(StrEnum):
+    EVENT_APPEND = "event_append"
+    LEASE_ACQUIRE = "lease_acquire"
+    LEASE_RENEW = "lease_renew"
+    LEASE_RELEASE = "lease_release"
+    VERIFY_CLAIM = "verify_claim"
+    EXPLORE_EFFORT = "explore_effort"
+    PUBLISH_SUMMARY = "publish_summary"
+
+
+class SigningKeyStatus(StrEnum):
+    ACTIVE = "active"
+    RETIRED = "retired"
+
+
+class SignatureScheme(StrEnum):
+    ED25519 = "ed25519"
+
+
+class NetworkMessageType(StrEnum):
+    EVENT_APPEND = "event.append"
+    LEASE_ACQUIRE = "lease.acquire"
+    LEASE_RENEW = "lease.renew"
+    LEASE_RELEASE = "lease.release"
+    LEASE_FAIL = "lease.fail"
+    LEASE_COMPLETE = "lease.complete"
+    NODE_HEARTBEAT = "node.heartbeat"
+
+
+class NodeSigningKey(BaseModel):
+    key_id: str
+    public_key: str
+    signature_scheme: SignatureScheme
+    status: SigningKeyStatus
+
+
+class NodeIdentity(BaseModel):
+    node_id: str
+    identity_schema: str = "openintention-node-identity-v1"
+    identity_version: int = 1
+    display_name: str
+    description: str | None = None
+    signing_keys: list[NodeSigningKey]
+    capabilities: list[NodeCapability]
+    transport_hints: list[str] = Field(default_factory=list)
+    operator_hint: str | None = None
+    created_at: datetime
+    expires_at: datetime | None = None
+
+
+class SignedNetworkEnvelope(BaseModel):
+    envelope_id: str
+    envelope_schema: str = "openintention-network-envelope-v1"
+    envelope_version: int = 1
+    message_type: NetworkMessageType
+    sender_node_id: str
+    sender_key_id: str
+    sent_at: datetime
+    expires_at: datetime | None = None
+    payload_schema: str
+    payload_digest: str
+    payload: dict[str, Any]
+    signature: str
+    signature_scheme: SignatureScheme
+    request_id: str | None = None
+    trace_id: str | None = None
+    replay_window_seconds: int | None = Field(default=None, ge=1)
+
+
 class EventEnvelope(BaseModel):
     event_id: str = Field(default_factory=lambda: str(uuid4()))
     kind: EventKind

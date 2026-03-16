@@ -139,6 +139,10 @@ API ingress is now validated before append:
 - malformed workspace/event payloads return `400`
 - duplicate `event_id` submissions return `409`
 - runs and claims must reference known workspace snapshots/runs instead of implicit placeholders
+- signed `openintention-network-envelope-v1` `event.append` requests can be verified at the edge
+  against a trusted node allowlist
+- signed ingress does not replace event-log authority; the inner event must still pass the current
+  service-layer validation before append
 
 To run the post-v1 external client experiment:
 
@@ -186,6 +190,12 @@ For claim provenance, equivalent `candidate_snapshot_manifest_*` fields are avai
 ANJ-67 adds explicit schema/version semantics for provenance fields so clients can coordinate
 future cryptographic verification. Existing clients that only send URI/digest/signature continue to
 work in this release.
+
+To enable signed ingress for trusted nodes, point the API at a node identity allowlist file:
+
+```bash
+export RESEARCH_OS_NETWORK_TRUSTED_NODES_PATH=./config/trusted-nodes.json
+```
 
 The local bootstrap backend stores those artifacts under `./data/artifacts/sha256/...`
 while the control plane keeps only those references.

@@ -1,0 +1,22 @@
+[
+  {
+    "node_id": "node_openintentionsmoke01",
+    "identity_schema": "openintention-node-identity-v1",
+    "identity_version": 1,
+    "display_name": "OpenIntention Smoke Node",
+    "description": "Operator-managed trusted node for signed ingress verification.",
+    "signing_keys": [
+      {
+        "key_id": "smoke-node-key-1",
+        "public_key": "dfnWvwAtcJ6csMzeaaxlE44QGQ1F+Tkecyxx432MJQg=",
+        "signature_scheme": "ed25519",
+        "status": "active"
+      }
+    ],
+    "capabilities": [
+      "event_append"
+    ],
+    "operator_hint": "Replace or extend this allowlist through operator-managed deployment config.",
+    "created_at": "2026-03-16T00:00:00Z"
+  }
+]

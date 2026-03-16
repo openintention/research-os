@@ -77,7 +77,7 @@ def test_run_layered_verification_gate_marks_launch_claim_manual_checks_pending(
     else:
         raise AssertionError("launch-claim gate should require manual clean-room evidence")
 
-    assert any(command[:2] == ("ruff", "check") for command in calls)
+    assert any(command[1:4] == ("-m", "ruff", "check") for command in calls)
     report = (tmp_path / "launch-claim" / "layered-verification-report.md").read_text(encoding="utf-8")
     assert "Claude clean-room run" in report
     assert "status=`pending-manual`" in report

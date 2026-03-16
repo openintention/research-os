@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from pydantic import TypeAdapter, ValidationError
 
 from research_os.artifacts.local import LocalArtifactRegistry
 from research_os.bootstrap import ensure_seeded_efforts
@@ -16,12 +17,23 @@ from research_os.domain.models import (
     PublicationView,
     RecommendNextRequest,
     RecommendNextResponse,
+    SignedNetworkEnvelope,
     WorkspaceCreated,
     WorkspaceView,
 )
 from research_os.ledger.sqlite import SQLiteEventStore
+from research_os.network.ingress import (
+    EnvelopeReplayError,
+    EnvelopeVerificationError,
+    EventAppendIngressVerifier,
+    TrustedNodeRegistry,
+)
+from research_os.network.sqlite import SQLiteNetworkEnvelopeStore
 from research_os.service import EventConflictError, EventIngestionError, ResearchOSService
 from research_os.settings import Settings
+
+
+_EVENT_APPEND_INPUT = TypeAdapter(EventEnvelope | SignedNetworkEnvelope)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -34,6 +46,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         default_frontier_size=settings.default_frontier_size,
         public_base_url=settings.public_base_url,
     )
+    ingress_verifier = EventAppendIngressVerifier(
+        trusted_nodes=TrustedNodeRegistry.from_file(settings.network_trusted_nodes_path),
+        receipt_store=SQLiteNetworkEnvelopeStore(settings.db_path),
+    )
     if settings.bootstrap_seeded_efforts:
         ensure_seeded_efforts(service, actor_id=settings.bootstrap_actor_id)
 
@@ -44,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.service = service
     app.state.artifact_registry = LocalArtifactRegistry(settings.artifact_root)
+    app.state.ingress_verifier = ingress_verifier
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -78,9 +95,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return workspace
 
     @app.post("/api/v1/events", response_model=EventEnvelope, status_code=201)
-    def append_event(event: EventEnvelope) -> EventEnvelope:
+    async def append_event(request: Request) -> EventEnvelope:
         try:
-            return service.append_event(event)
+            body = await request.json()
+            ingress_payload = _EVENT_APPEND_INPUT.validate_python(body)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="request body must be valid JSON") from exc
+
+        try:
+            if isinstance(ingress_payload, SignedNetworkEnvelope):
+                return ingress_verifier.verify_and_record(
+                    ingress_payload,
+                    raw_envelope=body,
+                    append_event=service.append_event,
+                )
+            return service.append_event(ingress_payload)
+        except EnvelopeVerificationError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except EnvelopeReplayError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         except EventIngestionError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except EventConflictError as exc:

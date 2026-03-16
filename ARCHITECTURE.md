@@ -103,6 +103,18 @@ That is enough to support:
 - publishers that mirror findings into GitHub
 - future websockets or subscriptions
 
+## Signed ingress boundary
+
+Signed network envelopes authenticate who sent a transport request and what exact payload was
+signed.
+
+They do not make the transport layer authoritative.
+
+For `event.append`, the hosted API may verify a signed
+`openintention-network-envelope-v1` envelope at ingress, but the enclosed `EventEnvelope` still
+has to pass the existing service-layer validation and only becomes authoritative after append to
+the immutable event log.
+
 ## Near-term extension path
 
 1. Materialize projections into tables instead of scanning the event log.
