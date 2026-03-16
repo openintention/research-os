@@ -47,7 +47,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         public_base_url=settings.public_base_url,
     )
     ingress_verifier = EventAppendIngressVerifier(
-        trusted_nodes=TrustedNodeRegistry.from_file(settings.network_trusted_nodes_path),
+        trusted_nodes=TrustedNodeRegistry.from_sources(
+            path=settings.network_trusted_nodes_path,
+            inline_json=settings.network_trusted_nodes_json,
+        ),
         receipt_store=SQLiteNetworkEnvelopeStore(settings.db_path),
     )
     if settings.bootstrap_seeded_efforts:

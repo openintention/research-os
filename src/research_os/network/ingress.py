@@ -36,11 +36,18 @@ class TrustedNodeRegistry:
         self._nodes = nodes
 
     @classmethod
-    def from_file(cls, path: str | None) -> "TrustedNodeRegistry":
-        if path is None:
+    def from_sources(
+        cls,
+        *,
+        path: str | None = None,
+        inline_json: str | None = None,
+    ) -> "TrustedNodeRegistry":
+        if inline_json is not None:
+            raw = json.loads(inline_json)
+        elif path is not None:
+            raw = json.loads(Path(path).read_text(encoding="utf-8"))
+        else:
             return cls({})
-
-        raw = json.loads(Path(path).read_text(encoding="utf-8"))
         if isinstance(raw, list):
             node_documents = raw
         elif isinstance(raw, dict) and "nodes" in raw:

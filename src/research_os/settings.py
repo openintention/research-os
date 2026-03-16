@@ -13,6 +13,7 @@ class Settings:
     default_frontier_size: int = 10
     public_base_url: str | None = None
     network_trusted_nodes_path: str | None = None
+    network_trusted_nodes_json: str | None = None
     bootstrap_seeded_efforts: bool = False
     bootstrap_actor_id: str = "openintention-seed"
 
@@ -25,6 +26,7 @@ class Settings:
             default_frontier_size=int(os.getenv("RESEARCH_OS_DEFAULT_FRONTIER_SIZE", "10")),
             public_base_url=os.getenv("RESEARCH_OS_PUBLIC_BASE_URL") or None,
             network_trusted_nodes_path=os.getenv("RESEARCH_OS_NETWORK_TRUSTED_NODES_PATH") or None,
+            network_trusted_nodes_json=os.getenv("RESEARCH_OS_NETWORK_TRUSTED_NODES_JSON") or None,
             bootstrap_seeded_efforts=_env_bool("RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS"),
             bootstrap_actor_id=os.getenv("RESEARCH_OS_BOOTSTRAP_ACTOR_ID", "openintention-seed"),
         )

@@ -48,6 +48,35 @@ def test_append_event_accepts_valid_signed_network_envelope(tmp_path):
     assert events.json()[0]["payload"]["artifact_uri"] == snapshot_artifact.uri
 
 
+def test_append_event_accepts_inline_trusted_node_json(tmp_path):
+    private_key = Ed25519PrivateKey.generate()
+    settings = _build_signed_ingress_settings(tmp_path, private_key=private_key, inline_config=True)
+    client = TestClient(create_app(settings))
+    artifact_registry = LocalArtifactRegistry(settings.artifact_root)
+    snapshot_artifact = artifact_registry.put_bytes(b"signed envelope snapshot")
+    workspace_id = _create_workspace(client)
+
+    envelope = _build_event_append_envelope(
+        private_key=private_key,
+        payload={
+            "kind": "snapshot.published",
+            "workspace_id": workspace_id,
+            "aggregate_id": "snap-inline-config-1",
+            "aggregate_kind": "snapshot",
+            "actor_id": "node-alpha",
+            "payload": {
+                "snapshot_id": "snap-inline-config-1",
+                "artifact_uri": snapshot_artifact.uri,
+            },
+            "tags": {},
+        },
+    )
+
+    response = client.post("/api/v1/events", json=envelope)
+
+    assert response.status_code == 201
+
+
 def test_append_event_rejects_signed_network_envelope_with_wrong_digest(tmp_path):
     private_key = Ed25519PrivateKey.generate()
     settings = _build_signed_ingress_settings(tmp_path, private_key=private_key)
@@ -242,37 +271,40 @@ def test_signed_network_envelope_still_flows_through_event_validation(tmp_path):
     assert response.json()["detail"] == "run.completed snapshot_id must reference a known workspace snapshot"
 
 
-def _build_signed_ingress_settings(tmp_path, *, private_key: Ed25519PrivateKey) -> Settings:
+def _build_signed_ingress_settings(
+    tmp_path,
+    *,
+    private_key: Ed25519PrivateKey,
+    inline_config: bool = False,
+) -> Settings:
     trusted_nodes_path = tmp_path / "trusted-nodes.json"
     public_key = private_key.public_key().public_bytes_raw()
-    trusted_nodes_path.write_text(
-        json.dumps(
-            [
+    trusted_nodes = [
+        {
+            "node_id": "node_alpha0000000001",
+            "identity_schema": "openintention-node-identity-v1",
+            "identity_version": 1,
+            "display_name": "Node Alpha",
+            "signing_keys": [
                 {
-                    "node_id": "node_alpha0000000001",
-                    "identity_schema": "openintention-node-identity-v1",
-                    "identity_version": 1,
-                    "display_name": "Node Alpha",
-                    "signing_keys": [
-                        {
-                            "key_id": "key-alpha-1",
-                            "public_key": base64.b64encode(public_key).decode("ascii"),
-                            "signature_scheme": "ed25519",
-                            "status": "active",
-                        }
-                    ],
-                    "capabilities": ["event_append"],
-                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "key_id": "key-alpha-1",
+                    "public_key": base64.b64encode(public_key).decode("ascii"),
+                    "signature_scheme": "ed25519",
+                    "status": "active",
                 }
             ],
-            sort_keys=True,
-        ),
-        encoding="utf-8",
-    )
+            "capabilities": ["event_append"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    ]
+    trusted_nodes_json = json.dumps(trusted_nodes, sort_keys=True)
+    trusted_nodes_path.write_text(trusted_nodes_json, encoding="utf-8")
+
     return Settings(
         db_path=str(tmp_path / "signed-ingress.db"),
         artifact_root=str(tmp_path / "artifacts"),
-        network_trusted_nodes_path=str(trusted_nodes_path),
+        network_trusted_nodes_path=None if inline_config else str(trusted_nodes_path),
+        network_trusted_nodes_json=trusted_nodes_json if inline_config else None,
     )
 
 

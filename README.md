@@ -197,6 +197,12 @@ To enable signed ingress for trusted nodes, point the API at a node identity all
 export RESEARCH_OS_NETWORK_TRUSTED_NODES_PATH=./config/trusted-nodes.json
 ```
 
+For container or secret-managed deployments, the same allowlist can be provided inline:
+
+```bash
+export RESEARCH_OS_NETWORK_TRUSTED_NODES_JSON='[{"node_id":"node_example...","identity_schema":"openintention-node-identity-v1",...}]'
+```
+
 The local bootstrap backend stores those artifacts under `./data/artifacts/sha256/...`
 while the control plane keeps only those references.
 
