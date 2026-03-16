@@ -62,6 +62,12 @@ def test_lease_schemas_define_bounded_coordination_contract() -> None:
         "complete",
         "heartbeat",
     ]
+    assert "completed_at" in lease_schema["properties"]
+    assert "failure_reason" in lease_schema["properties"]
+    assert "stale_completion" in lease_schema["properties"]
+    assert "work_item_type" in command_schema["properties"]
+    assert "subject_type" in command_schema["properties"]
+    assert "subject_id" in command_schema["properties"]
 
 
 def test_domain_model_records_mesh_foundation_types() -> None:

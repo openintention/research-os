@@ -139,6 +139,41 @@
       ],
       "format": "date-time"
     },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "failed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "failure_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observed_run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observed_claim_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stale_completion": {
+      "type": "boolean"
+    },
     "expires_at": {
       "type": "string",
       "format": "date-time"

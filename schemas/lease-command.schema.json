@@ -67,6 +67,67 @@
         null
       ]
     },
+    "work_item_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "reproduce_claim",
+        "contradict_claim",
+        "adopt_snapshot",
+        "compose_frontier",
+        "explore_effort",
+        "publish_summary",
+        null
+      ]
+    },
+    "subject_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "claim",
+        "snapshot",
+        "effort",
+        "frontier",
+        "summary",
+        null
+      ]
+    },
+    "subject_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "effort_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "objective": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "platform": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "budget_seconds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
     "workspace_id": {
       "type": [
         "string",
@@ -92,5 +153,74 @@
       ]
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "acquire"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "planner_fingerprint",
+          "ttl_seconds",
+          "participant_role",
+          "work_item_type",
+          "subject_type",
+          "subject_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "renew"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lease_id",
+          "ttl_seconds"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "enum": [
+              "release",
+              "fail",
+              "complete",
+              "heartbeat"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lease_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "fail"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "failure_reason"
+        ]
+      }
+    }
+  ],
   "additionalProperties": false
 }

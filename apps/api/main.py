@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException, Query, Request
 from pydantic import TypeAdapter, ValidationError
 
@@ -14,6 +17,8 @@ from research_os.domain.models import (
     EventEnvelope,
     EventKind,
     FrontierView,
+    Lease,
+    LeaseCommand,
     PublicationView,
     RecommendNextRequest,
     RecommendNextResponse,
@@ -29,14 +34,25 @@ from research_os.network.ingress import (
     TrustedNodeRegistry,
 )
 from research_os.network.sqlite import SQLiteNetworkEnvelopeStore
-from research_os.service import EventConflictError, EventIngestionError, ResearchOSService
+from research_os.service import (
+    EventConflictError,
+    EventIngestionError,
+    LeaseConflictError,
+    LeaseIngestionError,
+    LeaseNotFoundError,
+    ResearchOSService,
+)
 from research_os.settings import Settings
 
 
 _EVENT_APPEND_INPUT = TypeAdapter(EventEnvelope | SignedNetworkEnvelope)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    now_fn: Callable[[], datetime] | None = None,
+) -> FastAPI:
     settings = settings or Settings.from_env()
     settings.ensure_directories()
 
@@ -45,6 +61,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         store,
         default_frontier_size=settings.default_frontier_size,
         public_base_url=settings.public_base_url,
+        now_fn=now_fn,
     )
     ingress_verifier = EventAppendIngressVerifier(
         trusted_nodes=TrustedNodeRegistry.from_sources(
@@ -157,6 +174,54 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def planner_recommend(request: RecommendNextRequest) -> RecommendNextResponse:
         return service.recommend_next(request)
 
+    @app.post("/api/v1/leases/acquire", response_model=Lease)
+    def acquire_lease(payload: dict[str, object]) -> Lease:
+        try:
+            command = LeaseCommand.model_validate({"action": "acquire", **payload})
+            return service.acquire_lease(command)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        except LeaseIngestionError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except LeaseConflictError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @app.post("/api/v1/leases/{lease_id}/renew", response_model=Lease)
+    def renew_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+        return _run_lease_command(
+            service.renew_lease,
+            lease_id=lease_id,
+            action="renew",
+            payload=payload,
+        )
+
+    @app.post("/api/v1/leases/{lease_id}/release", response_model=Lease)
+    def release_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+        return _run_lease_command(
+            service.release_lease,
+            lease_id=lease_id,
+            action="release",
+            payload=payload,
+        )
+
+    @app.post("/api/v1/leases/{lease_id}/fail", response_model=Lease)
+    def fail_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+        return _run_lease_command(
+            service.fail_lease,
+            lease_id=lease_id,
+            action="fail",
+            payload=payload,
+        )
+
+    @app.post("/api/v1/leases/{lease_id}/complete", response_model=Lease)
+    def complete_lease(lease_id: str, payload: dict[str, object]) -> Lease:
+        return _run_lease_command(
+            service.complete_lease,
+            lease_id=lease_id,
+            action="complete",
+            payload=payload,
+        )
+
     @app.get("/api/v1/publications/workspaces/{workspace_id}/discussion", response_model=PublicationView)
     def get_workspace_discussion(workspace_id: str) -> PublicationView:
         publication = service.render_workspace_discussion(workspace_id)
@@ -182,6 +247,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return publication
 
     return app
+
+
+def _run_lease_command(
+    handler: Callable[[str, LeaseCommand], Lease],
+    *,
+    lease_id: str,
+    action: str,
+    payload: dict[str, object],
+) -> Lease:
+    try:
+        command = LeaseCommand.model_validate({**payload, "action": action, "lease_id": lease_id})
+        return handler(lease_id, command)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+    except LeaseNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except LeaseIngestionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except LeaseConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 app = create_app()

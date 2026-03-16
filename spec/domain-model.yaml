@@ -60,6 +60,19 @@ types:
       subject_id: string
       planner_fingerprint: string
       status: string
+      holder_node_id: string?
+      holder_workspace_id: string?
+      max_duration_seconds: integer
+      renewal_count: integer
+      acquired_at: datetime?
+      renewed_at: datetime?
+      released_at: datetime?
+      completed_at: datetime?
+      failed_at: datetime?
+      failure_reason: string?
+      observed_run_id: string?
+      observed_claim_id: string?
+      stale_completion: boolean
       expires_at: datetime
 
   EventEnvelope:

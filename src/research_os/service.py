@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from datetime import datetime, timedelta
 import math
 import re
 import sqlite3
 from urllib.parse import urlparse
 from uuid import uuid4
 
+from research_os.coordination import SQLiteLeaseStore
 from research_os.domain.models import (
     ClaimSummary,
     CreateEffortRequest,
@@ -15,11 +18,19 @@ from research_os.domain.models import (
     EventEnvelope,
     EventKind,
     FrontierView,
+    Lease,
+    LeaseCommand,
+    LeaseCommandAction,
+    LeaseState,
+    LeaseSubjectType,
+    LeaseWorkItemType,
+    ParticipantRole,
     PublicationView,
     RecommendNextRequest,
     RecommendNextResponse,
     WorkspaceCreated,
     WorkspaceView,
+    utcnow,
 )
 from research_os.effort_lifecycle import is_historical_proof_effort, is_public_proof_effort, proof_series
 from research_os.ledger.protocol import EventStore
@@ -34,6 +45,18 @@ class EventIngestionError(ValueError):
 
 
 class EventConflictError(RuntimeError):
+    pass
+
+
+class LeaseIngestionError(ValueError):
+    pass
+
+
+class LeaseConflictError(RuntimeError):
+    pass
+
+
+class LeaseNotFoundError(LookupError):
     pass
 
 
@@ -57,11 +80,16 @@ class ResearchOSService:
         *,
         default_frontier_size: int = 10,
         public_base_url: str | None = None,
+        lease_store: SQLiteLeaseStore | None = None,
+        now_fn: Callable[[], datetime] | None = None,
     ) -> None:
         self.store = store
         self.default_frontier_size = default_frontier_size
         self.public_base_url = public_base_url
+        self.now_fn = now_fn or utcnow
         self.store.init_schema()
+        self.lease_store = lease_store or self._default_lease_store(store)
+        self.lease_store.init_schema()
 
     def create_workspace(self, request: CreateWorkspaceRequest) -> WorkspaceCreated:
         workspace_id = str(uuid4())
@@ -107,6 +135,12 @@ class ResearchOSService:
         )
         self.store.append(event)
         return EffortCreated(effort_id=effort_id, bootstrap_event_id=event.event_id)
+
+    def _default_lease_store(self, store: EventStore) -> SQLiteLeaseStore:
+        db_path = getattr(store, "db_path", ":memory:")
+        if not isinstance(db_path, str):
+            db_path = ":memory:"
+        return SQLiteLeaseStore(db_path)
 
     def append_event(self, event: EventEnvelope) -> EventEnvelope:
         self._validate_incoming_event(event)
@@ -401,6 +435,106 @@ class ResearchOSService:
         if workspace is None:
             raise EventIngestionError(f"unknown workspace_id: {workspace_id}")
         return workspace
+
+    def _require_lease_action(
+        self,
+        command: LeaseCommand,
+        expected_action: LeaseCommandAction,
+        *,
+        lease_id: str | None = None,
+    ) -> None:
+        if command.action is not expected_action:
+            raise LeaseIngestionError(f"lease command action must be {expected_action.value}")
+        if lease_id is not None and command.lease_id != lease_id:
+            raise LeaseIngestionError("lease command lease_id must match request path")
+
+    def _validate_lease_acquire(self, command: LeaseCommand) -> None:
+        assert command.participant_role is not None
+        assert command.work_item_type is not None
+        assert command.subject_type is not None
+        assert command.subject_id is not None
+
+        if command.work_item_type is LeaseWorkItemType.REPRODUCE_CLAIM and command.subject_type is not LeaseSubjectType.CLAIM:
+            raise LeaseIngestionError("reproduce_claim leases must target subject_type=claim")
+        if command.work_item_type is LeaseWorkItemType.CONTRADICT_CLAIM and command.subject_type is not LeaseSubjectType.CLAIM:
+            raise LeaseIngestionError("contradict_claim leases must target subject_type=claim")
+        if command.work_item_type is LeaseWorkItemType.ADOPT_SNAPSHOT and command.subject_type is not LeaseSubjectType.SNAPSHOT:
+            raise LeaseIngestionError("adopt_snapshot leases must target subject_type=snapshot")
+        if command.work_item_type is LeaseWorkItemType.COMPOSE_FRONTIER and command.subject_type is not LeaseSubjectType.FRONTIER:
+            raise LeaseIngestionError("compose_frontier leases must target subject_type=frontier")
+        if command.work_item_type is LeaseWorkItemType.EXPLORE_EFFORT and command.subject_type is not LeaseSubjectType.EFFORT:
+            raise LeaseIngestionError("explore_effort leases must target subject_type=effort")
+        if command.work_item_type is LeaseWorkItemType.PUBLISH_SUMMARY and command.subject_type is not LeaseSubjectType.SUMMARY:
+            raise LeaseIngestionError("publish_summary leases must target subject_type=summary")
+
+        if command.participant_role is ParticipantRole.VERIFIER and command.subject_type is not LeaseSubjectType.CLAIM:
+            raise LeaseIngestionError("verifier leases must target an explicit claim")
+
+        if command.subject_type is LeaseSubjectType.CLAIM:
+            if not any(claim.claim_id == command.subject_id for claim in self.store.list_claims()):
+                raise LeaseIngestionError("lease subject claim does not exist")
+        elif command.subject_type is LeaseSubjectType.SNAPSHOT:
+            if not self._snapshot_exists(command.subject_id):
+                raise LeaseIngestionError("lease subject snapshot does not exist")
+        elif command.subject_type is LeaseSubjectType.EFFORT:
+            if self.get_effort(command.subject_id) is None:
+                raise LeaseIngestionError("lease subject effort does not exist")
+        elif command.subject_type is LeaseSubjectType.FRONTIER:
+            if not command.objective or not command.platform or command.budget_seconds is None:
+                raise LeaseIngestionError(
+                    "frontier leases require objective, platform, and budget_seconds context"
+                )
+
+        if command.workspace_id is not None:
+            workspace = self.get_workspace(command.workspace_id)
+            if workspace is None:
+                raise LeaseIngestionError("lease workspace_id must reference a known workspace")
+            if workspace.participant_role is not command.participant_role:
+                raise LeaseIngestionError("lease workspace participant_role must match lease participant_role")
+
+    def _require_existing_lease(self, lease_id: str, *, now: datetime) -> Lease:
+        lease = self.lease_store.get(lease_id, now_iso=now.isoformat())
+        if lease is None:
+            raise LeaseNotFoundError(f"lease {lease_id} not found")
+        return lease
+
+    def _require_lease_holder(self, lease: Lease, *, node_id: str) -> None:
+        if lease.holder_node_id != node_id:
+            raise LeaseConflictError("lease is held by a different node")
+
+    def _validate_verifier_completion(
+        self,
+        lease: Lease,
+        *,
+        workspace_id: str | None,
+        observed_run_id: str | None,
+        observed_claim_id: str | None,
+    ) -> None:
+        if workspace_id is None:
+            raise LeaseIngestionError("verifier completion requires workspace_id")
+        workspace = self.get_workspace(workspace_id)
+        if workspace is None:
+            raise LeaseIngestionError("verifier completion workspace_id must reference a known workspace")
+        if workspace.participant_role is not ParticipantRole.VERIFIER:
+            raise LeaseIngestionError("verifier completion requires a verifier workspace")
+        if observed_run_id is None:
+            raise LeaseIngestionError("verifier completion requires observed_run_id")
+        if observed_run_id not in self._run_ids_for_workspace(workspace_id):
+            raise LeaseIngestionError("verifier completion observed_run_id must reference a known workspace run")
+
+        claim_id = observed_claim_id or (lease.subject_id if lease.subject_type is LeaseSubjectType.CLAIM else None)
+        if claim_id is None:
+            raise LeaseIngestionError("verifier completion requires observed_claim_id")
+        events = self.store.list(workspace_id=workspace_id, limit=10_000)
+        if not any(
+            event.kind in {EventKind.CLAIM_REPRODUCED, EventKind.CLAIM_CONTRADICTED}
+            and event.payload.get("claim_id") == claim_id
+            and event.payload.get("evidence_run_id") == observed_run_id
+            for event in events
+        ):
+            raise LeaseIngestionError(
+                "verifier completion requires a verifier claim.reproduced or claim.contradicted event"
+            )
 
     def _require_identifier(
         self,
@@ -709,6 +843,12 @@ class ResearchOSService:
                 return event
         return None
 
+    def _snapshot_exists(self, snapshot_id: str) -> bool:
+        return any(
+            event.payload.get("snapshot_id") == snapshot_id
+            for event in self.store.list(kind=EventKind.SNAPSHOT_PUBLISHED, limit=10_000)
+        )
+
     def _snapshot_ids_for_workspace(self, workspace_id: str) -> set[str]:
         return {
             str(event.payload.get("snapshot_id"))
@@ -779,6 +919,233 @@ class ResearchOSService:
 
     def rebuild_claim_projection(self) -> None:
         self.store.rebuild_claim_projection()
+
+    def acquire_lease(self, command: LeaseCommand) -> Lease:
+        self._require_lease_action(command, LeaseCommandAction.ACQUIRE)
+        now = self.now_fn()
+        now_iso = now.isoformat()
+        existing = self.lease_store.get_by_request(
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+        if existing is not None:
+            return existing
+
+        self._validate_lease_acquire(command)
+        live_lease = self.lease_store.find_live(
+            work_item_type=command.work_item_type.value,
+            participant_role=command.participant_role.value,
+            subject_type=command.subject_type.value,
+            subject_id=command.subject_id,
+            now_iso=now_iso,
+        )
+        if live_lease is not None:
+            return self.lease_store.save(
+                live_lease,
+                request_id=command.request_id,
+                action=command.action,
+                now_iso=now_iso,
+            )
+
+        lease = Lease(
+            lease_id=str(uuid4()),
+            work_item_type=command.work_item_type,
+            participant_role=command.participant_role,
+            subject_type=command.subject_type,
+            subject_id=command.subject_id,
+            effort_id=command.effort_id,
+            objective=command.objective,
+            platform=command.platform,
+            budget_seconds=command.budget_seconds,
+            planner_fingerprint=command.planner_fingerprint,
+            holder_node_id=command.node_id,
+            holder_workspace_id=command.workspace_id,
+            status=LeaseState.ACQUIRED,
+            max_duration_seconds=command.ttl_seconds,
+            acquired_at=now,
+            expires_at=now + timedelta(seconds=command.ttl_seconds),
+        )
+        try:
+            return self.lease_store.insert(
+                lease,
+                request_id=command.request_id,
+                action=command.action,
+                now_iso=now_iso,
+            )
+        except sqlite3.IntegrityError:
+            live_lease = self.lease_store.find_live(
+                work_item_type=command.work_item_type.value,
+                participant_role=command.participant_role.value,
+                subject_type=command.subject_type.value,
+                subject_id=command.subject_id,
+                now_iso=now_iso,
+            )
+            if live_lease is None:
+                raise LeaseConflictError("lease acquisition conflicted with another live lease")
+            return self.lease_store.save(
+                live_lease,
+                request_id=command.request_id,
+                action=command.action,
+                now_iso=now_iso,
+            )
+
+    def renew_lease(self, lease_id: str, command: LeaseCommand) -> Lease:
+        self._require_lease_action(command, LeaseCommandAction.RENEW, lease_id=lease_id)
+        now = self.now_fn()
+        now_iso = now.isoformat()
+        existing = self.lease_store.get_by_request(
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+        if existing is not None:
+            return existing
+
+        lease = self._require_existing_lease(lease_id, now=now)
+        self._require_lease_holder(lease, node_id=command.node_id)
+        if lease.status is LeaseState.EXPIRED:
+            raise LeaseConflictError("expired leases cannot be renewed")
+        if lease.status not in {LeaseState.ACQUIRED, LeaseState.RENEWED}:
+            raise LeaseConflictError(f"lease {lease_id} cannot be renewed from status {lease.status.value}")
+
+        renewed = lease.model_copy(
+            update={
+                "status": LeaseState.RENEWED,
+                "max_duration_seconds": command.ttl_seconds,
+                "renewal_count": lease.renewal_count + 1,
+                "renewed_at": now,
+                "expires_at": now + timedelta(seconds=command.ttl_seconds),
+            }
+        )
+        return self.lease_store.save(
+            renewed,
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+
+    def release_lease(self, lease_id: str, command: LeaseCommand) -> Lease:
+        self._require_lease_action(command, LeaseCommandAction.RELEASE, lease_id=lease_id)
+        now = self.now_fn()
+        now_iso = now.isoformat()
+        existing = self.lease_store.get_by_request(
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+        if existing is not None:
+            return existing
+
+        lease = self._require_existing_lease(lease_id, now=now)
+        self._require_lease_holder(lease, node_id=command.node_id)
+        if lease.status in {LeaseState.RELEASED, LeaseState.COMPLETED, LeaseState.FAILED, LeaseState.EXPIRED}:
+            return self.lease_store.save(
+                lease,
+                request_id=command.request_id,
+                action=command.action,
+                now_iso=now_iso,
+            )
+        if lease.status not in {LeaseState.ACQUIRED, LeaseState.RENEWED}:
+            raise LeaseConflictError(f"lease {lease_id} cannot be released from status {lease.status.value}")
+
+        released = lease.model_copy(
+            update={
+                "status": LeaseState.RELEASED,
+                "released_at": now,
+            }
+        )
+        return self.lease_store.save(
+            released,
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+
+    def fail_lease(self, lease_id: str, command: LeaseCommand) -> Lease:
+        self._require_lease_action(command, LeaseCommandAction.FAIL, lease_id=lease_id)
+        now = self.now_fn()
+        now_iso = now.isoformat()
+        existing = self.lease_store.get_by_request(
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+        if existing is not None:
+            return existing
+
+        lease = self._require_existing_lease(lease_id, now=now)
+        self._require_lease_holder(lease, node_id=command.node_id)
+        if lease.status in {LeaseState.FAILED, LeaseState.RELEASED, LeaseState.COMPLETED, LeaseState.EXPIRED}:
+            terminal = lease.model_copy(update={"failure_reason": command.failure_reason or lease.failure_reason})
+            return self.lease_store.save(
+                terminal,
+                request_id=command.request_id,
+                action=command.action,
+                now_iso=now_iso,
+            )
+        if lease.status not in {LeaseState.ACQUIRED, LeaseState.RENEWED}:
+            raise LeaseConflictError(f"lease {lease_id} cannot be failed from status {lease.status.value}")
+
+        failed = lease.model_copy(
+            update={
+                "status": LeaseState.FAILED,
+                "failed_at": now,
+                "failure_reason": command.failure_reason,
+            }
+        )
+        return self.lease_store.save(
+            failed,
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+
+    def complete_lease(self, lease_id: str, command: LeaseCommand) -> Lease:
+        self._require_lease_action(command, LeaseCommandAction.COMPLETE, lease_id=lease_id)
+        now = self.now_fn()
+        now_iso = now.isoformat()
+        existing = self.lease_store.get_by_request(
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
+        if existing is not None:
+            return existing
+
+        lease = self._require_existing_lease(lease_id, now=now)
+        self._require_lease_holder(lease, node_id=command.node_id)
+        completion_workspace_id = command.workspace_id or lease.holder_workspace_id
+        if lease.participant_role is ParticipantRole.VERIFIER:
+            self._validate_verifier_completion(
+                lease,
+                workspace_id=completion_workspace_id,
+                observed_run_id=command.observed_run_id,
+                observed_claim_id=command.observed_claim_id,
+            )
+        elif completion_workspace_id is not None and command.observed_run_id is not None:
+            if command.observed_run_id not in self._run_ids_for_workspace(completion_workspace_id):
+                raise LeaseIngestionError("complete observed_run_id must reference a known workspace run")
+
+        if lease.status in {LeaseState.RELEASED, LeaseState.FAILED}:
+            raise LeaseConflictError(f"lease {lease_id} cannot be completed from status {lease.status.value}")
+
+        completed = lease.model_copy(
+            update={
+                "holder_workspace_id": completion_workspace_id,
+                "completed_at": now,
+                "observed_run_id": command.observed_run_id or lease.observed_run_id,
+                "observed_claim_id": command.observed_claim_id or lease.observed_claim_id,
+                "stale_completion": lease.status is LeaseState.EXPIRED,
+                "status": LeaseState.EXPIRED if lease.status is LeaseState.EXPIRED else LeaseState.COMPLETED,
+            }
+        )
+        return self.lease_store.save(
+            completed,
+            request_id=command.request_id,
+            action=command.action,
+            now_iso=now_iso,
+        )
 
     def recommend_next(self, request: RecommendNextRequest) -> RecommendNextResponse:
         return recommend_next(self.store.list(limit=10_000), request)

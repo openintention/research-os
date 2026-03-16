@@ -1,8 +1,19 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Iterable
 
-from research_os.domain.models import ClaimSummary, EventEnvelope, FrontierMember, RecommendNextRequest, RecommendNextResponse, Recommendation
+from research_os.domain.models import (
+    ClaimSummary,
+    EventEnvelope,
+    FrontierMember,
+    LeaseSubjectType,
+    LeaseWorkItemType,
+    RecommendNextRequest,
+    RecommendNextResponse,
+    Recommendation,
+)
 from research_os.planner.policies import resolve_objective_policy
 from research_os.projections.claims import build_claim_summaries
 from research_os.projections.frontier import build_frontier
@@ -186,7 +197,8 @@ def recommend_next(events: Iterable[EventEnvelope], request: RecommendNextReques
             )
         )
 
-    return RecommendNextResponse(recommendations=recommendations[: request.limit])
+    annotated = [_with_lease_metadata(request, recommendation) for recommendation in recommendations[: request.limit]]
+    return RecommendNextResponse(recommendations=annotated)
 
 
 def _reproducibility_gap(claim: ClaimSummary) -> int:
@@ -278,4 +290,62 @@ def _adopted_subject_ids(
         if event.workspace_id == workspace_id
         and event.kind.value == "adoption.recorded"
         and event.payload.get("subject_type") == subject_type
+    }
+
+
+def _with_lease_metadata(request: RecommendNextRequest, recommendation: Recommendation) -> Recommendation:
+    metadata = _lease_metadata_for_recommendation(request, recommendation)
+    if metadata is None:
+        return recommendation
+    return recommendation.model_copy(update=metadata)
+
+
+def _lease_metadata_for_recommendation(
+    request: RecommendNextRequest,
+    recommendation: Recommendation,
+) -> dict[str, object] | None:
+    action = recommendation.action
+    inputs = recommendation.inputs
+
+    if action == "reproduce_claim" and "claim_id" in inputs:
+        subject_type = LeaseSubjectType.CLAIM
+        subject_id = inputs["claim_id"]
+        work_item_type = LeaseWorkItemType.REPRODUCE_CLAIM
+    elif action == "adopt_claim" and "snapshot_id" in inputs:
+        subject_type = LeaseSubjectType.SNAPSHOT
+        subject_id = inputs["snapshot_id"]
+        work_item_type = LeaseWorkItemType.ADOPT_SNAPSHOT
+    elif action == "compose_frontier_snapshots":
+        subject_type = LeaseSubjectType.FRONTIER
+        subject_id = f"{request.objective}:{request.platform}:{request.budget_seconds}"
+        work_item_type = LeaseWorkItemType.COMPOSE_FRONTIER
+    else:
+        return None
+
+    fingerprint_payload = {
+        "objective": request.objective,
+        "platform": request.platform,
+        "budget_seconds": request.budget_seconds,
+        "workspace_id": request.workspace_id,
+        "target_claim_id": request.target_claim_id,
+        "action": recommendation.action,
+        "inputs": recommendation.inputs,
+        "work_item_type": work_item_type,
+        "subject_type": subject_type,
+        "subject_id": subject_id,
+    }
+    planner_fingerprint = "sha256:" + hashlib.sha256(
+        json.dumps(
+            fingerprint_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "planner_fingerprint": planner_fingerprint,
+        "work_item_type": work_item_type,
+        "subject_type": subject_type,
+        "subject_id": subject_id,
     }

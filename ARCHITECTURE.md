@@ -96,6 +96,7 @@ The machine API should support:
 - inspect frontier
 - inspect claims
 - recommend next actions
+- coordinate bounded lease state above planner work items
 
 That is enough to support:
 - local agents
@@ -121,5 +122,6 @@ the immutable event log.
 2. Add content-addressed artifact registry.
 3. Add subscriptions and notification fan-out.
 4. Add GitHub publisher that emits PR-like and Discussion-like views.
-5. Add lease tables and worker heartbeats.
-6. Add a distributed adapter with the same logical interface.
+5. Lease tables and `/api/v1/leases/*` coordination endpoints now sit above planner work items.
+6. Add worker heartbeats and lease-aware network envelopes.
+7. Add a distributed adapter with the same logical interface.

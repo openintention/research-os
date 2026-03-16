@@ -131,6 +131,7 @@ curl http://127.0.0.1:8000/api/v1/efforts
 curl http://127.0.0.1:8000/api/v1/workspaces
 curl "http://127.0.0.1:8000/api/v1/frontiers/val_bpb/A100?budget_seconds=300"
 curl -X POST http://127.0.0.1:8000/api/v1/planner/recommend   -H "content-type: application/json"   -d '{"objective":"val_bpb","platform":"A100","budget_seconds":300,"limit":3}'
+curl -X POST http://127.0.0.1:8000/api/v1/leases/acquire   -H "content-type: application/json"   -d '{"request_id":"lease-acquire-1","node_id":"node_verifierworker0001","planner_fingerprint":"sha256:<from-planner>","ttl_seconds":120,"participant_role":"verifier","work_item_type":"reproduce_claim","subject_type":"claim","subject_id":"claim-1","workspace_id":"<verifier_workspace_id>"}'
 curl http://127.0.0.1:8000/api/v1/publications/workspaces/<workspace_id>/discussion
 curl http://127.0.0.1:8000/api/v1/publications/workspaces/<workspace_id>/pull-requests/<snapshot_id>
 ```
@@ -143,6 +144,22 @@ API ingress is now validated before append:
   against a trusted node allowlist
 - signed ingress does not replace event-log authority; the inner event must still pass the current
   service-layer validation before append
+
+Planner recommendations now include lease-ready metadata:
+- `planner_fingerprint`
+- `work_item_type`
+- `subject_type`
+- `subject_id`
+
+The hosted control plane also exposes bounded coordination endpoints:
+- `POST /api/v1/leases/acquire`
+- `POST /api/v1/leases/{lease_id}/renew`
+- `POST /api/v1/leases/{lease_id}/release`
+- `POST /api/v1/leases/{lease_id}/fail`
+- `POST /api/v1/leases/{lease_id}/complete`
+
+Those leases coordinate planner-scoped work items. They do not replace the event log as the
+authoritative source of claim or frontier state.
 
 To run the post-v1 external client experiment:
 

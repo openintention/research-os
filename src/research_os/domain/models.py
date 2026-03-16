@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def utcnow() -> datetime:
@@ -57,6 +57,42 @@ class NetworkMessageType(StrEnum):
     LEASE_FAIL = "lease.fail"
     LEASE_COMPLETE = "lease.complete"
     NODE_HEARTBEAT = "node.heartbeat"
+
+
+class LeaseState(StrEnum):
+    AVAILABLE = "available"
+    ACQUIRED = "acquired"
+    RENEWED = "renewed"
+    RELEASED = "released"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    EXPIRED = "expired"
+
+
+class LeaseWorkItemType(StrEnum):
+    REPRODUCE_CLAIM = "reproduce_claim"
+    CONTRADICT_CLAIM = "contradict_claim"
+    ADOPT_SNAPSHOT = "adopt_snapshot"
+    COMPOSE_FRONTIER = "compose_frontier"
+    EXPLORE_EFFORT = "explore_effort"
+    PUBLISH_SUMMARY = "publish_summary"
+
+
+class LeaseSubjectType(StrEnum):
+    CLAIM = "claim"
+    SNAPSHOT = "snapshot"
+    EFFORT = "effort"
+    FRONTIER = "frontier"
+    SUMMARY = "summary"
+
+
+class LeaseCommandAction(StrEnum):
+    ACQUIRE = "acquire"
+    RENEW = "renew"
+    RELEASE = "release"
+    FAIL = "fail"
+    COMPLETE = "complete"
+    HEARTBEAT = "heartbeat"
 
 
 class NodeSigningKey(BaseModel):
@@ -177,10 +213,101 @@ class Recommendation(BaseModel):
     priority: int
     reason: str
     inputs: dict[str, Any] = Field(default_factory=dict)
+    planner_fingerprint: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
+    work_item_type: LeaseWorkItemType | None = None
+    subject_type: LeaseSubjectType | None = None
+    subject_id: str | None = Field(default=None, min_length=1)
 
 
 class RecommendNextResponse(BaseModel):
     recommendations: list[Recommendation]
+
+
+class Lease(BaseModel):
+    lease_id: str = Field(min_length=1)
+    lease_schema: str = "openintention-lease-v1"
+    lease_version: int = 1
+    work_item_type: LeaseWorkItemType
+    participant_role: ParticipantRole
+    subject_type: LeaseSubjectType
+    subject_id: str = Field(min_length=1)
+    effort_id: str | None = None
+    objective: str | None = None
+    platform: str | None = None
+    budget_seconds: int | None = Field(default=None, ge=1)
+    planner_fingerprint: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    holder_node_id: str | None = Field(default=None, pattern=r"^node_[a-z0-9]{16,64}$")
+    holder_workspace_id: str | None = None
+    status: LeaseState
+    max_duration_seconds: int = Field(ge=1)
+    renewal_count: int = Field(default=0, ge=0)
+    acquired_at: datetime | None = None
+    renewed_at: datetime | None = None
+    released_at: datetime | None = None
+    completed_at: datetime | None = None
+    failed_at: datetime | None = None
+    failure_reason: str | None = None
+    observed_run_id: str | None = None
+    observed_claim_id: str | None = None
+    stale_completion: bool = False
+    expires_at: datetime
+
+
+class LeaseCommand(BaseModel):
+    command_schema: str = "openintention-lease-command-v1"
+    command_version: int = 1
+    action: LeaseCommandAction
+    request_id: str = Field(min_length=1)
+    node_id: str = Field(pattern=r"^node_[a-z0-9]{16,64}$")
+    lease_id: str | None = None
+    planner_fingerprint: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
+    ttl_seconds: int | None = Field(default=None, ge=1)
+    participant_role: ParticipantRole | None = None
+    work_item_type: LeaseWorkItemType | None = None
+    subject_type: LeaseSubjectType | None = None
+    subject_id: str | None = Field(default=None, min_length=1)
+    effort_id: str | None = None
+    objective: str | None = None
+    platform: str | None = None
+    budget_seconds: int | None = Field(default=None, ge=1)
+    workspace_id: str | None = None
+    observed_run_id: str | None = None
+    observed_claim_id: str | None = None
+    failure_reason: str | None = None
+
+    @model_validator(mode="after")
+    def validate_for_action(self) -> "LeaseCommand":
+        if self.action is LeaseCommandAction.ACQUIRE:
+            missing = [
+                field
+                for field in (
+                    "planner_fingerprint",
+                    "ttl_seconds",
+                    "participant_role",
+                    "work_item_type",
+                    "subject_type",
+                    "subject_id",
+                )
+                if getattr(self, field) is None
+            ]
+            if missing:
+                raise ValueError(f"acquire requires {', '.join(missing)}")
+            return self
+
+        if self.action in {
+            LeaseCommandAction.RENEW,
+            LeaseCommandAction.RELEASE,
+            LeaseCommandAction.FAIL,
+            LeaseCommandAction.COMPLETE,
+            LeaseCommandAction.HEARTBEAT,
+        } and self.lease_id is None:
+            raise ValueError(f"{self.action.value} requires lease_id")
+
+        if self.action is LeaseCommandAction.RENEW and self.ttl_seconds is None:
+            raise ValueError("renew requires ttl_seconds")
+        if self.action is LeaseCommandAction.FAIL and not self.failure_reason:
+            raise ValueError("fail requires failure_reason")
+        return self
 
 
 class PublicationView(BaseModel):
