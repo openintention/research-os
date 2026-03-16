@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/lease-command.schema.json",
+  "title": "LeaseCommand",
+  "type": "object",
+  "required": [
+    "command_schema",
+    "command_version",
+    "action",
+    "request_id",
+    "node_id"
+  ],
+  "properties": {
+    "command_schema": {
+      "const": "openintention-lease-command-v1"
+    },
+    "command_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "action": {
+      "enum": [
+        "acquire",
+        "renew",
+        "release",
+        "fail",
+        "complete",
+        "heartbeat"
+      ]
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "node_id": {
+      "type": "string",
+      "pattern": "^node_[a-z0-9]{16,64}$"
+    },
+    "lease_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "planner_fingerprint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "ttl_seconds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "participant_role": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "contributor",
+        "verifier",
+        null
+      ]
+    },
+    "workspace_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observed_run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observed_claim_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "failure_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

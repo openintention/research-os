@@ -4,6 +4,64 @@ types:
       - contributor
       - verifier
 
+  LeaseState:
+    values:
+      - available
+      - acquired
+      - renewed
+      - released
+      - completed
+      - failed
+      - expired
+
+  NodeCapability:
+    values:
+      - event_append
+      - lease_acquire
+      - lease_renew
+      - lease_release
+      - verify_claim
+      - explore_effort
+      - publish_summary
+
+  NodeIdentity:
+    fields:
+      node_id: string
+      identity_schema: string
+      identity_version: integer
+      display_name: string
+      signing_keys: array
+      capabilities: array
+      created_at: datetime
+
+  NetworkEnvelope:
+    fields:
+      envelope_id: string
+      envelope_schema: string
+      envelope_version: integer
+      message_type: string
+      sender_node_id: string
+      sender_key_id: string
+      sent_at: datetime
+      payload_schema: string
+      payload_digest: string
+      payload: object
+      signature: string
+      signature_scheme: string
+
+  Lease:
+    fields:
+      lease_id: string
+      lease_schema: string
+      lease_version: integer
+      work_item_type: string
+      participant_role: string
+      subject_type: string
+      subject_id: string
+      planner_fingerprint: string
+      status: string
+      expires_at: datetime
+
   EventEnvelope:
     fields:
       event_id: string

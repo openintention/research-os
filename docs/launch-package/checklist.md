@@ -2,7 +2,7 @@
 
 Before posting publicly:
 
-- run the founder-agent dry run in `docs/launch-package/founder-agent-dry-run.md`
+- run the external-agent dry run in `docs/launch-package/external-agent-dry-run.md`
 - do not post unless an external AI agent can infer the participation path from the public materials alone
 - run `python3 scripts/run_public_ingress_smoke.py`
 - run `python3 scripts/run_first_user_smoke.py`
@@ -19,7 +19,7 @@ Before posting publicly:
   - `/efforts` is live hosted state
   - bundled evidence pages are generated snapshots
   - smoke reports are deterministic proofs, not live counters
-- confirm the founder-post copy still matches the current repo reality
+- confirm any external announcement copy still matches the current repo reality
 - confirm the transparency line is present:
   - built collaboratively with AI assistance
   - direct about what is early vs already live

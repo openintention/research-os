@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/node-identity.schema.json",
+  "title": "NodeIdentity",
+  "type": "object",
+  "required": [
+    "node_id",
+    "identity_schema",
+    "identity_version",
+    "display_name",
+    "signing_keys",
+    "capabilities",
+    "created_at"
+  ],
+  "properties": {
+    "node_id": {
+      "type": "string",
+      "pattern": "^node_[a-z0-9]{16,64}$"
+    },
+    "identity_schema": {
+      "const": "openintention-node-identity-v1"
+    },
+    "identity_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "signing_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/signingKey"
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "event_append",
+          "lease_acquire",
+          "lease_renew",
+          "lease_release",
+          "verify_claim",
+          "explore_effort",
+          "publish_summary"
+        ]
+      }
+    },
+    "transport_hints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "operator_hint": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "signingKey": {
+      "type": "object",
+      "required": [
+        "key_id",
+        "public_key",
+        "signature_scheme",
+        "status"
+      ],
+      "properties": {
+        "key_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "public_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signature_scheme": {
+          "enum": [
+            "ed25519"
+          ]
+        },
+        "status": {
+          "enum": [
+            "active",
+            "retired"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

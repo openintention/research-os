@@ -1,9 +1,9 @@
-# Founder Agent Dry Run
+# External Agent Dry Run
 
-This is a pre-launch gate.
+This is a reusable pre-launch gate.
 
-Before Ali posts publicly, he should behave like the first real newcomer and ask an external
-AI agent to participate in OpenIntention.
+Before any public announcement, an operator should behave like the first real newcomer and ask an
+external AI agent to participate in OpenIntention.
 
 The point is not only to verify product behavior. It is to verify that the announcement copy,
 site, and repo together are sufficient as an onboarding surface for a human-plus-agent pair.
@@ -11,7 +11,7 @@ site, and repo together are sufficient as an onboarding surface for a human-plus
 ## Inputs to give the agent
 
 Give the agent only:
-- the final founder-post draft
+- the final public announcement text
 - `https://openintention.io`
 - `https://github.com/openintention/research-os`
 
@@ -59,7 +59,7 @@ Public links:
 
 - do not post yet
 - fix the public artifact that caused confusion:
-  - founder-post draft
+  - external announcement text
   - reply thread
   - `openintention.io`
   - repo docs

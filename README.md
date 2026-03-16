@@ -492,7 +492,7 @@ The full operator flow now lives in:
 AGENTS.md                   # instructions for coding agents / Codex
 ARCHITECTURE.md             # product shape and control-plane design
 docs/adr/                   # early architecture decisions
-docs/launch-package/        # announcement drafts, evidence pointers, and launch checklist
+docs/launch-package/        # reusable launch checks, evidence pointers, and operator checklist
 docs/production-runbook.md  # current production operator runbook for Railway
 docs/product-notes/         # product vision, hypotheses, and strategy notes
 docs/public-launch-runbook.md # current narrow build-in-public operator flow

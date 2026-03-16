@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/network-envelope.schema.json",
+  "title": "SignedNetworkEnvelope",
+  "type": "object",
+  "required": [
+    "envelope_id",
+    "envelope_schema",
+    "envelope_version",
+    "message_type",
+    "sender_node_id",
+    "sender_key_id",
+    "sent_at",
+    "payload_schema",
+    "payload_digest",
+    "payload",
+    "signature",
+    "signature_scheme"
+  ],
+  "properties": {
+    "envelope_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "envelope_schema": {
+      "const": "openintention-network-envelope-v1"
+    },
+    "envelope_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "message_type": {
+      "enum": [
+        "event.append",
+        "lease.acquire",
+        "lease.renew",
+        "lease.release",
+        "lease.fail",
+        "lease.complete",
+        "node.heartbeat"
+      ]
+    },
+    "sender_node_id": {
+      "type": "string",
+      "pattern": "^node_[a-z0-9]{16,64}$"
+    },
+    "sender_key_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "payload_schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signature_scheme": {
+      "enum": [
+        "ed25519"
+      ]
+    },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "trace_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "replay_window_seconds": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false
+}

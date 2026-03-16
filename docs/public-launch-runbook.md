@@ -160,9 +160,9 @@ Use a short post structure:
 5. one sentence on what is real today versus what is still proxy behavior
 
 Recommended anchor:
-- publish a founder post in Ali's own voice first
-- then use a shorter reply or quote-reply on the public discussion that frames the
-  collaborative-agent research problem directly
+- publish one concise public announcement that links the site and repo
+- then use shorter replies or follow-up posts that frame the collaborative-agent research
+  problem directly
 - position `OpenIntention` as the public umbrella and `research-os` as the technical control
   plane underneath it
 

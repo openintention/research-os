@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/lease.schema.json",
+  "title": "Lease",
+  "type": "object",
+  "required": [
+    "lease_id",
+    "lease_schema",
+    "lease_version",
+    "work_item_type",
+    "participant_role",
+    "subject_type",
+    "subject_id",
+    "planner_fingerprint",
+    "status",
+    "max_duration_seconds",
+    "expires_at"
+  ],
+  "properties": {
+    "lease_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lease_schema": {
+      "const": "openintention-lease-v1"
+    },
+    "lease_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "work_item_type": {
+      "enum": [
+        "reproduce_claim",
+        "contradict_claim",
+        "adopt_snapshot",
+        "compose_frontier",
+        "explore_effort",
+        "publish_summary"
+      ]
+    },
+    "participant_role": {
+      "enum": [
+        "contributor",
+        "verifier"
+      ]
+    },
+    "subject_type": {
+      "enum": [
+        "claim",
+        "snapshot",
+        "effort",
+        "frontier",
+        "summary"
+      ]
+    },
+    "subject_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "effort_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "objective": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "platform": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "budget_seconds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "planner_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "holder_node_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^node_[a-z0-9]{16,64}$"
+    },
+    "holder_workspace_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "available",
+        "acquired",
+        "renewed",
+        "released",
+        "completed",
+        "failed",
+        "expired"
+      ]
+    },
+    "max_duration_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "renewal_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "acquired_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "renewed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "released_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

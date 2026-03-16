@@ -81,7 +81,7 @@ The public surface currently has three different evidence modes:
 Entry points:
 - `https://openintention.io`
 - `https://github.com/openintention/research-os`
-- a founder post or reply that links those two surfaces
+- a public post or message that links those two surfaces
 
 ### Step 2: Understand the big picture quickly
 
