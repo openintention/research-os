@@ -37,6 +37,21 @@ Public-facing documentation in this repo must:
 Internal or experimental work must be gated until it is represented through the control-plane primitives
 that the event log and API actually expose.
 
+This public repo should contain only:
+
+- product-facing code needed to run, verify, and contribute to `research-os`
+- public-facing documentation for verified behavior, operator workflows, and contributor onboarding
+- ADRs that explain shipped semantics or active architectural constraints visible in this repo
+
+This public repo should not contain:
+
+- internal strategy memos, competitor tear-downs, or speculative roadmap notes
+- launch drafts or narrative experiments after they are superseded
+- dormant seams that imply capabilities the repo does not actually expose
+
+The home for internal strategy, private experiments, and speculative notes is a separate non-public
+workspace or repository, not `docs/` in this public repo.
+
 ## Branch Hygiene Rule
 
 - `codex/anj-*` branches are ephemeral implementation branches.
@@ -51,4 +66,4 @@ that the event log and API actually expose.
 2. New experimentation should be staged through existing public primitives and removed from this repo
    once it is superseded by a concrete control-plane capability.
 3. Merges that close branch-based experiments should be followed by explicit remote cleanup.
-
+4. Repo reviews should treat boundary violations as product-surface regressions, not just doc nits.
