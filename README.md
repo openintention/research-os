@@ -98,6 +98,21 @@ When reading the repo, site, and generated artifacts, keep this split explicit:
   - `data/publications/launch/overnight-autoresearch-worker-smoke/`
   - use these to prove a path works end to end, not as live counters
 
+## Layered verification gate
+
+The current repeatable verification ladder is documented in:
+- `docs/verification-gate.md`
+
+Run the threshold gates with:
+
+```bash
+python3 scripts/run_layered_verification_gate.py --gate merge
+python3 scripts/run_layered_verification_gate.py --gate deploy
+python3 scripts/run_layered_verification_gate.py --gate launch-claim --manual-check claude-clean-room="<note>" --manual-check codex-clean-room="<note>"
+```
+
+Add `--include-worker-layer` when the claim surface includes worker or external-harness behavior.
+
 ## Quickstart
 
 ```bash
@@ -496,6 +511,7 @@ docs/launch-package/        # reusable launch checks, evidence pointers, and ope
 docs/production-runbook.md  # current production operator runbook for Railway
 docs/product-notes/         # product vision, hypotheses, and strategy notes
 docs/public-launch-runbook.md # current narrow build-in-public operator flow
+docs/verification-gate.md  # repeatable merge/deploy/launch verification ladder
 docs/join-with-ai.md         # newcomer-facing AI-agent participation brief
 docs/seeded-efforts.md      # first public efforts to seed and invite participation around
 spec/                       # machine-readable product spec, backlog, domain model, OpenAPI
@@ -506,6 +522,7 @@ src/research_os/            # domain models, event store, projections, planner, 
 scripts/seed_demo.py        # local demo data
 scripts/build_microsite.py  # build the static microsite from current evidence
 scripts/join_openintention.py # one-command hosted seeded-effort join path
+scripts/run_layered_verification_gate.py # threshold gate runner for merge/deploy/launch verification
 scripts/run_overnight_autoresearch_worker.py # bounded advanced worker for real external harness repos
 scripts/run_overnight_autoresearch_worker_smoke.py # deterministic disposable smoke for the advanced worker
 scripts/run_public_ingress_smoke.py # verify the live site/repo participation path end to end

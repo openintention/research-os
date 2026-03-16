@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window overnight-worker export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-overnight-worker smoke-mlx-history smoke-surface-coherence smoke-production backup-runtime restore-runtime backup-production build-microsite
+.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window overnight-worker export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-overnight-worker smoke-mlx-history smoke-surface-coherence smoke-production verify-gate backup-runtime restore-runtime backup-production build-microsite
 
 PYTHON ?= python3
 
@@ -61,6 +61,9 @@ smoke-surface-coherence:
 
 smoke-production:
 	$(PYTHON) scripts/run_production_smoke.py --site-url $(SITE_URL) --api-base-url $(BASE_URL)
+
+verify-gate:
+	$(PYTHON) scripts/run_layered_verification_gate.py --gate $(GATE) --site-url $(SITE_URL) --api-base-url $(BASE_URL)
 
 backup-runtime:
 	$(PYTHON) scripts/backup_runtime_state.py --output-path $(OUTPUT_PATH)

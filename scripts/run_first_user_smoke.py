@@ -13,9 +13,15 @@ import sys
 import time
 from urllib.request import urlopen
 
-from research_os.http import build_request
-from research_os.http import read_json
-from research_os.settings import Settings
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_ROOT = REPO_ROOT / "src"
+for path in (SRC_ROOT, REPO_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from research_os.http import build_request  # noqa: E402
+from research_os.http import read_json  # noqa: E402
+from research_os.settings import Settings  # noqa: E402
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,16 +40,17 @@ def run_first_user_smoke(
     db_path: str,
     artifact_root: str,
     output_dir: str,
-    python_executable: str = sys.executable,
+    python_executable: str | None = None,
 ) -> Path:
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
+    resolved_python_executable = _resolve_python_executable(python_executable)
 
     env = os.environ.copy()
     env["RESEARCH_OS_DB_PATH"] = db_path
     env["RESEARCH_OS_ARTIFACT_ROOT"] = artifact_root
 
-    _run_command([python_executable, "scripts/seed_demo.py", "--reset"], env=env)
+    _run_command([resolved_python_executable, "scripts/seed_demo.py", "--reset"], env=env)
 
     port = _find_open_port()
     base_url = f"http://127.0.0.1:{port}"
@@ -51,7 +58,7 @@ def run_first_user_smoke(
     with server_log_path.open("w", encoding="utf-8") as server_log:
         server = subprocess.Popen(
             [
-                python_executable,
+                resolved_python_executable,
                 "-m",
                 "uvicorn",
                 "apps.api.main:app",
@@ -71,7 +78,7 @@ def run_first_user_smoke(
             efforts = _get_json(f"{base_url}/api/v1/efforts")
             eval_client_output = _run_command(
                 [
-                    python_executable,
+                    resolved_python_executable,
                     "-m",
                     "clients.tiny_loop.run",
                     "--base-url",
@@ -83,7 +90,7 @@ def run_first_user_smoke(
             )
             inference_client_output = _run_command(
                 [
-                    python_executable,
+                    resolved_python_executable,
                     "-m",
                     "clients.tiny_loop.run",
                     "--profile",
@@ -97,7 +104,7 @@ def run_first_user_smoke(
             )
             exported_briefs_output = _run_command(
                 [
-                    python_executable,
+                    resolved_python_executable,
                     "scripts/export_effort_briefs.py",
                     "--output-dir",
                     str(output_root / "effort-briefs"),
@@ -292,6 +299,23 @@ def _find_open_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         return int(sock.getsockname()[1])
+
+
+def _resolve_python_executable(python_executable: str | None) -> str:
+    if python_executable is not None:
+        return python_executable
+
+    active_venv = os.environ.get("VIRTUAL_ENV")
+    if active_venv:
+        candidate = Path(active_venv) / "bin" / "python"
+        if candidate.exists():
+            return str(candidate)
+
+    repo_venv = REPO_ROOT / ".venv" / "bin" / "python"
+    if repo_venv.exists():
+        return str(repo_venv)
+
+    return sys.executable
 
 
 if __name__ == "__main__":

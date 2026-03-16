@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from scripts.run_first_user_smoke import SmokeResult, build_smoke_report
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+from scripts.run_first_user_smoke import SmokeResult, _resolve_python_executable, build_smoke_report
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_build_smoke_report_includes_efforts_and_exported_briefs():
@@ -43,3 +51,32 @@ def test_build_smoke_report_includes_efforts_and_exported_briefs():
     assert "- Inference provenance snippet" in report
     assert "effort_name=Eval Sprint" in report
     assert "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md" in report
+
+
+def test_run_first_user_smoke_script_bootstraps_from_plain_checkout() -> None:
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    result = subprocess.run(
+        [sys.executable, "-S", "scripts/run_first_user_smoke.py", "--help"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Run the first-user launch smoke flow." in result.stdout
+
+
+def test_resolve_python_executable_prefers_repo_venv_when_not_explicit(monkeypatch, tmp_path: Path) -> None:
+    fake_repo_root = tmp_path / "repo"
+    fake_python = fake_repo_root / ".venv" / "bin" / "python"
+    fake_python.parent.mkdir(parents=True)
+    fake_python.write_text("", encoding="utf-8")
+
+    monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+    monkeypatch.setattr("scripts.run_first_user_smoke.REPO_ROOT", fake_repo_root)
+
+    assert _resolve_python_executable(None) == str(fake_python)
