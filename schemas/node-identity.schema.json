@@ -48,6 +48,7 @@
       "items": {
         "enum": [
           "event_append",
+          "node_heartbeat",
           "lease_acquire",
           "lease_renew",
           "lease_release",

@@ -19,6 +19,9 @@ from research_os.domain.models import (
     FrontierView,
     Lease,
     LeaseCommand,
+    LeaseObservation,
+    LeaseState,
+    NodeHeartbeat,
     PublicationView,
     RecommendNextRequest,
     RecommendNextResponse,
@@ -32,6 +35,7 @@ from research_os.network.ingress import (
     EnvelopeVerificationError,
     EventAppendIngressVerifier,
     LeaseCommandIngressVerifier,
+    NodeHeartbeatIngressVerifier,
     TrustedNodeRegistry,
 )
 from research_os.network.sqlite import SQLiteNetworkEnvelopeStore
@@ -77,6 +81,15 @@ def create_app(
             inline_json=settings.network_trusted_nodes_json,
         ),
         receipt_store=SQLiteNetworkEnvelopeStore(settings.db_path),
+        now_fn=now_fn,
+    )
+    heartbeat_ingress_verifier = NodeHeartbeatIngressVerifier(
+        trusted_nodes=TrustedNodeRegistry.from_sources(
+            path=settings.network_trusted_nodes_path,
+            inline_json=settings.network_trusted_nodes_json,
+        ),
+        receipt_store=SQLiteNetworkEnvelopeStore(settings.db_path),
+        now_fn=now_fn,
     )
     if settings.bootstrap_seeded_efforts:
         ensure_seeded_efforts(service, actor_id=settings.bootstrap_actor_id)
@@ -90,6 +103,7 @@ def create_app(
     app.state.artifact_registry = LocalArtifactRegistry(settings.artifact_root)
     app.state.ingress_verifier = ingress_verifier
     app.state.lease_ingress_verifier = lease_ingress_verifier
+    app.state.heartbeat_ingress_verifier = heartbeat_ingress_verifier
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -183,6 +197,17 @@ def create_app(
     def planner_recommend(request: RecommendNextRequest) -> RecommendNextResponse:
         return service.recommend_next(request)
 
+    @app.get("/api/v1/leases", response_model=list[LeaseObservation])
+    def list_leases(status: LeaseState | None = Query(default=None)) -> list[LeaseObservation]:
+        return service.list_lease_observations(status=status)
+
+    @app.get("/api/v1/leases/{lease_id}", response_model=LeaseObservation)
+    def get_lease(lease_id: str) -> LeaseObservation:
+        lease = service.get_lease_observation(lease_id)
+        if lease is None:
+            raise HTTPException(status_code=404, detail="lease not found")
+        return lease
+
     @app.post("/api/v1/leases/acquire", response_model=Lease)
     async def acquire_lease(request: Request) -> Lease:
         body = await _decode_json_body(request)
@@ -236,6 +261,30 @@ def create_app(
             action="complete",
             payload=body,
         )
+
+    @app.post("/api/v1/network/heartbeats", response_model=NodeHeartbeat, status_code=201)
+    async def record_network_heartbeat(request: Request) -> NodeHeartbeat:
+        body = await _decode_json_body(request)
+        try:
+            envelope = SignedNetworkEnvelope.model_validate(body)
+            return heartbeat_ingress_verifier.verify_and_record(
+                envelope,
+                raw_envelope=body,
+                record_heartbeat=service.record_node_heartbeat,
+            )
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        except EnvelopeVerificationError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except EnvelopeReplayError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @app.get("/api/v1/network/heartbeats/{node_id}", response_model=NodeHeartbeat)
+    def get_network_heartbeat(node_id: str) -> NodeHeartbeat:
+        heartbeat = service.get_node_heartbeat(node_id)
+        if heartbeat is None:
+            raise HTTPException(status_code=404, detail="node heartbeat not found")
+        return heartbeat
 
     @app.get("/api/v1/publications/workspaces/{workspace_id}/discussion", response_model=PublicationView)
     def get_workspace_discussion(workspace_id: str) -> PublicationView:

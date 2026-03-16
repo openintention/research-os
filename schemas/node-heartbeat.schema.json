@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-os.local/schemas/node-heartbeat.schema.json",
+  "title": "NodeHeartbeat",
+  "type": "object",
+  "required": [
+    "heartbeat_schema",
+    "heartbeat_version",
+    "request_id",
+    "node_id",
+    "ttl_seconds",
+    "sent_at",
+    "observed_at",
+    "expires_at",
+    "freshness_status"
+  ],
+  "properties": {
+    "heartbeat_schema": {
+      "const": "openintention-node-heartbeat-v1"
+    },
+    "heartbeat_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "node_id": {
+      "type": "string",
+      "pattern": "^node_[a-z0-9]{16,64}$"
+    },
+    "ttl_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "freshness_status": {
+      "enum": [
+        "fresh",
+        "stale"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

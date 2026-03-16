@@ -20,6 +20,7 @@ def test_node_identity_schema_declares_first_mesh_identity_contract() -> None:
     assert schema["properties"]["identity_version"]["const"] == 1
     assert "signing_keys" in schema["required"]
     assert "capabilities" in schema["required"]
+    assert "node_heartbeat" in schema["properties"]["capabilities"]["items"]["enum"]
     assert "lease_fail" in schema["properties"]["capabilities"]["items"]["enum"]
     assert "lease_complete" in schema["properties"]["capabilities"]["items"]["enum"]
 
@@ -72,10 +73,22 @@ def test_lease_schemas_define_bounded_coordination_contract() -> None:
     assert "subject_id" in command_schema["properties"]
 
 
+def test_node_heartbeat_schema_defines_coordination_read_contract() -> None:
+    schema = _load_schema("node-heartbeat.schema.json")
+
+    assert schema["$id"] == "https://research-os.local/schemas/node-heartbeat.schema.json"
+    assert schema["properties"]["heartbeat_schema"]["const"] == "openintention-node-heartbeat-v1"
+    assert schema["properties"]["heartbeat_version"]["const"] == 1
+    assert schema["properties"]["freshness_status"]["enum"] == ["fresh", "stale"]
+    assert "node_id" in schema["required"]
+    assert "expires_at" in schema["required"]
+
+
 def test_domain_model_records_mesh_foundation_types() -> None:
     domain_model = (REPO_ROOT / "spec" / "domain-model.yaml").read_text(encoding="utf-8")
 
     assert "NodeIdentity:" in domain_model
     assert "NetworkEnvelope:" in domain_model
+    assert "NodeHeartbeat:" in domain_model
     assert "Lease:" in domain_model
     assert "LeaseState:" in domain_model

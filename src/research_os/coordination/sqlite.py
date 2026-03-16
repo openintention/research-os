@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from research_os.domain.models import Lease, LeaseCommandAction
+from research_os.domain.models import HeartbeatFreshnessStatus, Lease, LeaseCommandAction, NodeHeartbeat
 
 
 class SQLiteLeaseStore:
@@ -112,6 +112,18 @@ class SQLiteLeaseStore:
         with self._connect() as conn:
             self._expire_due_leases(conn, now_iso=now_iso)
             return self._get_with_connection(conn, lease_id)
+
+    def list(self, *, status: str | None = None, now_iso: str) -> list[Lease]:
+        with self._connect() as conn:
+            self._expire_due_leases(conn, now_iso=now_iso)
+            sql = "SELECT * FROM leases"
+            params: tuple[object, ...] = ()
+            if status is not None:
+                sql += " WHERE status = ?"
+                params = (status,)
+            sql += " ORDER BY acquired_at DESC, lease_id DESC"
+            rows = conn.execute(sql, params).fetchall()
+            return [self._lease_from_row(row) for row in rows]
 
     def find_live(
         self,
@@ -329,3 +341,118 @@ class SQLiteLeaseStore:
         if value is None:
             return None
         return value.isoformat()
+
+
+class SQLiteHeartbeatStore:
+    def __init__(self, db_path: str) -> None:
+        self.db_path = db_path
+        if db_path != ":memory:":
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout = 5000")
+        if self.db_path != ":memory:":
+            conn.execute("PRAGMA journal_mode = WAL")
+        return conn
+
+    def init_schema(self) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS node_heartbeat_observations (
+                    request_id TEXT PRIMARY KEY,
+                    node_id TEXT NOT NULL,
+                    heartbeat_schema TEXT NOT NULL,
+                    heartbeat_version INTEGER NOT NULL,
+                    ttl_seconds INTEGER NOT NULL,
+                    sent_at TEXT NOT NULL,
+                    observed_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_node_heartbeats_node_observed
+                ON node_heartbeat_observations(node_id, observed_at DESC)
+                """
+            )
+
+    def record(self, heartbeat: NodeHeartbeat) -> NodeHeartbeat:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO node_heartbeat_observations (
+                    request_id, node_id, heartbeat_schema, heartbeat_version, ttl_seconds,
+                    sent_at, observed_at, expires_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    heartbeat.request_id,
+                    heartbeat.node_id,
+                    heartbeat.heartbeat_schema,
+                    heartbeat.heartbeat_version,
+                    heartbeat.ttl_seconds,
+                    heartbeat.sent_at.isoformat(),
+                    heartbeat.observed_at.isoformat(),
+                    heartbeat.expires_at.isoformat(),
+                ),
+            )
+        return heartbeat
+
+    def get_latest(self, node_id: str, *, now_iso: str) -> NodeHeartbeat | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM node_heartbeat_observations
+                WHERE node_id = ?
+                ORDER BY observed_at DESC
+                LIMIT 1
+                """,
+                (node_id,),
+            ).fetchone()
+            if row is None:
+                return None
+            return self._heartbeat_from_row(row, now_iso=now_iso)
+
+    def get_latest_by_nodes(self, node_ids: list[str], *, now_iso: str) -> dict[str, NodeHeartbeat]:
+        if not node_ids:
+            return {}
+        placeholders = ", ".join("?" for _ in node_ids)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT *
+                FROM node_heartbeat_observations
+                WHERE node_id IN ({placeholders})
+                ORDER BY node_id ASC, observed_at DESC
+                """,
+                tuple(node_ids),
+            ).fetchall()
+        latest: dict[str, NodeHeartbeat] = {}
+        for row in rows:
+            node_id = str(row["node_id"])
+            if node_id not in latest:
+                latest[node_id] = self._heartbeat_from_row(row, now_iso=now_iso)
+        return latest
+
+    def _heartbeat_from_row(self, row: sqlite3.Row, *, now_iso: str) -> NodeHeartbeat:
+        freshness_status = (
+            HeartbeatFreshnessStatus.STALE if row["expires_at"] <= now_iso else HeartbeatFreshnessStatus.FRESH
+        )
+        return NodeHeartbeat.model_validate(
+            {
+                "heartbeat_schema": row["heartbeat_schema"],
+                "heartbeat_version": row["heartbeat_version"],
+                "request_id": row["request_id"],
+                "node_id": row["node_id"],
+                "ttl_seconds": row["ttl_seconds"],
+                "sent_at": row["sent_at"],
+                "observed_at": row["observed_at"],
+                "expires_at": row["expires_at"],
+                "freshness_status": freshness_status,
+            }
+        )

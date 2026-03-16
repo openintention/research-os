@@ -17,6 +17,7 @@ types:
   NodeCapability:
     values:
       - event_append
+      - node_heartbeat
       - lease_acquire
       - lease_renew
       - lease_release
@@ -50,6 +51,30 @@ types:
       payload: object
       signature: string
       signature_scheme: string
+
+  HeartbeatFreshnessStatus:
+    values:
+      - fresh
+      - stale
+
+  LeaseLivenessStatus:
+    values:
+      - healthy
+      - stale
+      - missing
+      - not_applicable
+
+  NodeHeartbeat:
+    fields:
+      heartbeat_schema: string
+      heartbeat_version: integer
+      request_id: string
+      node_id: string
+      ttl_seconds: integer
+      sent_at: datetime
+      observed_at: datetime
+      expires_at: datetime
+      freshness_status: string
 
   Lease:
     fields:

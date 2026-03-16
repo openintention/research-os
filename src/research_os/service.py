@@ -8,7 +8,7 @@ import sqlite3
 from urllib.parse import urlparse
 from uuid import uuid4
 
-from research_os.coordination import SQLiteLeaseStore
+from research_os.coordination import SQLiteHeartbeatStore, SQLiteLeaseStore
 from research_os.domain.models import (
     ClaimSummary,
     CreateEffortRequest,
@@ -18,12 +18,17 @@ from research_os.domain.models import (
     EventEnvelope,
     EventKind,
     FrontierView,
+    HeartbeatFreshnessStatus,
     Lease,
     LeaseCommand,
     LeaseCommandAction,
+    LeaseLivenessStatus,
+    LeaseObservation,
     LeaseState,
     LeaseSubjectType,
     LeaseWorkItemType,
+    NodeHeartbeat,
+    NodeHeartbeatCommand,
     ParticipantRole,
     PublicationView,
     RecommendNextRequest,
@@ -60,6 +65,10 @@ class LeaseNotFoundError(LookupError):
     pass
 
 
+class NodeHeartbeatNotFoundError(LookupError):
+    pass
+
+
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 _HANDLE_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _DIFF_DIRECTIONS = {"min", "max"}
@@ -81,6 +90,7 @@ class ResearchOSService:
         default_frontier_size: int = 10,
         public_base_url: str | None = None,
         lease_store: SQLiteLeaseStore | None = None,
+        heartbeat_store: SQLiteHeartbeatStore | None = None,
         now_fn: Callable[[], datetime] | None = None,
     ) -> None:
         self.store = store
@@ -90,6 +100,8 @@ class ResearchOSService:
         self.store.init_schema()
         self.lease_store = lease_store or self._default_lease_store(store)
         self.lease_store.init_schema()
+        self.heartbeat_store = heartbeat_store or self._default_heartbeat_store(store)
+        self.heartbeat_store.init_schema()
 
     def create_workspace(self, request: CreateWorkspaceRequest) -> WorkspaceCreated:
         workspace_id = str(uuid4())
@@ -141,6 +153,12 @@ class ResearchOSService:
         if not isinstance(db_path, str):
             db_path = ":memory:"
         return SQLiteLeaseStore(db_path)
+
+    def _default_heartbeat_store(self, store: EventStore) -> SQLiteHeartbeatStore:
+        db_path = getattr(store, "db_path", ":memory:")
+        if not isinstance(db_path, str):
+            db_path = ":memory:"
+        return SQLiteHeartbeatStore(db_path)
 
     def append_event(self, event: EventEnvelope) -> EventEnvelope:
         self._validate_incoming_event(event)
@@ -535,6 +553,24 @@ class ResearchOSService:
             raise LeaseIngestionError(
                 "verifier completion requires a verifier claim.reproduced or claim.contradicted event"
             )
+
+    def _build_lease_observation(self, lease: Lease, *, now_iso: str) -> LeaseObservation:
+        holder_heartbeat = None
+        if lease.holder_node_id is not None:
+            holder_heartbeat = self.heartbeat_store.get_latest(lease.holder_node_id, now_iso=now_iso)
+        if lease.status not in {LeaseState.ACQUIRED, LeaseState.RENEWED}:
+            liveness_status = LeaseLivenessStatus.NOT_APPLICABLE
+        elif holder_heartbeat is None:
+            liveness_status = LeaseLivenessStatus.MISSING
+        elif holder_heartbeat.freshness_status is HeartbeatFreshnessStatus.STALE:
+            liveness_status = LeaseLivenessStatus.STALE
+        else:
+            liveness_status = LeaseLivenessStatus.HEALTHY
+        return LeaseObservation(
+            lease=lease,
+            liveness_status=liveness_status,
+            holder_heartbeat=holder_heartbeat,
+        )
 
     def _require_identifier(
         self,
@@ -1146,6 +1182,37 @@ class ResearchOSService:
             action=command.action,
             now_iso=now_iso,
         )
+
+    def record_node_heartbeat(self, command: NodeHeartbeatCommand, sent_at: datetime) -> NodeHeartbeat:
+        now = self.now_fn()
+        heartbeat = NodeHeartbeat(
+            request_id=command.request_id,
+            node_id=command.node_id,
+            ttl_seconds=command.ttl_seconds,
+            sent_at=sent_at,
+            observed_at=now,
+            expires_at=now + timedelta(seconds=command.ttl_seconds),
+            freshness_status=HeartbeatFreshnessStatus.FRESH,
+        )
+        return self.heartbeat_store.record(heartbeat)
+
+    def get_node_heartbeat(self, node_id: str) -> NodeHeartbeat | None:
+        return self.heartbeat_store.get_latest(node_id, now_iso=self.now_fn().isoformat())
+
+    def get_lease_observation(self, lease_id: str) -> LeaseObservation | None:
+        now_iso = self.now_fn().isoformat()
+        lease = self.lease_store.get(lease_id, now_iso=now_iso)
+        if lease is None:
+            return None
+        return self._build_lease_observation(lease, now_iso=now_iso)
+
+    def list_lease_observations(self, *, status: LeaseState | None = None) -> list[LeaseObservation]:
+        now_iso = self.now_fn().isoformat()
+        leases = self.lease_store.list(
+            status=status.value if status is not None else None,
+            now_iso=now_iso,
+        )
+        return [self._build_lease_observation(lease, now_iso=now_iso) for lease in leases]
 
     def recommend_next(self, request: RecommendNextRequest) -> RecommendNextResponse:
         return recommend_next(self.store.list(limit=10_000), request)

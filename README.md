@@ -144,6 +144,8 @@ API ingress is now validated before append:
   against a trusted node allowlist
 - signed `openintention-network-envelope-v1` lease commands can also be verified at the edge for
   `lease.acquire`, `lease.renew`, `lease.release`, `lease.fail`, and `lease.complete`
+- signed `openintention-network-envelope-v1` `node.heartbeat` payloads can be verified at the edge
+  through the dedicated `/api/v1/network/heartbeats` ingress path
 - signed ingress does not replace event-log authority; the inner event must still pass the current
   service-layer validation before append, and signed lease commands still only update bounded
   coordination metadata above planner work items
@@ -155,14 +157,21 @@ Planner recommendations now include lease-ready metadata:
 - `subject_id`
 
 The hosted control plane also exposes bounded coordination endpoints:
+- `GET /api/v1/leases`
+- `GET /api/v1/leases/{lease_id}`
 - `POST /api/v1/leases/acquire`
 - `POST /api/v1/leases/{lease_id}/renew`
 - `POST /api/v1/leases/{lease_id}/release`
 - `POST /api/v1/leases/{lease_id}/fail`
 - `POST /api/v1/leases/{lease_id}/complete`
+- `POST /api/v1/network/heartbeats`
+- `GET /api/v1/network/heartbeats/{node_id}`
 
 Those leases coordinate planner-scoped work items. They do not replace the event log as the
 authoritative source of claim or frontier state.
+
+Heartbeat observations are also coordination metadata only. They explain lease liveness for a node
+holder, but they do not become lineage truth.
 
 To run the post-v1 external client experiment:
 

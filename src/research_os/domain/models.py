@@ -32,6 +32,7 @@ class ParticipantRole(StrEnum):
 
 class NodeCapability(StrEnum):
     EVENT_APPEND = "event_append"
+    NODE_HEARTBEAT = "node_heartbeat"
     LEASE_ACQUIRE = "lease_acquire"
     LEASE_RENEW = "lease_renew"
     LEASE_RELEASE = "lease_release"
@@ -95,6 +96,18 @@ class LeaseCommandAction(StrEnum):
     FAIL = "fail"
     COMPLETE = "complete"
     HEARTBEAT = "heartbeat"
+
+
+class HeartbeatFreshnessStatus(StrEnum):
+    FRESH = "fresh"
+    STALE = "stale"
+
+
+class LeaseLivenessStatus(StrEnum):
+    HEALTHY = "healthy"
+    STALE = "stale"
+    MISSING = "missing"
+    NOT_APPLICABLE = "not_applicable"
 
 
 class NodeSigningKey(BaseModel):
@@ -310,6 +323,32 @@ class LeaseCommand(BaseModel):
         if self.action is LeaseCommandAction.FAIL and not self.failure_reason:
             raise ValueError("fail requires failure_reason")
         return self
+
+
+class NodeHeartbeatCommand(BaseModel):
+    heartbeat_schema: str = "openintention-node-heartbeat-v1"
+    heartbeat_version: int = 1
+    request_id: str = Field(min_length=1)
+    node_id: str = Field(pattern=r"^node_[a-z0-9]{16,64}$")
+    ttl_seconds: int = Field(ge=1)
+
+
+class NodeHeartbeat(BaseModel):
+    heartbeat_schema: str = "openintention-node-heartbeat-v1"
+    heartbeat_version: int = 1
+    request_id: str = Field(min_length=1)
+    node_id: str = Field(pattern=r"^node_[a-z0-9]{16,64}$")
+    ttl_seconds: int = Field(ge=1)
+    sent_at: datetime
+    observed_at: datetime
+    expires_at: datetime
+    freshness_status: HeartbeatFreshnessStatus
+
+
+class LeaseObservation(BaseModel):
+    lease: Lease
+    liveness_status: LeaseLivenessStatus
+    holder_heartbeat: NodeHeartbeat | None = None
 
 
 class PublicationView(BaseModel):

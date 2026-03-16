@@ -15,10 +15,12 @@ from pydantic import ValidationError
 
 from research_os.domain.models import (
     EventEnvelope,
+    NodeHeartbeatCommand,
     LeaseCommand,
     LeaseCommandAction,
     NetworkMessageType,
     NodeCapability,
+    NodeHeartbeat,
     NodeIdentity,
     SignedNetworkEnvelope,
     SigningKeyStatus,
@@ -214,6 +216,74 @@ class LeaseCommandIngressVerifier:
             return LeaseCommand.model_validate(payload)
         except ValidationError as exc:
             raise EnvelopeVerificationError("payload is not a valid lease command") from exc
+
+
+class NodeHeartbeatIngressVerifier:
+    def __init__(
+        self,
+        *,
+        trusted_nodes: TrustedNodeRegistry,
+        receipt_store: SQLiteNetworkEnvelopeStore,
+        now_fn: Callable[[], datetime] | None = None,
+    ) -> None:
+        self.trusted_nodes = trusted_nodes
+        self.receipt_store = receipt_store
+        self.now_fn = now_fn or (lambda: datetime.now(timezone.utc))
+        self.receipt_store.init_schema()
+
+    def verify_and_record(
+        self,
+        envelope: SignedNetworkEnvelope,
+        *,
+        raw_envelope: dict[str, object],
+        record_heartbeat: Callable[[NodeHeartbeatCommand, datetime], NodeHeartbeat],
+    ) -> NodeHeartbeat:
+        heartbeat_command = self.verify(envelope, raw_envelope=raw_envelope)
+        if self.receipt_store.has_envelope_id(envelope.envelope_id):
+            raise EnvelopeReplayError(f"network envelope {envelope.envelope_id} already accepted")
+        if envelope.request_id is not None and self.receipt_store.has_request_id(envelope.request_id):
+            raise EnvelopeReplayError(f"network request {envelope.request_id} already accepted")
+
+        heartbeat = record_heartbeat(heartbeat_command, envelope.sent_at)
+        self.receipt_store.record_receipt(
+            envelope_id=envelope.envelope_id,
+            request_id=envelope.request_id,
+            sender_node_id=envelope.sender_node_id,
+            message_type=envelope.message_type.value,
+            payload_digest=envelope.payload_digest,
+        )
+        return heartbeat
+
+    def verify(
+        self,
+        envelope: SignedNetworkEnvelope,
+        *,
+        raw_envelope: dict[str, object],
+    ) -> NodeHeartbeatCommand:
+        if envelope.message_type is not NetworkMessageType.NODE_HEARTBEAT:
+            raise EnvelopeVerificationError("signed heartbeat ingress only accepts node.heartbeat envelopes")
+
+        _verify_common_envelope(
+            envelope,
+            raw_envelope=raw_envelope,
+            trusted_nodes=self.trusted_nodes,
+            now_fn=self.now_fn,
+            required_capability=NodeCapability.NODE_HEARTBEAT,
+        )
+
+        if not isinstance(envelope.payload, dict):
+            raise EnvelopeVerificationError("payload is not a valid node heartbeat command")
+
+        payload = dict(envelope.payload)
+        if payload.get("node_id") != envelope.sender_node_id:
+            raise EnvelopeVerificationError("payload node_id must match sender_node_id")
+        if envelope.request_id is not None and payload.get("request_id") != envelope.request_id:
+            raise EnvelopeVerificationError("payload request_id must match network request_id")
+
+        try:
+            return NodeHeartbeatCommand.model_validate(payload)
+        except ValidationError as exc:
+            raise EnvelopeVerificationError("payload is not a valid node heartbeat command") from exc
 
 
 def canonical_json_bytes(value: object) -> bytes:

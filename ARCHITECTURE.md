@@ -120,6 +120,10 @@ For `/api/v1/leases/*`, the hosted API may verify signed lease envelopes at ingr
 renew, release, fail, and complete operations, but the resulting lease state remains coordination
 metadata above planner work items rather than lineage truth.
 
+For `/api/v1/network/heartbeats`, the hosted API may verify signed `node.heartbeat` envelopes and
+store bounded liveness observations for node holders, but those observations remain coordination
+state and only inform lease liveness views.
+
 ## Near-term extension path
 
 1. Materialize projections into tables instead of scanning the event log.
@@ -127,5 +131,5 @@ metadata above planner work items rather than lineage truth.
 3. Add subscriptions and notification fan-out.
 4. Add GitHub publisher that emits PR-like and Discussion-like views.
 5. Lease tables and `/api/v1/leases/*` coordination endpoints now sit above planner work items.
-6. Add worker heartbeats and lease-aware network envelopes.
+6. Signed node heartbeats and lease liveness views now sit above coordination storage.
 7. Add a distributed adapter with the same logical interface.
