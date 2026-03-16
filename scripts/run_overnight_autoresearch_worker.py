@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+import hashlib
+import inspect
+import json
 import os
 from pathlib import Path
 import re
@@ -9,6 +13,8 @@ import subprocess
 import sys
 import time
 from typing import Callable
+from urllib import error
+from uuid import uuid4
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -17,7 +23,16 @@ for path in (SRC_ROOT, REPO_ROOT):
         sys.path.insert(0, str(path))
 
 from clients.tiny_loop.api import HttpResearchOSApi  # noqa: E402
+from research_os.domain.models import LeaseSubjectType  # noqa: E402
+from research_os.domain.models import LeaseWorkItemType  # noqa: E402
+from research_os.domain.models import NetworkMessageType  # noqa: E402
+from research_os.domain.models import ParticipantRole  # noqa: E402
+from research_os.http import build_request  # noqa: E402
+from research_os.http import open_url  # noqa: E402
 from research_os.integrations.mlx_history import MlxHistoryResult, load_results_tsv  # noqa: E402
+from research_os.network.signing import LocalNodeSigner  # noqa: E402
+from research_os.network.signing import build_signed_envelope  # noqa: E402
+from research_os.network.signing import load_local_node_signer  # noqa: E402
 from scripts.run_mlx_history_compounding_smoke import (  # noqa: E402
     DEFAULT_REPO_URL,
     EFFORT_BUDGET_SECONDS,
@@ -36,6 +51,7 @@ DEFAULT_WINDOW_SECONDS = 8 * 60 * 60
 DEFAULT_INTERVAL_SECONDS = 15 * 60
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 5 * 60
 DEFAULT_BUDGET_CAP_SECONDS = 40 * 60
+DEFAULT_HEARTBEAT_TTL_SECONDS = 30
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +69,18 @@ class RunnerCommandResult:
     exit_code: int | None
     output: str
     log_path: str
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerCoordinationSummary:
+    node_id: str
+    lease_id: str
+    lease_status: str | None
+    heartbeat_count: int
+    lease_ttl_seconds: int
+    heartbeat_ttl_seconds: int
+    heartbeat_interval_seconds: float
+    lease_observation_url: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +122,108 @@ class OvernightWorkerResult:
     effort_workspace_count: int
     effort_claim_count: int
     frontier_member_count: int
+    coordination: WorkerCoordinationSummary | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerNetworkConfig:
+    signer: LocalNodeSigner
+    lease_ttl_seconds: int
+    heartbeat_ttl_seconds: int
+    heartbeat_interval_seconds: float
+    release_lease_on_exit: bool
+
+
+class WorkerLeaseSession:
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        effort: dict[str, object],
+        network: WorkerNetworkConfig,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.effort = effort
+        self.network = network
+        self.lease_id: str | None = None
+        self.final_lease_status: str | None = None
+        self.heartbeat_count = 0
+        self._request_prefix = f"{network.signer.node_id}-{uuid4().hex[:12]}"
+        self._sequence = 0
+
+    def acquire(self) -> str:
+        response = _acquire_worker_lease(
+            base_url=self.base_url,
+            signer=self.network.signer,
+            request_id=self._next_request_id("lease-acquire"),
+            effort_id=str(self.effort["effort_id"]),
+            objective=str(self.effort["objective"]),
+            platform=str(self.effort["platform"]),
+            budget_seconds=int(self.effort["budget_seconds"]),
+            planner_fingerprint=_worker_planner_fingerprint(
+                effort_id=str(self.effort["effort_id"]),
+                objective=str(self.effort["objective"]),
+                platform=str(self.effort["platform"]),
+                budget_seconds=int(self.effort["budget_seconds"]),
+            ),
+            lease_ttl_seconds=self.network.lease_ttl_seconds,
+        )
+        self.lease_id = str(response["lease_id"])
+        self.final_lease_status = str(response.get("status") or "acquired")
+        return self.lease_id
+
+    def emit_heartbeat(self) -> dict[str, object]:
+        response = _emit_worker_heartbeat(
+            base_url=self.base_url,
+            signer=self.network.signer,
+            request_id=self._next_request_id("heartbeat"),
+            heartbeat_ttl_seconds=self.network.heartbeat_ttl_seconds,
+        )
+        self.heartbeat_count += 1
+        return response
+
+    def release(self) -> dict[str, object] | None:
+        if self.lease_id is None:
+            return None
+        response = _release_worker_lease(
+            base_url=self.base_url,
+            signer=self.network.signer,
+            lease_id=self.lease_id,
+            request_id=self._next_request_id("lease-release"),
+        )
+        self.final_lease_status = str(response.get("status") or "released")
+        return response
+
+    def fail(self, failure_reason: str) -> dict[str, object] | None:
+        if self.lease_id is None:
+            return None
+        response = _fail_worker_lease(
+            base_url=self.base_url,
+            signer=self.network.signer,
+            lease_id=self.lease_id,
+            request_id=self._next_request_id("lease-fail"),
+            failure_reason=failure_reason,
+        )
+        self.final_lease_status = str(response.get("status") or "failed")
+        return response
+
+    def summary(self) -> WorkerCoordinationSummary | None:
+        if self.lease_id is None:
+            return None
+        return WorkerCoordinationSummary(
+            node_id=self.network.signer.node_id,
+            lease_id=self.lease_id,
+            lease_status=self.final_lease_status,
+            heartbeat_count=self.heartbeat_count,
+            lease_ttl_seconds=self.network.lease_ttl_seconds,
+            heartbeat_ttl_seconds=self.network.heartbeat_ttl_seconds,
+            heartbeat_interval_seconds=self.network.heartbeat_interval_seconds,
+            lease_observation_url=f"{self.base_url}/api/v1/leases/{self.lease_id}",
+        )
+
+    def _next_request_id(self, kind: str) -> str:
+        self._sequence += 1
+        return f"{self._request_prefix}-{kind}-{self._sequence:04d}"
 
 
 def run_overnight_autoresearch_worker(
@@ -108,13 +238,20 @@ def run_overnight_autoresearch_worker(
     max_loops: int | None,
     command_timeout_seconds: int,
     budget_cap_seconds: int | None,
+    node_id: str | None = None,
+    node_key_id: str | None = None,
+    node_private_key_path: str | None = None,
+    lease_ttl_seconds: int | None = None,
+    heartbeat_ttl_seconds: int | None = None,
+    heartbeat_interval_seconds: float | None = None,
+    release_lease_on_exit: bool = True,
     artifact_root: str,
     output_dir: str,
     repo_url: str | None = None,
     results_path: str | None = None,
     monotonic_fn: Callable[[], float] = time.monotonic,
     sleep_fn: Callable[[float], None] = time.sleep,
-    run_command_fn: Callable[[str, Path, int, Path], RunnerCommandResult] | None = None,
+    run_command_fn: Callable[..., RunnerCommandResult] | None = None,
 ) -> Path:
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -132,6 +269,13 @@ def run_overnight_autoresearch_worker(
         max_loops=max_loops,
         command_timeout_seconds=command_timeout_seconds,
         budget_cap_seconds=budget_cap_seconds,
+        node_id=node_id,
+        node_key_id=node_key_id,
+        node_private_key_path=node_private_key_path,
+        lease_ttl_seconds=lease_ttl_seconds,
+        heartbeat_ttl_seconds=heartbeat_ttl_seconds,
+        heartbeat_interval_seconds=heartbeat_interval_seconds,
+        release_lease_on_exit=release_lease_on_exit,
         artifact_root=artifact_root,
         repo_url=repo_url,
         results_path=results_path,
@@ -157,13 +301,20 @@ def execute_overnight_autoresearch_worker(
     max_loops: int | None,
     command_timeout_seconds: int,
     budget_cap_seconds: int | None,
+    node_id: str | None = None,
+    node_key_id: str | None = None,
+    node_private_key_path: str | None = None,
+    lease_ttl_seconds: int | None = None,
+    heartbeat_ttl_seconds: int | None = None,
+    heartbeat_interval_seconds: float | None = None,
+    release_lease_on_exit: bool = True,
     artifact_root: str,
     repo_url: str | None = None,
     results_path: str | None = None,
     log_root: str | Path,
     monotonic_fn: Callable[[], float] = time.monotonic,
     sleep_fn: Callable[[float], None] = time.sleep,
-    run_command_fn: Callable[[str, Path, int, Path], RunnerCommandResult] | None = None,
+    run_command_fn: Callable[..., RunnerCommandResult] | None = None,
 ) -> OvernightWorkerResult:
     if window_seconds <= 0:
         raise ValueError("window_seconds must be greater than zero")
@@ -194,142 +345,197 @@ def execute_overnight_autoresearch_worker(
 
     api = HttpResearchOSApi(normalized_base_url)
     effort = _ensure_effort(api, base_url=normalized_base_url)
+    worker_network = _resolve_worker_network_config(
+        node_id=node_id,
+        node_key_id=node_key_id,
+        node_private_key_path=node_private_key_path,
+        window_seconds=window_seconds,
+        heartbeat_ttl_seconds=heartbeat_ttl_seconds,
+        heartbeat_interval_seconds=heartbeat_interval_seconds,
+        lease_ttl_seconds=lease_ttl_seconds,
+        release_lease_on_exit=release_lease_on_exit,
+    )
+    lease_session = WorkerLeaseSession(
+        base_url=normalized_base_url,
+        effort=effort,
+        network=worker_network,
+    ) if worker_network is not None else None
     deadline = monotonic_fn() + window_seconds
     total_runner_seconds = 0.0
     iterations: list[OvernightWorkerIteration] = []
     stop_reason = "window_end"
     loop_index = 0
+    failure_reason: str | None = None
 
-    while True:
-        if max_loops is not None and loop_index >= max_loops:
-            stop_reason = "max_loops_reached"
-            break
-        if loop_index > 0 and monotonic_fn() >= deadline:
-            stop_reason = "window_elapsed"
-            break
-        if budget_cap_seconds is not None and total_runner_seconds >= budget_cap_seconds:
-            stop_reason = "budget_cap_reached"
-            break
+    if lease_session is not None:
+        lease_session.acquire()
+        lease_session.emit_heartbeat()
 
-        remaining_window_seconds = max(1, int(deadline - monotonic_fn()))
-        remaining_budget_seconds = (
-            max(1, int(budget_cap_seconds - total_runner_seconds))
-            if budget_cap_seconds is not None
-            else command_timeout_seconds
-        )
-        timeout_seconds = min(command_timeout_seconds, remaining_window_seconds, remaining_budget_seconds)
+    try:
+        while True:
+            if max_loops is not None and loop_index >= max_loops:
+                stop_reason = "max_loops_reached"
+                break
+            if loop_index > 0 and monotonic_fn() >= deadline:
+                stop_reason = "window_elapsed"
+                break
+            if budget_cap_seconds is not None and total_runner_seconds >= budget_cap_seconds:
+                stop_reason = "budget_cap_reached"
+                break
 
-        loop_index += 1
-        log_path = log_root_path / f"loop-{loop_index:03d}.log"
-        command_result = resolved_run_command_fn(runner_command, repo_root, timeout_seconds, log_path)
-        total_runner_seconds += command_result.duration_seconds
+            remaining_window_seconds = max(1, int(deadline - monotonic_fn()))
+            remaining_budget_seconds = (
+                max(1, int(budget_cap_seconds - total_runner_seconds))
+                if budget_cap_seconds is not None
+                else command_timeout_seconds
+            )
+            timeout_seconds = min(command_timeout_seconds, remaining_window_seconds, remaining_budget_seconds)
 
-        if not results_file.exists():
+            loop_index += 1
+            log_path = log_root_path / f"loop-{loop_index:03d}.log"
+            if lease_session is not None:
+                lease_session.emit_heartbeat()
+            command_result = _invoke_runner_command(
+                run_command_fn=resolved_run_command_fn,
+                command=runner_command,
+                cwd=repo_root,
+                timeout_seconds=timeout_seconds,
+                log_path=log_path,
+                on_activity_tick=lease_session.emit_heartbeat if lease_session is not None else None,
+                activity_tick_seconds=(
+                    lease_session.network.heartbeat_interval_seconds if lease_session is not None else None
+                ),
+            )
+            total_runner_seconds += command_result.duration_seconds
+
+            if not results_file.exists():
+                iterations.append(
+                    OvernightWorkerIteration(
+                        index=loop_index,
+                        runner_status=command_result.status,
+                        duration_seconds=command_result.duration_seconds,
+                        exit_code=command_result.exit_code,
+                        imported_candidate_commit=None,
+                        imported_baseline_commit=None,
+                        workspace_id=None,
+                        claim_id=None,
+                        discussion_url=None,
+                        adoption_event_id=None,
+                        note=f"results.tsv not found at `{results_file}` after the runner command",
+                        log_path=str(command_result.log_path),
+                    )
+                )
+                stop_reason = "missing_results_tsv"
+                failure_reason = "results_tsv_missing"
+                break
+
+            workspaces = api.list_workspaces(effort_id=str(effort["effort_id"]))
+            results = load_results_tsv(results_file)
+            keep_pair = _next_keep_pair(results, imported_candidate_commits=_imported_candidate_commits(workspaces))
+
+            imported_contribution: ImportedContribution | None = None
+            adoption_event_id: str | None = None
+            note: str
+            if keep_pair is None:
+                note = "No new kept external-harness result was available to import after this loop."
+            else:
+                baseline, candidate = keep_pair
+                imported_contribution = _import_contribution(
+                    api,
+                    effort_id=str(effort["effort_id"]),
+                    actor_id=resolved_actor_id,
+                    workspace_name="mlx-history-worker",
+                    baseline=baseline,
+                    candidate=candidate,
+                    repo_url=resolved_repo_url,
+                    artifact_root=artifact_root_path / "mlx-history-worker",
+                    workspace_tags={
+                        "worker_mode": "overnight-autoresearch",
+                        "worker_window": "true",
+                    },
+                    event_tags={
+                        "worker_mode": "overnight-autoresearch",
+                        "worker_window": "true",
+                    },
+                )
+                prior_reference = _find_contribution_reference(
+                    api.list_workspaces(effort_id=str(effort["effort_id"])),
+                    candidate_commit=baseline.commit,
+                )
+                if prior_reference is not None and prior_reference.workspace_id != imported_contribution.workspace_id:
+                    adoption_event_id = _record_adoption(
+                        api,
+                        from_contribution=prior_reference,
+                        to_contribution=imported_contribution,
+                    )
+                note = (
+                    f"Imported kept result `{candidate.commit}` over `{baseline.commit}` into shared state."
+                )
+
             iterations.append(
                 OvernightWorkerIteration(
                     index=loop_index,
                     runner_status=command_result.status,
                     duration_seconds=command_result.duration_seconds,
                     exit_code=command_result.exit_code,
-                    imported_candidate_commit=None,
-                    imported_baseline_commit=None,
-                    workspace_id=None,
-                    claim_id=None,
-                    discussion_url=None,
-                    adoption_event_id=None,
-                    note=f"results.tsv not found at `{results_file}` after the runner command",
+                    imported_candidate_commit=(
+                        imported_contribution.candidate_commit if imported_contribution is not None else None
+                    ),
+                    imported_baseline_commit=(
+                        imported_contribution.baseline_commit if imported_contribution is not None else None
+                    ),
+                    workspace_id=imported_contribution.workspace_id if imported_contribution is not None else None,
+                    claim_id=imported_contribution.claim_id if imported_contribution is not None else None,
+                    discussion_url=(
+                        _discussion_url(normalized_base_url, imported_contribution.workspace_id)
+                        if imported_contribution is not None
+                        else None
+                    ),
+                    adoption_event_id=adoption_event_id,
+                    note=note,
                     log_path=str(command_result.log_path),
                 )
             )
-            stop_reason = "missing_results_tsv"
-            break
 
-        workspaces = api.list_workspaces(effort_id=str(effort["effort_id"]))
-        results = load_results_tsv(results_file)
-        keep_pair = _next_keep_pair(results, imported_candidate_commits=_imported_candidate_commits(workspaces))
-
-        imported_contribution: ImportedContribution | None = None
-        adoption_event_id: str | None = None
-        note: str
-        if keep_pair is None:
-            note = "No new kept external-harness result was available to import after this loop."
-        else:
-            baseline, candidate = keep_pair
-            imported_contribution = _import_contribution(
-                api,
-                effort_id=str(effort["effort_id"]),
-                actor_id=resolved_actor_id,
-                workspace_name="mlx-history-worker",
-                baseline=baseline,
-                candidate=candidate,
-                repo_url=resolved_repo_url,
-                artifact_root=artifact_root_path / "mlx-history-worker",
-                workspace_tags={
-                    "worker_mode": "overnight-autoresearch",
-                    "worker_window": "true",
-                },
-                event_tags={
-                    "worker_mode": "overnight-autoresearch",
-                    "worker_window": "true",
-                },
-            )
-            prior_reference = _find_contribution_reference(
-                api.list_workspaces(effort_id=str(effort["effort_id"])),
-                candidate_commit=baseline.commit,
-            )
-            if prior_reference is not None and prior_reference.workspace_id != imported_contribution.workspace_id:
-                adoption_event_id = _record_adoption(
-                    api,
-                    from_contribution=prior_reference,
-                    to_contribution=imported_contribution,
+            if command_result.status == "failed":
+                stop_reason = "runner_failed"
+                failure_reason = "runner_failed"
+                break
+            if command_result.status == "timed_out":
+                stop_reason = "runner_timed_out"
+                failure_reason = "runner_timed_out"
+                break
+            if budget_cap_seconds is not None and total_runner_seconds >= budget_cap_seconds:
+                stop_reason = "budget_cap_reached"
+                break
+            if max_loops is not None and loop_index >= max_loops:
+                stop_reason = "max_loops_reached"
+                break
+            remaining_seconds = deadline - monotonic_fn()
+            if remaining_seconds <= 0:
+                stop_reason = "window_elapsed"
+                break
+            if interval_seconds > 0:
+                _sleep_with_activity_ticks(
+                    duration_seconds=min(interval_seconds, remaining_seconds),
+                    sleep_fn=sleep_fn,
+                    on_activity_tick=lease_session.emit_heartbeat if lease_session is not None else None,
+                    activity_tick_seconds=(
+                        lease_session.network.heartbeat_interval_seconds if lease_session is not None else None
+                    ),
                 )
-            note = (
-                f"Imported kept result `{candidate.commit}` over `{baseline.commit}` into shared state."
-            )
-
-        iterations.append(
-            OvernightWorkerIteration(
-                index=loop_index,
-                runner_status=command_result.status,
-                duration_seconds=command_result.duration_seconds,
-                exit_code=command_result.exit_code,
-                imported_candidate_commit=(
-                    imported_contribution.candidate_commit if imported_contribution is not None else None
-                ),
-                imported_baseline_commit=(
-                    imported_contribution.baseline_commit if imported_contribution is not None else None
-                ),
-                workspace_id=imported_contribution.workspace_id if imported_contribution is not None else None,
-                claim_id=imported_contribution.claim_id if imported_contribution is not None else None,
-                discussion_url=(
-                    _discussion_url(normalized_base_url, imported_contribution.workspace_id)
-                    if imported_contribution is not None
-                    else None
-                ),
-                adoption_event_id=adoption_event_id,
-                note=note,
-                log_path=str(command_result.log_path),
-            )
-        )
-
-        if command_result.status == "failed":
-            stop_reason = "runner_failed"
-            break
-        if command_result.status == "timed_out":
-            stop_reason = "runner_timed_out"
-            break
-        if budget_cap_seconds is not None and total_runner_seconds >= budget_cap_seconds:
-            stop_reason = "budget_cap_reached"
-            break
-        if max_loops is not None and loop_index >= max_loops:
-            stop_reason = "max_loops_reached"
-            break
-        remaining_seconds = deadline - monotonic_fn()
-        if remaining_seconds <= 0:
-            stop_reason = "window_elapsed"
-            break
-        if interval_seconds > 0:
-            sleep_fn(min(interval_seconds, remaining_seconds))
+    except Exception:
+        failure_reason = failure_reason or "worker_exception"
+        raise
+    finally:
+        if lease_session is not None:
+            if failure_reason is None and lease_session.network.release_lease_on_exit:
+                lease_session.release()
+            elif failure_reason is not None and lease_session.network.release_lease_on_exit:
+                try:
+                    lease_session.fail(failure_reason)
+                except Exception:
+                    pass
 
     workspaces = api.list_workspaces(effort_id=str(effort["effort_id"]))
     claims = _get_json(
@@ -364,6 +570,7 @@ def execute_overnight_autoresearch_worker(
         effort_workspace_count=len(workspaces),
         effort_claim_count=effort_claim_count,
         frontier_member_count=len(frontier["members"]),
+        coordination=lease_session.summary() if lease_session is not None else None,
     )
 
 
@@ -377,6 +584,18 @@ def build_overnight_worker_report(result: OvernightWorkerResult) -> str:
         (iteration.discussion_url for iteration in reversed(result.iterations) if iteration.discussion_url is not None),
         None,
     )
+    coordination_lines = ["- Coordination mode: `disabled`"]
+    if result.coordination is not None:
+        coordination_lines = [
+            f"- Node: `{result.coordination.node_id}`",
+            f"- Lease: `{result.coordination.lease_id}`",
+            f"- Lease status: `{result.coordination.lease_status or 'unknown'}`",
+            f"- Heartbeats sent: `{result.coordination.heartbeat_count}`",
+            f"- Lease TTL seconds: `{result.coordination.lease_ttl_seconds}`",
+            f"- Heartbeat TTL seconds: `{result.coordination.heartbeat_ttl_seconds}`",
+            f"- Heartbeat interval seconds: `{result.coordination.heartbeat_interval_seconds}`",
+            f"- Lease observation: `{result.coordination.lease_observation_url}`",
+        ]
     return "\n".join(
         [
             "# Overnight Autoresearch Worker",
@@ -393,6 +612,9 @@ def build_overnight_worker_report(result: OvernightWorkerResult) -> str:
             f"- Budget cap seconds: `{result.budget_cap_seconds if result.budget_cap_seconds is not None else 'none'}`",
             f"- Max loops: `{result.max_loops if result.max_loops is not None else 'until window ends'}`",
             f"- Live effort page: `{effort_url}`",
+            "",
+            "## Coordination",
+            *coordination_lines,
             "",
             "## Outcome",
             f"- Loops completed: `{result.loops_completed}`",
@@ -487,6 +709,39 @@ def main() -> None:
         help="Hard cap on cumulative external command runtime across the worker window.",
     )
     parser.add_argument(
+        "--node-id",
+        default=None,
+        help="Optional trusted node id for signed lease + heartbeat coordination mode.",
+    )
+    parser.add_argument(
+        "--node-key-id",
+        default=None,
+        help="Optional signing key id for the trusted node.",
+    )
+    parser.add_argument(
+        "--node-private-key-path",
+        default=None,
+        help="Optional PEM or base64-encoded raw Ed25519 private key path for signed coordination mode.",
+    )
+    parser.add_argument(
+        "--lease-ttl-seconds",
+        type=int,
+        default=None,
+        help="Optional lease ttl for signed coordination mode. Defaults to a bounded value derived from the worker window.",
+    )
+    parser.add_argument(
+        "--heartbeat-ttl-seconds",
+        type=int,
+        default=None,
+        help="Optional heartbeat ttl for signed coordination mode. Defaults to 30 seconds.",
+    )
+    parser.add_argument(
+        "--heartbeat-interval-seconds",
+        type=float,
+        default=None,
+        help="Optional heartbeat cadence for signed coordination mode. Defaults to half of the heartbeat ttl.",
+    )
+    parser.add_argument(
         "--artifact-root",
         default="data/client-artifacts/overnight-worker",
         help="Directory for local content-addressed worker artifacts.",
@@ -509,6 +764,12 @@ def main() -> None:
         max_loops=args.max_loops,
         command_timeout_seconds=args.command_timeout_seconds,
         budget_cap_seconds=args.budget_cap_seconds,
+        node_id=args.node_id,
+        node_key_id=args.node_key_id,
+        node_private_key_path=args.node_private_key_path,
+        lease_ttl_seconds=args.lease_ttl_seconds,
+        heartbeat_ttl_seconds=args.heartbeat_ttl_seconds,
+        heartbeat_interval_seconds=args.heartbeat_interval_seconds,
         artifact_root=args.artifact_root,
         output_dir=args.output_dir,
         repo_url=args.repo_url,
@@ -597,41 +858,367 @@ def _find_contribution_reference(
     return None
 
 
-def _run_runner_command(command: str, cwd: Path, timeout_seconds: int, log_path: Path) -> RunnerCommandResult:
-    started_at = time.monotonic()
+def _resolve_worker_network_config(
+    *,
+    node_id: str | None,
+    node_key_id: str | None,
+    node_private_key_path: str | None,
+    window_seconds: int,
+    heartbeat_ttl_seconds: int | None,
+    heartbeat_interval_seconds: float | None,
+    lease_ttl_seconds: int | None,
+    release_lease_on_exit: bool,
+) -> WorkerNetworkConfig | None:
+    coordination_args = {
+        "node_id": node_id,
+        "node_key_id": node_key_id,
+        "node_private_key_path": node_private_key_path,
+    }
+    provided = {name for name, value in coordination_args.items() if value is not None}
+    if not provided:
+        return None
+    if len(provided) != len(coordination_args):
+        missing = ", ".join(sorted(set(coordination_args) - provided))
+        raise ValueError(f"signed worker coordination requires node_id, node_key_id, and node_private_key_path; missing {missing}")
+
+    resolved_heartbeat_ttl = heartbeat_ttl_seconds or DEFAULT_HEARTBEAT_TTL_SECONDS
+    if resolved_heartbeat_ttl <= 0:
+        raise ValueError("heartbeat_ttl_seconds must be greater than zero")
+    resolved_heartbeat_interval = (
+        heartbeat_interval_seconds
+        if heartbeat_interval_seconds is not None
+        else max(1.0, resolved_heartbeat_ttl / 2.0)
+    )
+    if resolved_heartbeat_interval <= 0:
+        raise ValueError("heartbeat_interval_seconds must be greater than zero")
+    if resolved_heartbeat_interval >= resolved_heartbeat_ttl:
+        raise ValueError("heartbeat_interval_seconds must be less than heartbeat_ttl_seconds")
+    resolved_lease_ttl = lease_ttl_seconds or max(60, window_seconds + resolved_heartbeat_ttl)
+    if resolved_lease_ttl <= 0:
+        raise ValueError("lease_ttl_seconds must be greater than zero")
+
+    return WorkerNetworkConfig(
+        signer=load_local_node_signer(
+            node_id=str(node_id),
+            key_id=str(node_key_id),
+            private_key_path=str(node_private_key_path),
+        ),
+        lease_ttl_seconds=resolved_lease_ttl,
+        heartbeat_ttl_seconds=resolved_heartbeat_ttl,
+        heartbeat_interval_seconds=resolved_heartbeat_interval,
+        release_lease_on_exit=release_lease_on_exit,
+    )
+
+
+def _invoke_runner_command(
+    *,
+    run_command_fn: Callable[..., RunnerCommandResult],
+    command: str,
+    cwd: Path,
+    timeout_seconds: int,
+    log_path: Path,
+    on_activity_tick: Callable[[], object] | None,
+    activity_tick_seconds: float | None,
+) -> RunnerCommandResult:
+    supported_kwargs: dict[str, object] = {}
     try:
-        completed = subprocess.run(
+        signature = inspect.signature(run_command_fn)
+    except (TypeError, ValueError):
+        signature = None
+
+    if signature is not None:
+        parameters = signature.parameters.values()
+        accepts_kwargs = any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters)
+        if accepts_kwargs or "on_activity_tick" in signature.parameters:
+            supported_kwargs["on_activity_tick"] = on_activity_tick
+        if accepts_kwargs or "activity_tick_seconds" in signature.parameters:
+            supported_kwargs["activity_tick_seconds"] = activity_tick_seconds
+
+    return run_command_fn(
+        command,
+        cwd,
+        timeout_seconds,
+        log_path,
+        **supported_kwargs,
+    )
+
+
+def _sleep_with_activity_ticks(
+    *,
+    duration_seconds: float,
+    sleep_fn: Callable[[float], None],
+    on_activity_tick: Callable[[], object] | None,
+    activity_tick_seconds: float | None,
+) -> None:
+    remaining_seconds = duration_seconds
+    if remaining_seconds <= 0:
+        return
+    if on_activity_tick is None or activity_tick_seconds is None or activity_tick_seconds <= 0:
+        sleep_fn(remaining_seconds)
+        return
+
+    while remaining_seconds > 0:
+        sleep_seconds = min(activity_tick_seconds, remaining_seconds)
+        sleep_fn(sleep_seconds)
+        remaining_seconds = max(0.0, remaining_seconds - sleep_seconds)
+        if remaining_seconds > 0:
+            on_activity_tick()
+
+
+def _worker_planner_fingerprint(
+    *,
+    effort_id: str,
+    objective: str,
+    platform: str,
+    budget_seconds: int,
+) -> str:
+    fingerprint_payload = {
+        "objective": objective,
+        "platform": platform,
+        "budget_seconds": budget_seconds,
+        "workspace_id": None,
+        "target_claim_id": None,
+        "action": LeaseWorkItemType.EXPLORE_EFFORT.value,
+        "inputs": {"effort_id": effort_id},
+        "work_item_type": LeaseWorkItemType.EXPLORE_EFFORT.value,
+        "subject_type": LeaseSubjectType.EFFORT.value,
+        "subject_id": effort_id,
+    }
+    return "sha256:" + hashlib.sha256(
+        json.dumps(
+            fingerprint_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _post_json(url: str, payload: dict[str, object]) -> dict[str, object]:
+    request = build_request(
+        url,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8"),
+    )
+    try:
+        with open_url(request, timeout=20.0) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        try:
+            decoded = json.loads(detail)
+            detail = str(decoded.get("detail") or decoded)
+        except json.JSONDecodeError:
+            pass
+        raise RuntimeError(f"{request.method} {url} failed with HTTP {exc.code}: {detail}") from exc
+
+
+def _acquire_worker_lease(
+    *,
+    base_url: str,
+    signer: LocalNodeSigner,
+    request_id: str,
+    effort_id: str,
+    objective: str,
+    platform: str,
+    budget_seconds: int,
+    planner_fingerprint: str,
+    lease_ttl_seconds: int,
+) -> dict[str, object]:
+    sent_at = datetime.now(timezone.utc)
+    payload = {
+        "command_schema": "openintention-lease-command-v1",
+        "command_version": 1,
+        "request_id": request_id,
+        "node_id": signer.node_id,
+        "planner_fingerprint": planner_fingerprint,
+        "ttl_seconds": lease_ttl_seconds,
+        "participant_role": ParticipantRole.CONTRIBUTOR.value,
+        "work_item_type": LeaseWorkItemType.EXPLORE_EFFORT.value,
+        "subject_type": LeaseSubjectType.EFFORT.value,
+        "subject_id": effort_id,
+        "effort_id": effort_id,
+        "objective": objective,
+        "platform": platform,
+        "budget_seconds": budget_seconds,
+    }
+    envelope = build_signed_envelope(
+        signer=signer,
+        message_type=NetworkMessageType.LEASE_ACQUIRE,
+        payload_schema="openintention-lease-command-v1",
+        payload=payload,
+        request_id=request_id,
+        envelope_id=f"env-{request_id}",
+        sent_at=sent_at,
+        expires_at=sent_at + timedelta(seconds=max(lease_ttl_seconds, 60)),
+        replay_window_seconds=max(lease_ttl_seconds, 60),
+        trace_id=request_id,
+    )
+    return _post_json(f"{base_url.rstrip('/')}/api/v1/leases/acquire", envelope)
+
+
+def _emit_worker_heartbeat(
+    *,
+    base_url: str,
+    signer: LocalNodeSigner,
+    request_id: str,
+    heartbeat_ttl_seconds: int,
+) -> dict[str, object]:
+    sent_at = datetime.now(timezone.utc)
+    payload = {
+        "heartbeat_schema": "openintention-node-heartbeat-v1",
+        "heartbeat_version": 1,
+        "request_id": request_id,
+        "node_id": signer.node_id,
+        "ttl_seconds": heartbeat_ttl_seconds,
+    }
+    envelope = build_signed_envelope(
+        signer=signer,
+        message_type=NetworkMessageType.NODE_HEARTBEAT,
+        payload_schema="openintention-node-heartbeat-v1",
+        payload=payload,
+        request_id=request_id,
+        envelope_id=f"env-{request_id}",
+        sent_at=sent_at,
+        expires_at=sent_at + timedelta(seconds=heartbeat_ttl_seconds),
+        replay_window_seconds=heartbeat_ttl_seconds,
+        trace_id=request_id,
+    )
+    return _post_json(
+        f"{base_url.rstrip('/')}/api/v1/network/heartbeats",
+        envelope,
+    )
+
+
+def _release_worker_lease(
+    *,
+    base_url: str,
+    signer: LocalNodeSigner,
+    lease_id: str,
+    request_id: str,
+) -> dict[str, object]:
+    sent_at = datetime.now(timezone.utc)
+    payload = {
+        "command_schema": "openintention-lease-command-v1",
+        "command_version": 1,
+        "request_id": request_id,
+        "node_id": signer.node_id,
+        "lease_id": lease_id,
+    }
+    envelope = build_signed_envelope(
+        signer=signer,
+        message_type=NetworkMessageType.LEASE_RELEASE,
+        payload_schema="openintention-lease-command-v1",
+        payload=payload,
+        request_id=request_id,
+        envelope_id=f"env-{request_id}",
+        sent_at=sent_at,
+        expires_at=sent_at + timedelta(seconds=60),
+        replay_window_seconds=60,
+        trace_id=request_id,
+    )
+    return _post_json(
+        f"{base_url.rstrip('/')}/api/v1/leases/{lease_id}/release",
+        envelope,
+    )
+
+
+def _fail_worker_lease(
+    *,
+    base_url: str,
+    signer: LocalNodeSigner,
+    lease_id: str,
+    request_id: str,
+    failure_reason: str,
+) -> dict[str, object]:
+    sent_at = datetime.now(timezone.utc)
+    payload = {
+        "command_schema": "openintention-lease-command-v1",
+        "command_version": 1,
+        "request_id": request_id,
+        "node_id": signer.node_id,
+        "lease_id": lease_id,
+        "failure_reason": failure_reason,
+    }
+    envelope = build_signed_envelope(
+        signer=signer,
+        message_type=NetworkMessageType.LEASE_FAIL,
+        payload_schema="openintention-lease-command-v1",
+        payload=payload,
+        request_id=request_id,
+        envelope_id=f"env-{request_id}",
+        sent_at=sent_at,
+        expires_at=sent_at + timedelta(seconds=60),
+        replay_window_seconds=60,
+        trace_id=request_id,
+    )
+    return _post_json(
+        f"{base_url.rstrip('/')}/api/v1/leases/{lease_id}/fail",
+        envelope,
+    )
+
+
+def _run_runner_command(
+    command: str,
+    cwd: Path,
+    timeout_seconds: int,
+    log_path: Path,
+    *,
+    on_activity_tick: Callable[[], object] | None = None,
+    activity_tick_seconds: float | None = None,
+) -> RunnerCommandResult:
+    started_at = time.monotonic()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("w", encoding="utf-8") as log_file:
+        process = subprocess.Popen(
             command,
             cwd=cwd,
             shell=True,
             executable="/bin/bash",
-            check=False,
-            stdout=subprocess.PIPE,
+            stdout=log_file,
             stderr=subprocess.STDOUT,
             text=True,
-            timeout=timeout_seconds,
         )
-        duration_seconds = time.monotonic() - started_at
-        output = completed.stdout or ""
-        log_path.write_text(output, encoding="utf-8")
-        return RunnerCommandResult(
-            status="success" if completed.returncode == 0 else "failed",
-            duration_seconds=duration_seconds,
-            exit_code=completed.returncode,
-            output=output,
-            log_path=str(log_path),
-        )
-    except subprocess.TimeoutExpired as exc:
-        duration_seconds = time.monotonic() - started_at
-        output = (exc.stdout or "") + (exc.stderr or "")
-        log_path.write_text(output, encoding="utf-8")
-        return RunnerCommandResult(
-            status="timed_out",
-            duration_seconds=duration_seconds,
-            exit_code=None,
-            output=output,
-            log_path=str(log_path),
-        )
+        try:
+            tick_seconds = activity_tick_seconds if activity_tick_seconds is not None and activity_tick_seconds > 0 else 1.0
+            while True:
+                elapsed_seconds = time.monotonic() - started_at
+                remaining_timeout = timeout_seconds - elapsed_seconds
+                if remaining_timeout <= 0:
+                    process.kill()
+                    process.wait()
+                    duration_seconds = time.monotonic() - started_at
+                    output = log_path.read_text(encoding="utf-8")
+                    return RunnerCommandResult(
+                        status="timed_out",
+                        duration_seconds=duration_seconds,
+                        exit_code=None,
+                        output=output,
+                        log_path=str(log_path),
+                    )
+                wait_timeout = min(tick_seconds, remaining_timeout)
+                try:
+                    process.wait(timeout=wait_timeout)
+                    break
+                except subprocess.TimeoutExpired:
+                    if on_activity_tick is not None:
+                        on_activity_tick()
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+
+    duration_seconds = time.monotonic() - started_at
+    output = log_path.read_text(encoding="utf-8")
+    return RunnerCommandResult(
+        status="success" if process.returncode == 0 else "failed",
+        duration_seconds=duration_seconds,
+        exit_code=process.returncode,
+        output=output,
+        log_path=str(log_path),
+    )
 
 
 def _resolve_repo_url(repo_root: Path) -> str:

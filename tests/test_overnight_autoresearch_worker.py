@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import base64
 from pathlib import Path
+import sys
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from scripts.run_overnight_autoresearch_worker import (
     OvernightWorkerIteration,
     OvernightWorkerResult,
     RunnerCommandResult,
+    _run_runner_command,
     build_overnight_worker_report,
     execute_overnight_autoresearch_worker,
 )
@@ -337,3 +342,196 @@ def test_execute_overnight_worker_stops_when_window_elapses(monkeypatch, tmp_pat
 
     assert result.loops_completed == 1
     assert result.stop_reason == "window_elapsed"
+
+
+def test_run_runner_command_calls_activity_tick_while_command_runs(tmp_path: Path) -> None:
+    tick_markers: list[str] = []
+
+    result = _run_runner_command(
+        f"{sys.executable} -c \"import time; time.sleep(0.25); print('done')\"",
+        tmp_path,
+        5,
+        tmp_path / "runner.log",
+        on_activity_tick=lambda: tick_markers.append("tick"),
+        activity_tick_seconds=0.05,
+    )
+
+    assert result.status == "success"
+    assert result.exit_code == 0
+    assert "done" in result.output
+    assert tick_markers
+
+
+def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    effort = {
+        "effort_id": "effort-mlx",
+        "name": "MLX History Sprint: improve val_bpb on Apple Silicon",
+        "objective": "val_bpb",
+        "platform": "A100",
+        "budget_seconds": 300,
+    }
+    results_path = tmp_path / "results.tsv"
+    private_key = Ed25519PrivateKey.generate()
+    private_key_path = tmp_path / "worker-node.key"
+    private_key_path.write_text(
+        base64.b64encode(private_key.private_bytes_raw()).decode("ascii"),
+        encoding="utf-8",
+    )
+
+    acquire_calls: list[dict[str, object]] = []
+    heartbeat_calls: list[dict[str, object]] = []
+    release_calls: list[dict[str, object]] = []
+    fail_calls: list[str] = []
+
+    class FakeApi:
+        def __init__(self) -> None:
+            self.workspaces: list[dict[str, object]] = []
+
+        def list_workspaces(self, effort_id: str | None = None) -> list[dict[str, object]]:
+            return list(self.workspaces)
+
+    fake_api = FakeApi()
+
+    def fake_run_command(
+        command: str,
+        cwd: Path,
+        timeout_seconds: int,
+        log_path: Path,
+        *,
+        on_activity_tick=None,
+        activity_tick_seconds=None,
+    ) -> RunnerCommandResult:
+        assert cwd == tmp_path
+        assert timeout_seconds == 20
+        assert activity_tick_seconds == 6
+        results_path.write_text(
+            "\n".join(
+                [
+                    "commit\tval_bpb\tmemory_gb\tstatus\tdescription",
+                    "383abb4\t2.667000\t26.9\tkeep\tbaseline",
+                    "4161af3\t2.533728\t26.9\tkeep\tincrease matrix LR to 0.04",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        if on_activity_tick is not None:
+            on_activity_tick()
+            on_activity_tick()
+        log_path.write_text("worker loop", encoding="utf-8")
+        return RunnerCommandResult(
+            status="success",
+            duration_seconds=4.0,
+            exit_code=0,
+            output="worker loop",
+            log_path=str(log_path),
+        )
+
+    def fake_import_contribution(
+        api,
+        *,
+        effort_id: str,
+        actor_id: str,
+        workspace_name: str,
+        baseline,
+        candidate,
+        repo_url: str,
+        artifact_root,
+        workspace_tags=None,
+        event_tags=None,
+    ) -> ImportedContribution:
+        workspace_id = f"workspace-{candidate.commit}"
+        api.workspaces.append(
+            {
+                "workspace_id": workspace_id,
+                "name": f"{workspace_name}-{candidate.commit}",
+                "actor_id": actor_id,
+                "claim_ids": [f"claim-{candidate.commit}"],
+                "run_ids": [f"run-{candidate.commit}"],
+                "tags": {
+                    "external_harness": "mlx-history",
+                    "candidate_commit": candidate.commit,
+                    "baseline_commit": baseline.commit,
+                    **(workspace_tags or {}),
+                },
+            }
+        )
+        return ImportedContribution(
+            actor_id=actor_id,
+            workspace_id=workspace_id,
+            workspace_name=workspace_name,
+            baseline_commit=baseline.commit,
+            candidate_commit=candidate.commit,
+            claim_id=f"claim-{candidate.commit}",
+            run_id=f"run-{candidate.commit}",
+            metric_value=candidate.val_bpb,
+            delta=candidate.val_bpb - baseline.val_bpb,
+        )
+
+    def fake_get_json(url: str):
+        if "frontiers" in url:
+            return {"members": [{"snapshot_id": "snap-4161af3"}]}
+        return [{"workspace_id": "workspace-4161af3", "claim_id": "claim-4161af3"}]
+
+    monkeypatch.setattr("scripts.run_overnight_autoresearch_worker.HttpResearchOSApi", lambda base_url: fake_api)
+    monkeypatch.setattr("scripts.run_overnight_autoresearch_worker._ensure_effort", lambda api, base_url: effort)
+    monkeypatch.setattr("scripts.run_overnight_autoresearch_worker._import_contribution", fake_import_contribution)
+    monkeypatch.setattr("scripts.run_overnight_autoresearch_worker._record_adoption", lambda *args, **kwargs: "adopt-1")
+    monkeypatch.setattr("scripts.run_overnight_autoresearch_worker._get_json", fake_get_json)
+    monkeypatch.setattr(
+        "scripts.run_overnight_autoresearch_worker._acquire_worker_lease",
+        lambda **kwargs: acquire_calls.append(kwargs) or {"lease_id": "lease-1", "status": "acquired"},
+    )
+    monkeypatch.setattr(
+        "scripts.run_overnight_autoresearch_worker._emit_worker_heartbeat",
+        lambda **kwargs: heartbeat_calls.append(kwargs) or {"node_id": kwargs["signer"].node_id},
+    )
+    monkeypatch.setattr(
+        "scripts.run_overnight_autoresearch_worker._release_worker_lease",
+        lambda **kwargs: release_calls.append(kwargs) or {"lease_id": kwargs["lease_id"], "status": "released"},
+    )
+    monkeypatch.setattr(
+        "scripts.run_overnight_autoresearch_worker._fail_worker_lease",
+        lambda **kwargs: fail_calls.append(kwargs["failure_reason"]) or {"lease_id": kwargs["lease_id"], "status": "failed"},
+    )
+
+    result = execute_overnight_autoresearch_worker(
+        base_url="https://api.openintention.io",
+        site_url="https://openintention.io",
+        repo_path=str(tmp_path),
+        runner_command="python3 agent.py",
+        actor_id="aliargun",
+        window_seconds=60,
+        interval_seconds=0,
+        max_loops=1,
+        command_timeout_seconds=300,
+        budget_cap_seconds=20,
+        node_id="node_testworkercoord0001",
+        node_key_id="key-worker-1",
+        node_private_key_path=str(private_key_path),
+        lease_ttl_seconds=90,
+        heartbeat_ttl_seconds=12,
+        heartbeat_interval_seconds=6,
+        artifact_root=str(tmp_path / "artifacts"),
+        repo_url="https://github.com/example/mlx-history",
+        results_path="results.tsv",
+        log_root=tmp_path / "logs",
+        run_command_fn=fake_run_command,
+    )
+
+    assert result.loops_completed == 1
+    assert result.imported_iterations == 1
+    assert result.coordination is not None
+    assert result.coordination.node_id == "node_testworkercoord0001"
+    assert result.coordination.lease_id == "lease-1"
+    assert result.coordination.lease_status == "released"
+    assert result.coordination.heartbeat_count >= 4
+    assert acquire_calls[0]["lease_ttl_seconds"] == 90
+    assert len(heartbeat_calls) >= 4
+    assert len(release_calls) == 1
+    assert release_calls[0]["lease_id"] == "lease-1"
+    assert release_calls[0]["signer"].node_id == "node_testworkercoord0001"
+    assert release_calls[0]["request_id"].startswith("node_testworkercoord0001-")
+    assert not fail_calls

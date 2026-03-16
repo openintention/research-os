@@ -497,6 +497,9 @@ This path is intentionally separate from the seeded nightly contribution window:
 - `scripts/run_overnight_autoresearch_worker.py` is the advanced external-harness path
 - both are bounded by explicit time/loop limits; neither is a mesh or always-on daemon
 
+If you also pass `--node-id`, `--node-key-id`, and `--node-private-key-path`, the worker acquires
+one signed effort lease and emits signed heartbeats while active work is running.
+
 ## External MLX Compounding Proof
 
 The stronger post-v1 proof is not just multi-party shared state. It is compounding progress
