@@ -61,6 +61,14 @@ Linear is the canonical planning system for this repository.
 - Do not create local planning files unless explicitly asked.
 - At the end of each task, post verification results and the next recommended issue in Linear.
 
+## Verification discipline
+
+- Nothing is done until the relevant end-to-end verification for the affected surface has passed.
+- Compiling, static review, or "looks good" checks do not count as done.
+- Tests alone do not count when the changed surface is hosted, public, worker-facing, or observer-visible.
+- Use the smallest applicable verification threshold from `docs/verification-gate.md`, then add any stronger live proof required by the change.
+- Do not move a Linear issue to `Done` without posting the verification result that satisfies this bar.
+
 ## Coding conventions
 
 - Keep Python 3.11 compatibility.
