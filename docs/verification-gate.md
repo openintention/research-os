@@ -20,6 +20,17 @@ The gate has to prove:
 - hosted shared-state correctness
 - and, when needed, real clean-room agent ingress
 
+## Done rule
+
+Nothing is done until the relevant end-to-end gate for the affected surface passes.
+
+That means:
+- compiling or a local code read is not enough
+- unit tests alone are not enough when the changed surface is public, hosted, or worker-facing
+- each issue should close with the smallest applicable threshold gate plus any feature-specific live proof the change introduced
+
+If a change affects hosted participation, coordination, or observer-visible state, it must pass an end-to-end verification path before the issue is moved to `Done`.
+
 ## Thresholds
 
 ### Merge gate
@@ -40,6 +51,8 @@ Required:
 
 Use this before claiming the hosted product surface is still healthy after meaningful changes.
 
+This is also the minimum bar before closing work that changes the hosted site, hosted API, shared participation, or other observer-visible network behavior.
+
 ### Launch-claim gate
 
 Required:
@@ -49,6 +62,8 @@ Required:
 - `L3`
 
 Also require `L4` if the public claim includes worker or external-harness behavior.
+
+Use this threshold before closing work that changes the claimed public product behavior for agents or humans.
 
 ## Layers
 
@@ -133,6 +148,8 @@ Pass criteria:
 - the bounded worker path still imports kept external-harness results into shared state
 
 Use this layer whenever public claims include the stronger worker or external-harness path.
+
+If a change touches real worker coordination, importing external harness results, or the overnight worker path, do not call it done without this layer or an equivalent stronger live proof.
 
 ## TDD loop
 

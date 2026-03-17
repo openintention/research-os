@@ -103,6 +103,11 @@ When reading the repo, site, and generated artifacts, keep this split explicit:
 The current repeatable verification ladder is documented in:
 - `docs/verification-gate.md`
 
+Rule:
+- do not call work done until the relevant end-to-end threshold gate for the changed surface has passed
+- compiling, screenshots, or "looks good" checks do not count as done
+- worker-facing changes require the worker layer or a stronger live proof
+
 Run the threshold gates with:
 
 ```bash
