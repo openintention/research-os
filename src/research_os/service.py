@@ -1206,10 +1206,16 @@ class ResearchOSService:
             return None
         return self._build_lease_observation(lease, now_iso=now_iso)
 
-    def list_lease_observations(self, *, status: LeaseState | None = None) -> list[LeaseObservation]:
+    def list_lease_observations(
+        self,
+        *,
+        status: LeaseState | None = None,
+        effort_id: str | None = None,
+    ) -> list[LeaseObservation]:
         now_iso = self.now_fn().isoformat()
         leases = self.lease_store.list(
             status=status.value if status is not None else None,
+            effort_id=effort_id,
             now_iso=now_iso,
         )
         return [self._build_lease_observation(lease, now_iso=now_iso) for lease in leases]

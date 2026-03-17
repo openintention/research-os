@@ -3,8 +3,10 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from apps.site.server import _build_effort_proof
+from apps.site.server import _build_effort_worker_coordination
 from apps.site.server import _participant_visibility_summary
 from apps.site.server import create_site_app
+from research_os.domain.models import LeaseObservation
 from research_os.domain.models import WorkspaceView
 
 
@@ -308,6 +310,53 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
                     }
                 ]
             }
+        if path == "/api/v1/leases":
+            assert query == {"effort_id": "effort-mlx"}
+            return [
+                {
+                    "lease": {
+                        "lease_id": "lease-worker-1",
+                        "lease_schema": "openintention-lease-v1",
+                        "lease_version": 1,
+                        "work_item_type": "explore_effort",
+                        "participant_role": "contributor",
+                        "subject_type": "effort",
+                        "subject_id": "effort-mlx",
+                        "effort_id": "effort-mlx",
+                        "objective": "val_bpb",
+                        "platform": "Apple-Silicon-MLX",
+                        "budget_seconds": 300,
+                        "planner_fingerprint": "sha256:" + "b" * 64,
+                        "holder_node_id": "node_mlxworkerproof01",
+                        "holder_workspace_id": None,
+                        "status": "released",
+                        "max_duration_seconds": 120,
+                        "renewal_count": 1,
+                        "acquired_at": "2026-03-11T13:47:20Z",
+                        "renewed_at": "2026-03-11T13:47:28Z",
+                        "released_at": "2026-03-11T13:47:31Z",
+                        "completed_at": None,
+                        "failed_at": None,
+                        "failure_reason": None,
+                        "observed_run_id": None,
+                        "observed_claim_id": None,
+                        "stale_completion": False,
+                        "expires_at": "2026-03-11T13:47:50Z",
+                    },
+                    "liveness_status": "not_applicable",
+                    "holder_heartbeat": {
+                        "heartbeat_schema": "openintention-node-heartbeat-v1",
+                        "heartbeat_version": 1,
+                        "request_id": "heartbeat-worker-1",
+                        "node_id": "node_mlxworkerproof01",
+                        "ttl_seconds": 12,
+                        "sent_at": "2026-03-11T13:47:29Z",
+                        "observed_at": "2026-03-11T13:47:29Z",
+                        "expires_at": "2026-03-11T13:47:41Z",
+                        "freshness_status": "stale",
+                    },
+                }
+            ]
         raise AssertionError(f"unexpected path: {path}")
 
     monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
@@ -344,6 +393,12 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "Latest public handoff" in response.text
     assert "Who is involved" in response.text
     assert "People and agents visible on this effort" in response.text
+    assert "Worker coordination" in response.text
+    assert "Worker liveness and lease state on this effort" in response.text
+    assert "No worker is active right now" in response.text
+    assert "Open lease observation" in response.text
+    assert "node_mlxworkerproof01" in response.text
+    assert "not applicable" in response.text
     assert "worker import" in response.text
     assert "first visible" in response.text
     assert "Recent handoffs" in response.text
@@ -432,6 +487,66 @@ def test_build_effort_proof_tracks_participant_visibility_summary():
     assert (
         _participant_visibility_summary(proof, scope_label="proof series")
         == "This proof series currently shows 2 visible participants, all visible in the current window, 1 through worker import, 1 acting as verifier, 1 returning contributor, and 1 first-time visible contributor."
+    )
+
+
+def test_build_effort_worker_coordination_summarizes_released_worker_windows():
+    coordination = _build_effort_worker_coordination(
+        [
+            LeaseObservation.model_validate(
+                {
+                    "lease": {
+                        "lease_id": "lease-worker-1",
+                        "lease_schema": "openintention-lease-v1",
+                        "lease_version": 1,
+                        "work_item_type": "explore_effort",
+                        "participant_role": "contributor",
+                        "subject_type": "effort",
+                        "subject_id": "effort-1",
+                        "effort_id": "effort-1",
+                        "objective": "val_bpb",
+                        "platform": "Apple-Silicon-MLX",
+                        "budget_seconds": 300,
+                        "planner_fingerprint": "sha256:" + "c" * 64,
+                        "holder_node_id": "node_workerproofsummary01",
+                        "holder_workspace_id": None,
+                        "status": "released",
+                        "max_duration_seconds": 120,
+                        "renewal_count": 1,
+                        "acquired_at": "2026-03-17T05:47:34Z",
+                        "renewed_at": "2026-03-17T05:47:39Z",
+                        "released_at": "2026-03-17T05:47:41Z",
+                        "completed_at": None,
+                        "failed_at": None,
+                        "failure_reason": None,
+                        "observed_run_id": None,
+                        "observed_claim_id": None,
+                        "stale_completion": False,
+                        "expires_at": "2026-03-17T05:47:47Z",
+                    },
+                    "liveness_status": "not_applicable",
+                    "holder_heartbeat": {
+                        "heartbeat_schema": "openintention-node-heartbeat-v1",
+                        "heartbeat_version": 1,
+                        "request_id": "heartbeat-worker-1",
+                        "node_id": "node_workerproofsummary01",
+                        "ttl_seconds": 12,
+                        "sent_at": "2026-03-17T05:47:40Z",
+                        "observed_at": "2026-03-17T05:47:40Z",
+                        "expires_at": "2026-03-17T05:47:52Z",
+                        "freshness_status": "stale",
+                    },
+                }
+            )
+        ]
+    )
+
+    assert coordination.active_count == 0
+    assert coordination.released_count == 1
+    assert coordination.latest_observation is not None
+    assert (
+        coordination.summary_line
+        == "1 worker lease window has touched this effort. No worker is active right now; node_workerproofsummary01 left its latest lease in status released after 1 renewal. The last observed heartbeat is stale."
     )
 
 
@@ -638,6 +753,9 @@ def test_site_server_carries_forward_proof_series_context_for_fresh_successor(mo
                     }
                 ]
             }
+        if path == "/api/v1/leases":
+            assert query == {"effort_id": "effort-current"}
+            return []
         raise AssertionError(f"unexpected path: {path}")
 
     monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
@@ -700,6 +818,8 @@ def test_site_server_prefers_private_fetch_base_without_leaking_it(monkeypatch, 
             return []
         if path == "/api/v1/frontiers/val_bpb/A100":
             return {"members": []}
+        if path == "/api/v1/leases":
+            return []
         raise AssertionError(path)
 
     monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)

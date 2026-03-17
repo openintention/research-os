@@ -198,8 +198,11 @@ def create_app(
         return service.recommend_next(request)
 
     @app.get("/api/v1/leases", response_model=list[LeaseObservation])
-    def list_leases(status: LeaseState | None = Query(default=None)) -> list[LeaseObservation]:
-        return service.list_lease_observations(status=status)
+    def list_leases(
+        status: LeaseState | None = Query(default=None),
+        effort_id: str | None = Query(default=None),
+    ) -> list[LeaseObservation]:
+        return service.list_lease_observations(status=status, effort_id=effort_id)
 
     @app.get("/api/v1/leases/{lease_id}", response_model=LeaseObservation)
     def get_lease(lease_id: str) -> LeaseObservation:

@@ -113,16 +113,28 @@ class SQLiteLeaseStore:
             self._expire_due_leases(conn, now_iso=now_iso)
             return self._get_with_connection(conn, lease_id)
 
-    def list(self, *, status: str | None = None, now_iso: str) -> list[Lease]:
+    def list(
+        self,
+        *,
+        status: str | None = None,
+        effort_id: str | None = None,
+        now_iso: str,
+    ) -> list[Lease]:
         with self._connect() as conn:
             self._expire_due_leases(conn, now_iso=now_iso)
             sql = "SELECT * FROM leases"
-            params: tuple[object, ...] = ()
+            where_clauses: list[str] = []
+            params: list[object] = []
             if status is not None:
-                sql += " WHERE status = ?"
-                params = (status,)
+                where_clauses.append("status = ?")
+                params.append(status)
+            if effort_id is not None:
+                where_clauses.append("effort_id = ?")
+                params.append(effort_id)
+            if where_clauses:
+                sql += " WHERE " + " AND ".join(where_clauses)
             sql += " ORDER BY acquired_at DESC, lease_id DESC"
-            rows = conn.execute(sql, params).fetchall()
+            rows = conn.execute(sql, tuple(params)).fetchall()
             return [self._lease_from_row(row) for row in rows]
 
     def find_live(

@@ -49,6 +49,28 @@ def _create_workspace(
     return response.json()["workspace_id"]
 
 
+def _create_effort(
+    client: TestClient,
+    *,
+    name: str,
+    objective: str = "val_bpb",
+    platform: str = "A100",
+    budget_seconds: int = 300,
+) -> str:
+    response = client.post(
+        "/api/v1/efforts",
+        json={
+            "name": name,
+            "objective": objective,
+            "platform": platform,
+            "budget_seconds": budget_seconds,
+            "actor_id": "lease-test",
+        },
+    )
+    assert response.status_code == 201
+    return response.json()["effort_id"]
+
+
 def _append_snapshot(client: TestClient, *, workspace_id: str, snapshot_id: str) -> None:
     response = client.post(
         "/api/v1/events",
@@ -274,6 +296,63 @@ def test_lease_endpoints_bind_to_planner_work_items_and_are_idempotent(tmp_path)
     failed = fail_response.json()
     assert failed["status"] == "failed"
     assert failed["failure_reason"] == "worker crashed before publishing verifier evidence"
+
+
+def test_list_leases_can_filter_by_effort_id(tmp_path) -> None:
+    clock = MutableClock(datetime(2026, 3, 16, tzinfo=timezone.utc))
+    client = _create_client(tmp_path, clock=clock)
+    effort_alpha = _create_effort(client, name="effort alpha")
+    effort_beta = _create_effort(client, name="effort beta")
+
+    alpha_response = client.post(
+        "/api/v1/leases/acquire",
+        json={
+            "request_id": "lease-effort-alpha-1",
+            "node_id": "node_effortworkeralpha01",
+            "planner_fingerprint": "sha256:" + "a" * 64,
+            "ttl_seconds": 120,
+            "participant_role": "contributor",
+            "work_item_type": "explore_effort",
+            "subject_type": "effort",
+            "subject_id": effort_alpha,
+            "effort_id": effort_alpha,
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+        },
+    )
+    assert alpha_response.status_code == 200
+
+    beta_response = client.post(
+        "/api/v1/leases/acquire",
+        json={
+            "request_id": "lease-effort-beta-1",
+            "node_id": "node_effortworkerbeta01",
+            "planner_fingerprint": "sha256:" + "b" * 64,
+            "ttl_seconds": 120,
+            "participant_role": "contributor",
+            "work_item_type": "explore_effort",
+            "subject_type": "effort",
+            "subject_id": effort_beta,
+            "effort_id": effort_beta,
+            "objective": "val_bpb",
+            "platform": "A100",
+            "budget_seconds": 300,
+        },
+    )
+    assert beta_response.status_code == 200
+
+    filtered_response = client.get(f"/api/v1/leases?effort_id={effort_alpha}")
+    assert filtered_response.status_code == 200
+    body = filtered_response.json()
+    assert len(body) == 1
+    assert body[0]["lease"]["effort_id"] == effort_alpha
+    assert body[0]["lease"]["subject_id"] == effort_alpha
+    assert body[0]["liveness_status"] == "missing"
+
+    unfiltered_response = client.get("/api/v1/leases")
+    assert unfiltered_response.status_code == 200
+    assert len(unfiltered_response.json()) == 2
 
 
 def test_expired_verifier_lease_cannot_renew_but_late_lineage_still_counts(tmp_path) -> None:

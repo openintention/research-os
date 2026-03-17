@@ -21,6 +21,9 @@ from research_os.domain.models import EffortView
 from research_os.domain.models import EventEnvelope
 from research_os.domain.models import EventKind
 from research_os.domain.models import FrontierMember
+from research_os.domain.models import LeaseLivenessStatus
+from research_os.domain.models import LeaseObservation
+from research_os.domain.models import LeaseState
 from research_os.domain.models import WorkspaceView
 from research_os.edge_bootstrap import render_edge_bootstrap_script
 from research_os.http import build_request
@@ -53,6 +56,21 @@ class ParticipantSpotlight:
     adoption_count: int
     has_worker_handoff: bool
     has_verifier_handoff: bool
+
+
+@dataclass(frozen=True, slots=True)
+class EffortWorkerCoordination:
+    observations: list[LeaseObservation]
+    active_count: int
+    healthy_count: int
+    stale_count: int
+    missing_count: int
+    released_count: int
+    completed_count: int
+    failed_count: int
+    expired_count: int
+    latest_observation: LeaseObservation | None
+    summary_line: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,6 +196,14 @@ def create_site_app(
             f"/api/v1/frontiers/{quote(effort.objective)}/{quote(effort.platform)}",
             query={"budget_seconds": effort.budget_seconds},
         )
+        lease_observations = [
+            LeaseObservation.model_validate(item)
+            for item in _fetch_json(
+                normalized_fetch_api_base_url,
+                "/api/v1/leases",
+                query={"effort_id": effort_id},
+            )
+        ]
         proof_surface = _build_effort_proof_surface_context(
             api_base_url=normalized_fetch_api_base_url,
             effort=effort,
@@ -192,6 +218,7 @@ def create_site_app(
             effort=effort,
             proof_surface=proof_surface,
             frontier=frontier,
+            lease_observations=lease_observations,
         )
 
     return app
@@ -366,6 +393,7 @@ def _effort_detail_html(
     effort: EffortView,
     proof_surface: EffortProofSurfaceContext,
     frontier: dict[str, object],
+    lease_observations: list[LeaseObservation],
 ) -> str:
     current_workspace_models = proof_surface.current_workspaces
     current_claim_models = proof_surface.current_claims
@@ -387,12 +415,23 @@ def _effort_detail_html(
         current_workspace_ids=current_workspace_ids,
         scope_label="proof series" if proof_surface.carries_forward else "effort",
     )
+    worker_coordination = _build_effort_worker_coordination(lease_observations)
+    show_worker_coordination = bool(worker_coordination.observations) or any(
+        _workspace_is_worker_origin(workspace) for workspace in display_workspace_models
+    )
     participant_cards = "\n".join(
         _render_participant_spotlight(
             spotlight,
             public_api_base_url=public_api_base_url,
         )
         for spotlight in proof.participant_spotlights[:6]
+    )
+    worker_cards = "\n".join(
+        _render_worker_coordination_card(
+            observation,
+            public_api_base_url=public_api_base_url,
+        )
+        for observation in worker_coordination.observations[:4]
     )
     recent_handoffs = "\n".join(
         _render_recent_handoff(
@@ -433,6 +472,30 @@ def _effort_detail_html(
         if proof_surface.carries_forward
         else "This lower section keeps the raw state visible for agents and technical users without making ids the first thing a human sees."
     )
+    worker_coordination_section = ""
+    if show_worker_coordination:
+        worker_coordination_section = f"""
+        <section class="panel">
+          <div class="eyebrow">Worker coordination</div>
+          <h2>Worker liveness and lease state on this effort</h2>
+          <p class="section-lede">{escape(worker_coordination.summary_line)}</p>
+          <ul class="state-pills proof-stat-pills">
+            <li><span>Observed leases</span><code>{len(worker_coordination.observations)}</code></li>
+            <li><span>Active</span><code>{worker_coordination.active_count}</code></li>
+            <li><span>Healthy</span><code>{worker_coordination.healthy_count}</code></li>
+            <li><span>Stale</span><code>{worker_coordination.stale_count}</code></li>
+            <li><span>Missing</span><code>{worker_coordination.missing_count}</code></li>
+            {'<li><span>Released</span><code>%s</code></li>' % worker_coordination.released_count if worker_coordination.released_count else ''}
+            {'<li><span>Completed</span><code>%s</code></li>' % worker_coordination.completed_count if worker_coordination.completed_count else ''}
+            {'<li><span>Failed</span><code>%s</code></li>' % worker_coordination.failed_count if worker_coordination.failed_count else ''}
+            {'<li><span>Expired</span><code>%s</code></li>' % worker_coordination.expired_count if worker_coordination.expired_count else ''}
+          </ul>
+          <div class="handoff-grid">
+            {worker_cards or '<p>No worker lease observations are visible on this effort yet.</p>'}
+          </div>
+          <p class="footer-note">This panel is derived from lease observations and signed node heartbeats on the hosted control plane.</p>
+        </section>
+        """
     return _page_html(
         str(effort.name),
         f"""
@@ -546,6 +609,8 @@ def _effort_detail_html(
             {participant_cards or '<p>No participants are visible yet. Use the join command above to leave the first hosted handoff.</p>'}
           </div>
         </section>
+
+        {worker_coordination_section}
 
         <section class="panel">
           <div class="eyebrow">Recent handoffs</div>
@@ -918,6 +983,198 @@ def _participant_visibility_summary(proof: EffortProof, *, scope_label: str) -> 
     else:
         lead = bits[0]
     return f"This {scope_label} currently shows {lead}."
+
+
+def _build_effort_worker_coordination(
+    observations: list[LeaseObservation],
+) -> EffortWorkerCoordination:
+    sorted_observations = sorted(
+        observations,
+        key=_lease_sort_key,
+        reverse=True,
+    )
+    active_count = sum(
+        1
+        for observation in sorted_observations
+        if observation.lease.status in {LeaseState.ACQUIRED, LeaseState.RENEWED}
+    )
+    healthy_count = sum(
+        1 for observation in sorted_observations if observation.liveness_status is LeaseLivenessStatus.HEALTHY
+    )
+    stale_count = sum(
+        1 for observation in sorted_observations if observation.liveness_status is LeaseLivenessStatus.STALE
+    )
+    missing_count = sum(
+        1 for observation in sorted_observations if observation.liveness_status is LeaseLivenessStatus.MISSING
+    )
+    released_count = sum(
+        1 for observation in sorted_observations if observation.lease.status is LeaseState.RELEASED
+    )
+    completed_count = sum(
+        1 for observation in sorted_observations if observation.lease.status is LeaseState.COMPLETED
+    )
+    failed_count = sum(
+        1 for observation in sorted_observations if observation.lease.status is LeaseState.FAILED
+    )
+    expired_count = sum(
+        1 for observation in sorted_observations if observation.lease.status is LeaseState.EXPIRED
+    )
+    latest_observation = sorted_observations[0] if sorted_observations else None
+
+    if not sorted_observations:
+        summary_line = (
+            "No worker lease or heartbeat state is visible on this effort yet."
+        )
+    elif active_count:
+        bits = [f"{active_count} active worker lease{'s' if active_count != 1 else ''}"]
+        if healthy_count:
+            bits.append(f"{healthy_count} healthy")
+        if stale_count:
+            bits.append(f"{stale_count} stale")
+        if missing_count:
+            bits.append(f"{missing_count} still waiting for a heartbeat")
+        lead = ", ".join(bits[:-1])
+        if len(bits) > 1:
+            lead = f"{lead}, and {bits[-1]}" if lead else bits[-1]
+        else:
+            lead = bits[0]
+        summary_line = f"This effort currently has {lead}."
+    else:
+        latest_node = latest_observation.lease.holder_node_id or "the latest worker"
+        latest_status = latest_observation.lease.status.value
+        renewal_note = (
+            f" after {latest_observation.lease.renewal_count} renewal"
+            f"{'s' if latest_observation.lease.renewal_count != 1 else ''}"
+            if latest_observation.lease.renewal_count
+            else ""
+        )
+        heartbeat_note = ""
+        if latest_observation.holder_heartbeat is None:
+            heartbeat_note = " No heartbeat was observed for that lease."
+        else:
+            heartbeat_note = (
+                f" The last observed heartbeat is {latest_observation.holder_heartbeat.freshness_status.value}."
+            )
+        summary_line = (
+            f"{len(sorted_observations)} worker lease window"
+            f"{'s have' if len(sorted_observations) != 1 else ' has'} touched this effort. "
+            f"No worker is active right now; {latest_node} left its latest lease in status {latest_status}{renewal_note}."
+            f"{heartbeat_note}"
+        )
+
+    return EffortWorkerCoordination(
+        observations=sorted_observations,
+        active_count=active_count,
+        healthy_count=healthy_count,
+        stale_count=stale_count,
+        missing_count=missing_count,
+        released_count=released_count,
+        completed_count=completed_count,
+        failed_count=failed_count,
+        expired_count=expired_count,
+        latest_observation=latest_observation,
+        summary_line=summary_line,
+    )
+
+
+def _render_worker_coordination_card(
+    observation: LeaseObservation,
+    *,
+    public_api_base_url: str,
+) -> str:
+    lease = observation.lease
+    raw_url = f"{public_api_base_url}/api/v1/leases/{quote(lease.lease_id)}"
+    discussion_url = (
+        f"{public_api_base_url}/api/v1/publications/workspaces/{quote(lease.holder_workspace_id)}/discussion"
+        if lease.holder_workspace_id
+        else None
+    )
+    latest_change = _lease_latest_timestamp(observation)
+    latest_change_line = (
+        f"Latest change <code>{escape(_format_timestamp(latest_change))}</code>"
+        if latest_change is not None
+        else "Latest change time unavailable"
+    )
+    heartbeat_line = (
+        f"Heartbeat <code>{escape(_format_timestamp(observation.holder_heartbeat.observed_at))}</code>"
+        if observation.holder_heartbeat is not None
+        else "No heartbeat observed"
+    )
+    links = [f'<a href="{escape(raw_url)}">Open lease observation</a>']
+    if discussion_url is not None:
+        links.insert(0, f'<a href="{escape(discussion_url)}">View workspace discussion</a>')
+    return f"""
+    <article class="result-summary-card handoff-card">
+      <div class="effort-type">Worker lease</div>
+      <h3>{escape(lease.holder_node_id or "unknown worker")}</h3>
+      <p class="summary-headline">{escape(_worker_lease_summary(observation))}</p>
+      <ul class="state-pills compact">
+        <li><span>Status</span><code>{escape(_display_token(lease.status.value))}</code></li>
+        <li><span>Liveness</span><code>{escape(_display_token(observation.liveness_status.value))}</code></li>
+        <li><span>Work item</span><code>{escape(_display_token(lease.work_item_type.value))}</code></li>
+        <li><span>Subject</span><code>{escape(_lease_subject_label(observation))}</code></li>
+        <li><span>Renewals</span><code>{lease.renewal_count}</code></li>
+        <li><span>Heartbeat</span><code>{escape(_display_token(observation.holder_heartbeat.freshness_status.value if observation.holder_heartbeat is not None else 'none'))}</code></li>
+      </ul>
+      <p class="handoff-meta">
+        Lease <code>{escape(_short_id(lease.lease_id))}</code> · {latest_change_line} · {heartbeat_line}
+      </p>
+      <div class="card-links">
+        {' '.join(links)}
+      </div>
+    </article>
+    """
+
+
+def _worker_lease_summary(observation: LeaseObservation) -> str:
+    lease = observation.lease
+    subject_label = _lease_subject_label(observation)
+    if lease.status in {LeaseState.ACQUIRED, LeaseState.RENEWED}:
+        if observation.liveness_status is LeaseLivenessStatus.HEALTHY:
+            return f"Currently holding a {lease.work_item_type.value} lease on {subject_label} with healthy heartbeats."
+        if observation.liveness_status is LeaseLivenessStatus.MISSING:
+            return f"Holds a {lease.work_item_type.value} lease on {subject_label}, but no heartbeat has been observed yet."
+        return f"Still holds a {lease.work_item_type.value} lease on {subject_label}, but the latest heartbeat is stale."
+    if lease.status is LeaseState.RELEASED:
+        return f"Released a {lease.work_item_type.value} lease on {subject_label}."
+    if lease.status is LeaseState.COMPLETED:
+        return f"Completed a {lease.work_item_type.value} lease on {subject_label}."
+    if lease.status is LeaseState.FAILED:
+        return f"Failed a {lease.work_item_type.value} lease on {subject_label}: {_trim_sentence(lease.failure_reason or 'no failure reason recorded', limit=120)}"
+    if lease.status is LeaseState.EXPIRED:
+        return f"The {lease.work_item_type.value} lease on {subject_label} expired before a clean release."
+    return f"Observed a {lease.work_item_type.value} lease on {subject_label}."
+
+
+def _lease_subject_label(observation: LeaseObservation) -> str:
+    lease = observation.lease
+    if lease.subject_type.value == "effort" and lease.effort_id == lease.subject_id:
+        return "this effort"
+    return f"{lease.subject_type.value}:{_short_id(lease.subject_id)}"
+
+
+def _lease_sort_key(observation: LeaseObservation):
+    latest = _lease_latest_timestamp(observation)
+    return (
+        observation.lease.status in {LeaseState.ACQUIRED, LeaseState.RENEWED},
+        latest or observation.lease.expires_at,
+    )
+
+
+def _lease_latest_timestamp(observation: LeaseObservation):
+    timestamps = [
+        observation.lease.failed_at,
+        observation.lease.completed_at,
+        observation.lease.released_at,
+        observation.lease.renewed_at,
+        observation.lease.acquired_at,
+        observation.holder_heartbeat.observed_at if observation.holder_heartbeat is not None else None,
+    ]
+    return max((timestamp for timestamp in timestamps if timestamp is not None), default=None)
+
+
+def _display_token(value: str) -> str:
+    return value.replace("_", " ")
 
 
 def _render_workspace_proof_meta(workspace: WorkspaceView, *, is_current_window: bool) -> str:
