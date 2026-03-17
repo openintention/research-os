@@ -76,8 +76,12 @@ class WorkerCoordinationSummary:
     node_id: str
     lease_id: str
     lease_status: str | None
+    renewal_count: int
+    latest_renewed_at: str | None
+    latest_expires_at: str | None
     heartbeat_count: int
     lease_ttl_seconds: int
+    lease_renewal_interval_seconds: float
     heartbeat_ttl_seconds: int
     heartbeat_interval_seconds: float
     lease_observation_url: str
@@ -129,6 +133,7 @@ class OvernightWorkerResult:
 class WorkerNetworkConfig:
     signer: LocalNodeSigner
     lease_ttl_seconds: int
+    lease_renewal_interval_seconds: float
     heartbeat_ttl_seconds: int
     heartbeat_interval_seconds: float
     release_lease_on_exit: bool
@@ -141,15 +146,21 @@ class WorkerLeaseSession:
         base_url: str,
         effort: dict[str, object],
         network: WorkerNetworkConfig,
+        monotonic_fn: Callable[[], float] = time.monotonic,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.effort = effort
         self.network = network
         self.lease_id: str | None = None
         self.final_lease_status: str | None = None
+        self.renewal_count = 0
+        self.latest_renewed_at: str | None = None
+        self.latest_expires_at: str | None = None
         self.heartbeat_count = 0
         self._request_prefix = f"{network.signer.node_id}-{uuid4().hex[:12]}"
         self._sequence = 0
+        self._monotonic_fn = monotonic_fn
+        self._next_renewal_at: float | None = None
 
     def acquire(self) -> str:
         response = _acquire_worker_lease(
@@ -169,7 +180,8 @@ class WorkerLeaseSession:
             lease_ttl_seconds=self.network.lease_ttl_seconds,
         )
         self.lease_id = str(response["lease_id"])
-        self.final_lease_status = str(response.get("status") or "acquired")
+        self._record_lease_state(response)
+        self._schedule_next_renewal()
         return self.lease_id
 
     def emit_heartbeat(self) -> dict[str, object]:
@@ -180,6 +192,21 @@ class WorkerLeaseSession:
             heartbeat_ttl_seconds=self.network.heartbeat_ttl_seconds,
         )
         self.heartbeat_count += 1
+        self._renew_if_due()
+        return response
+
+    def renew(self) -> dict[str, object] | None:
+        if self.lease_id is None:
+            return None
+        response = _renew_worker_lease(
+            base_url=self.base_url,
+            signer=self.network.signer,
+            lease_id=self.lease_id,
+            request_id=self._next_request_id("lease-renew"),
+            lease_ttl_seconds=self.network.lease_ttl_seconds,
+        )
+        self._record_lease_state(response)
+        self._schedule_next_renewal()
         return response
 
     def release(self) -> dict[str, object] | None:
@@ -191,7 +218,7 @@ class WorkerLeaseSession:
             lease_id=self.lease_id,
             request_id=self._next_request_id("lease-release"),
         )
-        self.final_lease_status = str(response.get("status") or "released")
+        self._record_lease_state(response)
         return response
 
     def fail(self, failure_reason: str) -> dict[str, object] | None:
@@ -204,7 +231,7 @@ class WorkerLeaseSession:
             request_id=self._next_request_id("lease-fail"),
             failure_reason=failure_reason,
         )
-        self.final_lease_status = str(response.get("status") or "failed")
+        self._record_lease_state(response)
         return response
 
     def summary(self) -> WorkerCoordinationSummary | None:
@@ -214,8 +241,12 @@ class WorkerLeaseSession:
             node_id=self.network.signer.node_id,
             lease_id=self.lease_id,
             lease_status=self.final_lease_status,
+            renewal_count=self.renewal_count,
+            latest_renewed_at=self.latest_renewed_at,
+            latest_expires_at=self.latest_expires_at,
             heartbeat_count=self.heartbeat_count,
             lease_ttl_seconds=self.network.lease_ttl_seconds,
+            lease_renewal_interval_seconds=self.network.lease_renewal_interval_seconds,
             heartbeat_ttl_seconds=self.network.heartbeat_ttl_seconds,
             heartbeat_interval_seconds=self.network.heartbeat_interval_seconds,
             lease_observation_url=f"{self.base_url}/api/v1/leases/{self.lease_id}",
@@ -224,6 +255,29 @@ class WorkerLeaseSession:
     def _next_request_id(self, kind: str) -> str:
         self._sequence += 1
         return f"{self._request_prefix}-{kind}-{self._sequence:04d}"
+
+    def _record_lease_state(self, response: dict[str, object]) -> None:
+        self.final_lease_status = str(response.get("status") or self.final_lease_status or "unknown")
+        renewal_count = response.get("renewal_count")
+        if isinstance(renewal_count, int):
+            self.renewal_count = renewal_count
+        renewed_at = response.get("renewed_at")
+        self.latest_renewed_at = str(renewed_at) if renewed_at else self.latest_renewed_at
+        expires_at = response.get("expires_at")
+        self.latest_expires_at = str(expires_at) if expires_at else self.latest_expires_at
+
+    def _schedule_next_renewal(self) -> None:
+        if self.lease_id is None:
+            self._next_renewal_at = None
+            return
+        self._next_renewal_at = self._monotonic_fn() + self.network.lease_renewal_interval_seconds
+
+    def _renew_if_due(self) -> None:
+        if self.lease_id is None or self._next_renewal_at is None:
+            return
+        if self._monotonic_fn() < self._next_renewal_at:
+            return
+        self.renew()
 
 
 def run_overnight_autoresearch_worker(
@@ -359,6 +413,7 @@ def execute_overnight_autoresearch_worker(
         base_url=normalized_base_url,
         effort=effort,
         network=worker_network,
+        monotonic_fn=monotonic_fn,
     ) if worker_network is not None else None
     deadline = monotonic_fn() + window_seconds
     total_runner_seconds = 0.0
@@ -590,8 +645,12 @@ def build_overnight_worker_report(result: OvernightWorkerResult) -> str:
             f"- Node: `{result.coordination.node_id}`",
             f"- Lease: `{result.coordination.lease_id}`",
             f"- Lease status: `{result.coordination.lease_status or 'unknown'}`",
+            f"- Lease renewals: `{result.coordination.renewal_count}`",
+            f"- Latest renewed at: `{result.coordination.latest_renewed_at or 'n/a'}`",
+            f"- Lease expires at: `{result.coordination.latest_expires_at or 'n/a'}`",
             f"- Heartbeats sent: `{result.coordination.heartbeat_count}`",
             f"- Lease TTL seconds: `{result.coordination.lease_ttl_seconds}`",
+            f"- Lease renewal interval seconds: `{result.coordination.lease_renewal_interval_seconds}`",
             f"- Heartbeat TTL seconds: `{result.coordination.heartbeat_ttl_seconds}`",
             f"- Heartbeat interval seconds: `{result.coordination.heartbeat_interval_seconds}`",
             f"- Lease observation: `{result.coordination.lease_observation_url}`",
@@ -879,7 +938,10 @@ def _resolve_worker_network_config(
         return None
     if len(provided) != len(coordination_args):
         missing = ", ".join(sorted(set(coordination_args) - provided))
-        raise ValueError(f"signed worker coordination requires node_id, node_key_id, and node_private_key_path; missing {missing}")
+        raise ValueError(
+            "signed worker coordination requires node_id, node_key_id, and "
+            f"node_private_key_path; missing {missing}"
+        )
 
     resolved_heartbeat_ttl = heartbeat_ttl_seconds or DEFAULT_HEARTBEAT_TTL_SECONDS
     if resolved_heartbeat_ttl <= 0:
@@ -893,9 +955,15 @@ def _resolve_worker_network_config(
         raise ValueError("heartbeat_interval_seconds must be greater than zero")
     if resolved_heartbeat_interval >= resolved_heartbeat_ttl:
         raise ValueError("heartbeat_interval_seconds must be less than heartbeat_ttl_seconds")
-    resolved_lease_ttl = lease_ttl_seconds or max(60, window_seconds + resolved_heartbeat_ttl)
+    resolved_lease_ttl = lease_ttl_seconds or max(60, resolved_heartbeat_ttl * 6)
     if resolved_lease_ttl <= 0:
         raise ValueError("lease_ttl_seconds must be greater than zero")
+    if resolved_lease_ttl <= resolved_heartbeat_interval:
+        raise ValueError("lease_ttl_seconds must be greater than heartbeat_interval_seconds")
+    resolved_lease_renewal_interval = max(
+        resolved_heartbeat_interval,
+        resolved_lease_ttl / 2.0,
+    )
 
     return WorkerNetworkConfig(
         signer=load_local_node_signer(
@@ -904,6 +972,7 @@ def _resolve_worker_network_config(
             private_key_path=str(node_private_key_path),
         ),
         lease_ttl_seconds=resolved_lease_ttl,
+        lease_renewal_interval_seconds=resolved_lease_renewal_interval,
         heartbeat_ttl_seconds=resolved_heartbeat_ttl,
         heartbeat_interval_seconds=resolved_heartbeat_interval,
         release_lease_on_exit=release_lease_on_exit,
@@ -1088,6 +1157,41 @@ def _emit_worker_heartbeat(
     )
     return _post_json(
         f"{base_url.rstrip('/')}/api/v1/network/heartbeats",
+        envelope,
+    )
+
+
+def _renew_worker_lease(
+    *,
+    base_url: str,
+    signer: LocalNodeSigner,
+    lease_id: str,
+    request_id: str,
+    lease_ttl_seconds: int,
+) -> dict[str, object]:
+    sent_at = datetime.now(timezone.utc)
+    payload = {
+        "command_schema": "openintention-lease-command-v1",
+        "command_version": 1,
+        "request_id": request_id,
+        "node_id": signer.node_id,
+        "lease_id": lease_id,
+        "ttl_seconds": lease_ttl_seconds,
+    }
+    envelope = build_signed_envelope(
+        signer=signer,
+        message_type=NetworkMessageType.LEASE_RENEW,
+        payload_schema="openintention-lease-command-v1",
+        payload=payload,
+        request_id=request_id,
+        envelope_id=f"env-{request_id}",
+        sent_at=sent_at,
+        expires_at=sent_at + timedelta(seconds=max(lease_ttl_seconds, 60)),
+        replay_window_seconds=max(lease_ttl_seconds, 60),
+        trace_id=request_id,
+    )
+    return _post_json(
+        f"{base_url.rstrip('/')}/api/v1/leases/{lease_id}/renew",
         envelope,
     )
 

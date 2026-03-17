@@ -498,7 +498,8 @@ This path is intentionally separate from the seeded nightly contribution window:
 - both are bounded by explicit time/loop limits; neither is a mesh or always-on daemon
 
 If you also pass `--node-id`, `--node-key-id`, and `--node-private-key-path`, the worker acquires
-one signed effort lease and emits signed heartbeats while active work is running.
+one signed effort lease, renews it in bounded increments while it stays healthy, and emits signed
+heartbeats while active work is running.
 
 ## External MLX Compounding Proof
 

@@ -10,6 +10,7 @@ from scripts.run_overnight_autoresearch_worker import (
     OvernightWorkerIteration,
     OvernightWorkerResult,
     RunnerCommandResult,
+    _resolve_worker_network_config,
     _run_runner_command,
     build_overnight_worker_report,
     execute_overnight_autoresearch_worker,
@@ -362,7 +363,33 @@ def test_run_runner_command_calls_activity_tick_while_command_runs(tmp_path: Pat
     assert tick_markers
 
 
-def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
+def test_resolve_worker_network_config_uses_bounded_default_lease_ttl(tmp_path: Path) -> None:
+    private_key = Ed25519PrivateKey.generate()
+    private_key_path = tmp_path / "worker-node.key"
+    private_key_path.write_text(
+        base64.b64encode(private_key.private_bytes_raw()).decode("ascii"),
+        encoding="utf-8",
+    )
+
+    config = _resolve_worker_network_config(
+        node_id="node_testworkercoord0001",
+        node_key_id="key-worker-1",
+        node_private_key_path=str(private_key_path),
+        window_seconds=3600,
+        heartbeat_ttl_seconds=None,
+        heartbeat_interval_seconds=None,
+        lease_ttl_seconds=None,
+        release_lease_on_exit=True,
+    )
+
+    assert config is not None
+    assert config.heartbeat_ttl_seconds == 30
+    assert config.heartbeat_interval_seconds == 15
+    assert config.lease_ttl_seconds == 180
+    assert config.lease_renewal_interval_seconds == 90
+
+
+def test_execute_overnight_worker_emits_signed_heartbeats_renews_lease_and_releases(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
@@ -382,9 +409,11 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
     )
 
     acquire_calls: list[dict[str, object]] = []
+    renew_calls: list[dict[str, object]] = []
     heartbeat_calls: list[dict[str, object]] = []
     release_calls: list[dict[str, object]] = []
     fail_calls: list[str] = []
+    monotonic_state = {"now": 0.0}
 
     class FakeApi:
         def __init__(self) -> None:
@@ -406,7 +435,7 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
     ) -> RunnerCommandResult:
         assert cwd == tmp_path
         assert timeout_seconds == 20
-        assert activity_tick_seconds == 6
+        assert activity_tick_seconds == 2
         results_path.write_text(
             "\n".join(
                 [
@@ -418,7 +447,9 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
             encoding="utf-8",
         )
         if on_activity_tick is not None:
+            monotonic_state["now"] = 6.0
             on_activity_tick()
+            monotonic_state["now"] = 8.0
             on_activity_tick()
         log_path.write_text("worker loop", encoding="utf-8")
         return RunnerCommandResult(
@@ -482,7 +513,22 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
     monkeypatch.setattr("scripts.run_overnight_autoresearch_worker._get_json", fake_get_json)
     monkeypatch.setattr(
         "scripts.run_overnight_autoresearch_worker._acquire_worker_lease",
-        lambda **kwargs: acquire_calls.append(kwargs) or {"lease_id": "lease-1", "status": "acquired"},
+        lambda **kwargs: acquire_calls.append(kwargs) or {
+            "lease_id": "lease-1",
+            "status": "acquired",
+            "renewal_count": 0,
+            "expires_at": "2026-03-17T00:00:10Z",
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.run_overnight_autoresearch_worker._renew_worker_lease",
+        lambda **kwargs: renew_calls.append(kwargs) or {
+            "lease_id": kwargs["lease_id"],
+            "status": "renewed",
+            "renewal_count": 1,
+            "renewed_at": "2026-03-17T00:00:06Z",
+            "expires_at": "2026-03-17T00:00:16Z",
+        },
     )
     monkeypatch.setattr(
         "scripts.run_overnight_autoresearch_worker._emit_worker_heartbeat",
@@ -490,7 +536,13 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
     )
     monkeypatch.setattr(
         "scripts.run_overnight_autoresearch_worker._release_worker_lease",
-        lambda **kwargs: release_calls.append(kwargs) or {"lease_id": kwargs["lease_id"], "status": "released"},
+        lambda **kwargs: release_calls.append(kwargs) or {
+            "lease_id": kwargs["lease_id"],
+            "status": "released",
+            "renewal_count": 1,
+            "renewed_at": "2026-03-17T00:00:06Z",
+            "expires_at": "2026-03-17T00:00:16Z",
+        },
     )
     monkeypatch.setattr(
         "scripts.run_overnight_autoresearch_worker._fail_worker_lease",
@@ -511,13 +563,14 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
         node_id="node_testworkercoord0001",
         node_key_id="key-worker-1",
         node_private_key_path=str(private_key_path),
-        lease_ttl_seconds=90,
+        lease_ttl_seconds=12,
         heartbeat_ttl_seconds=12,
-        heartbeat_interval_seconds=6,
+        heartbeat_interval_seconds=2,
         artifact_root=str(tmp_path / "artifacts"),
         repo_url="https://github.com/example/mlx-history",
         results_path="results.tsv",
         log_root=tmp_path / "logs",
+        monotonic_fn=lambda: monotonic_state["now"],
         run_command_fn=fake_run_command,
     )
 
@@ -527,11 +580,21 @@ def test_execute_overnight_worker_emits_signed_heartbeats_and_releases_lease(
     assert result.coordination.node_id == "node_testworkercoord0001"
     assert result.coordination.lease_id == "lease-1"
     assert result.coordination.lease_status == "released"
+    assert result.coordination.renewal_count == 1
+    assert result.coordination.latest_renewed_at == "2026-03-17T00:00:06Z"
+    assert result.coordination.latest_expires_at == "2026-03-17T00:00:16Z"
     assert result.coordination.heartbeat_count >= 4
-    assert acquire_calls[0]["lease_ttl_seconds"] == 90
+    assert acquire_calls[0]["lease_ttl_seconds"] == 12
+    assert len(renew_calls) == 1
+    assert renew_calls[0]["lease_id"] == "lease-1"
+    assert renew_calls[0]["lease_ttl_seconds"] == 12
     assert len(heartbeat_calls) >= 4
     assert len(release_calls) == 1
     assert release_calls[0]["lease_id"] == "lease-1"
     assert release_calls[0]["signer"].node_id == "node_testworkercoord0001"
     assert release_calls[0]["request_id"].startswith("node_testworkercoord0001-")
     assert not fail_calls
+
+    report = build_overnight_worker_report(result)
+    assert "Lease renewals" in report
+    assert "Lease expires at" in report
