@@ -42,9 +42,27 @@ class ProgressMilestone:
 
 
 @dataclass(frozen=True, slots=True)
+class ParticipantSpotlight:
+    actor: str
+    latest_workspace: WorkspaceView
+    workspace_count: int
+    current_window_workspace_count: int
+    run_count: int
+    claim_count: int
+    reproduction_count: int
+    adoption_count: int
+    has_worker_handoff: bool
+    has_verifier_handoff: bool
+
+
+@dataclass(frozen=True, slots=True)
 class EffortProof:
     contributor_count: int
+    current_window_participant_count: int
+    new_arrival_count: int
     repeat_contributor_count: int
+    worker_contributor_count: int
+    verifier_contributor_count: int
     visible_handoff_count: int
     successful_run_count: int
     claim_count: int
@@ -55,6 +73,8 @@ class EffortProof:
     progress_milestones: list[ProgressMilestone]
     summary_line: str
     latest_handoff_line: str
+    actor_workspace_counts: dict[str, int]
+    participant_spotlights: list[ParticipantSpotlight]
 
 
 @dataclass(frozen=True, slots=True)
@@ -360,16 +380,26 @@ def _effort_detail_html(
     workspace_actor_map = {
         workspace.workspace_id: workspace.actor_id or "unknown" for workspace in display_workspace_models
     }
+    current_workspace_ids = {workspace.workspace_id for workspace in current_workspace_models}
     proof = _build_effort_proof(
         display_workspace_models,
         proof_surface.display_workspace_events,
+        current_workspace_ids=current_workspace_ids,
         scope_label="proof series" if proof_surface.carries_forward else "effort",
+    )
+    participant_cards = "\n".join(
+        _render_participant_spotlight(
+            spotlight,
+            public_api_base_url=public_api_base_url,
+        )
+        for spotlight in proof.participant_spotlights[:6]
     )
     recent_handoffs = "\n".join(
         _render_recent_handoff(
             workspace,
             public_api_base_url=public_api_base_url,
-            is_current_window=workspace.workspace_id in {item.workspace_id for item in current_workspace_models},
+            is_current_window=workspace.workspace_id in current_workspace_ids,
+            is_repeat_contributor=proof.actor_workspace_counts.get(workspace.actor_id or "unknown", 0) > 1,
         )
         for workspace in display_workspace_models[:6]
     )
@@ -380,7 +410,6 @@ def _effort_detail_html(
     next_move = _next_move_summary(effort, display_claim_models, frontier_members, workspace_actor_map)
     progress_items = "\n".join(_render_progress_milestone(step) for step in proof.progress_milestones)
     latest_workspace = proof.latest_workspace
-    current_workspace_ids = {workspace.workspace_id for workspace in current_workspace_models}
     carried_workspace_count = len(display_workspace_models) - len(current_workspace_models)
     proof_summary_line = proof.summary_line
     if proof_surface.carries_forward and not current_workspace_models:
@@ -510,6 +539,15 @@ def _effort_detail_html(
         </section>
 
         <section class="panel">
+          <div class="eyebrow">Who is involved</div>
+          <h2>People and agents visible on this effort</h2>
+          <p class="section-lede">{escape(_participant_visibility_summary(proof, scope_label="proof series" if proof_surface.carries_forward else "effort"))}</p>
+          <div class="handoff-grid">
+            {participant_cards or '<p>No participants are visible yet. Use the join command above to leave the first hosted handoff.</p>'}
+          </div>
+        </section>
+
+        <section class="panel">
           <div class="eyebrow">Recent handoffs</div>
           <h2>Work the next person can continue</h2>
           <p class="section-lede">These are the most recent hosted contributions. Each one links back to a discussion mirror and leaves behind enough evidence for the next participant to inspect or extend.</p>
@@ -546,6 +584,7 @@ def _render_recent_handoff(
     *,
     public_api_base_url: str,
     is_current_window: bool,
+    is_repeat_contributor: bool,
 ) -> str:
     actor = workspace.actor_id or "unknown"
     discussion_url = (
@@ -559,6 +598,8 @@ def _render_recent_handoff(
       <ul class="state-pills compact">
         <li><span>Window</span><code>{'current' if is_current_window else 'carried'}</code></li>
         <li><span>Role</span><code>{escape(str(workspace.participant_role))}</code></li>
+        <li><span>Origin</span><code>{escape(_workspace_origin_label(workspace))}</code></li>
+        <li><span>Pattern</span><code>{'repeat' if is_repeat_contributor else 'first visible'}</code></li>
         <li><span>Runs</span><code>{len(workspace.run_ids)}</code></li>
         <li><span>Claims</span><code>{len(workspace.claim_ids)}</code></li>
         <li><span>Reproductions</span><code>{workspace.reproduction_count}</code></li>
@@ -578,9 +619,15 @@ def _build_effort_proof(
     workspaces: list[WorkspaceView],
     workspace_events: dict[str, list[EventEnvelope]],
     *,
+    current_workspace_ids: set[str],
     scope_label: str = "effort",
 ) -> EffortProof:
     actor_counts = Counter(workspace.actor_id or "unknown" for workspace in workspaces)
+    current_window_actor_counts = Counter(
+        workspace.actor_id or "unknown"
+        for workspace in workspaces
+        if workspace.workspace_id in current_workspace_ids
+    )
     visible_handoffs = sum(
         1
         for workspace in workspaces
@@ -599,10 +646,34 @@ def _build_effort_proof(
     progress_milestones = _build_progress_milestones(successful_runs)
 
     contributor_count = len(actor_counts)
+    current_window_participant_count = len(current_window_actor_counts)
+    new_arrival_count = sum(1 for count in actor_counts.values() if count == 1)
     repeat_contributor_count = sum(1 for count in actor_counts.values() if count > 1)
+    worker_contributor_count = sum(
+        1
+        for actor in actor_counts
+        if any(
+            _workspace_is_worker_origin(workspace)
+            for workspace in workspaces
+            if (workspace.actor_id or "unknown") == actor
+        )
+    )
+    verifier_contributor_count = sum(
+        1
+        for actor in actor_counts
+        if any(
+            str(workspace.participant_role) == "verifier"
+            for workspace in workspaces
+            if (workspace.actor_id or "unknown") == actor
+        )
+    )
     latest_workspace = workspaces[0] if workspaces else None
     latest_handoff_line = (
         _workspace_handoff_summary(latest_workspace) if latest_workspace is not None else "No public handoff yet."
+    )
+    participant_spotlights = _build_participant_spotlights(
+        workspaces,
+        current_workspace_ids=current_workspace_ids,
     )
     if contributor_count == 0:
         summary_line = (
@@ -635,7 +706,11 @@ def _build_effort_proof(
 
     return EffortProof(
         contributor_count=contributor_count,
+        current_window_participant_count=current_window_participant_count,
+        new_arrival_count=new_arrival_count,
         repeat_contributor_count=repeat_contributor_count,
+        worker_contributor_count=worker_contributor_count,
+        verifier_contributor_count=verifier_contributor_count,
         visible_handoff_count=visible_handoffs,
         successful_run_count=len(successful_runs),
         claim_count=event_counts[EventKind.CLAIM_ASSERTED.value],
@@ -646,6 +721,51 @@ def _build_effort_proof(
         progress_milestones=progress_milestones,
         summary_line=summary_line,
         latest_handoff_line=latest_handoff_line,
+        actor_workspace_counts=dict(actor_counts),
+        participant_spotlights=participant_spotlights,
+    )
+
+
+def _build_participant_spotlights(
+    workspaces: list[WorkspaceView],
+    *,
+    current_workspace_ids: set[str],
+) -> list[ParticipantSpotlight]:
+    workspaces_by_actor: dict[str, list[WorkspaceView]] = {}
+    for workspace in workspaces:
+        actor = workspace.actor_id or "unknown"
+        workspaces_by_actor.setdefault(actor, []).append(workspace)
+
+    spotlights: list[ParticipantSpotlight] = []
+    for actor, actor_workspaces in workspaces_by_actor.items():
+        latest_workspace = max(actor_workspaces, key=lambda item: item.updated_at)
+        spotlights.append(
+            ParticipantSpotlight(
+                actor=actor,
+                latest_workspace=latest_workspace,
+                workspace_count=len(actor_workspaces),
+                current_window_workspace_count=sum(
+                    1 for workspace in actor_workspaces if workspace.workspace_id in current_workspace_ids
+                ),
+                run_count=sum(len(workspace.run_ids) for workspace in actor_workspaces),
+                claim_count=sum(len(workspace.claim_ids) for workspace in actor_workspaces),
+                reproduction_count=sum(workspace.reproduction_count for workspace in actor_workspaces),
+                adoption_count=sum(workspace.adoption_count for workspace in actor_workspaces),
+                has_worker_handoff=any(_workspace_is_worker_origin(workspace) for workspace in actor_workspaces),
+                has_verifier_handoff=any(
+                    str(workspace.participant_role) == "verifier" for workspace in actor_workspaces
+                ),
+            )
+        )
+
+    return sorted(
+        spotlights,
+        key=lambda spotlight: (
+            spotlight.current_window_workspace_count > 0,
+            spotlight.workspace_count > 1,
+            spotlight.latest_workspace.updated_at,
+        ),
+        reverse=True,
     )
 
 
@@ -705,11 +825,107 @@ def _render_progress_milestone(step: ProgressMilestone) -> str:
     """
 
 
+def _render_participant_spotlight(
+    spotlight: ParticipantSpotlight,
+    *,
+    public_api_base_url: str,
+) -> str:
+    latest_workspace = spotlight.latest_workspace
+    discussion_url = (
+        f"{public_api_base_url}/api/v1/publications/workspaces/{quote(latest_workspace.workspace_id)}/discussion"
+    )
+    return f"""
+    <article class="result-summary-card handoff-card">
+      <div class="effort-type">{'Returning contributor' if spotlight.workspace_count > 1 else 'Visible participant'}</div>
+      <h3>{escape(spotlight.actor)}</h3>
+      <p class="summary-headline">{escape(_participant_spotlight_summary(spotlight))}</p>
+      <ul class="state-pills compact">
+        <li><span>Presence</span><code>{'current window' if spotlight.current_window_workspace_count else 'carried forward'}</code></li>
+        <li><span>Pattern</span><code>{'repeat' if spotlight.workspace_count > 1 else 'first visible'}</code></li>
+        <li><span>Latest role</span><code>{escape(str(latest_workspace.participant_role))}</code></li>
+        <li><span>Origin</span><code>{escape(_workspace_origin_label(latest_workspace))}</code></li>
+        <li><span>Workspaces</span><code>{spotlight.workspace_count}</code></li>
+        <li><span>Runs</span><code>{spotlight.run_count}</code></li>
+        <li><span>Claims</span><code>{spotlight.claim_count}</code></li>
+      </ul>
+      <p class="handoff-meta">
+        Latest workspace <code>{escape(_short_id(latest_workspace.workspace_id))}</code> · updated <code>{escape(_format_timestamp(latest_workspace.updated_at))}</code>
+      </p>
+      <div class="card-links">
+        <a href="{escape(discussion_url)}">View latest discussion</a>
+        <a href="#join-this-effort">Continue from this effort</a>
+      </div>
+    </article>
+    """
+
+
+def _participant_spotlight_summary(spotlight: ParticipantSpotlight) -> str:
+    parts = [
+        f"{spotlight.workspace_count} workspace{'s' if spotlight.workspace_count != 1 else ''}",
+        f"{spotlight.run_count} run{'s' if spotlight.run_count != 1 else ''}",
+    ]
+    if spotlight.claim_count:
+        parts.append(f"{spotlight.claim_count} claim{'s' if spotlight.claim_count != 1 else ''}")
+    if spotlight.reproduction_count:
+        parts.append(
+            f"{spotlight.reproduction_count} reproduction{'s' if spotlight.reproduction_count != 1 else ''}"
+        )
+    if spotlight.adoption_count:
+        parts.append(f"{spotlight.adoption_count} adoption{'s' if spotlight.adoption_count != 1 else ''}")
+
+    summary = ", ".join(parts[:-1])
+    if len(parts) > 1:
+        summary = f"{summary}, and {parts[-1]}" if summary else parts[-1]
+    else:
+        summary = parts[0]
+    return f"Visible through {summary} on this effort."
+
+
+def _participant_visibility_summary(proof: EffortProof, *, scope_label: str) -> str:
+    if proof.contributor_count == 0:
+        return (
+            f"No participants are visible on this {scope_label} yet. "
+            "The first newcomer can leave the initial hosted handoff."
+        )
+
+    bits = [f"{proof.contributor_count} visible participant{'s' if proof.contributor_count != 1 else ''}"]
+    if proof.current_window_participant_count == proof.contributor_count:
+        bits.append("all visible in the current window")
+    elif proof.current_window_participant_count:
+        bits.append(
+            f"{proof.current_window_participant_count} active in the current window"
+        )
+    if proof.worker_contributor_count:
+        bits.append(
+            f"{proof.worker_contributor_count} through worker import{'s' if proof.worker_contributor_count != 1 else ''}"
+        )
+    if proof.verifier_contributor_count:
+        bits.append(
+            f"{proof.verifier_contributor_count} acting as verifier{'s' if proof.verifier_contributor_count != 1 else ''}"
+        )
+    if proof.repeat_contributor_count:
+        bits.append(
+            f"{proof.repeat_contributor_count} returning contributor{'s' if proof.repeat_contributor_count != 1 else ''}"
+        )
+    if proof.new_arrival_count and proof.new_arrival_count != proof.contributor_count:
+        bits.append(
+            f"{proof.new_arrival_count} first-time visible contributor{'s' if proof.new_arrival_count != 1 else ''}"
+        )
+
+    lead = ", ".join(bits[:-1])
+    if len(bits) > 1:
+        lead = f"{lead}, and {bits[-1]}" if lead else bits[-1]
+    else:
+        lead = bits[0]
+    return f"This {scope_label} currently shows {lead}."
+
+
 def _render_workspace_proof_meta(workspace: WorkspaceView, *, is_current_window: bool) -> str:
     return f"""
     <ul class="state-pills compact">
       <li><span>Window</span><code>{'current' if is_current_window else 'carried'}</code></li>
       <li><span>Role</span><code>{escape(str(workspace.participant_role))}</code></li>
+      <li><span>Origin</span><code>{escape(_workspace_origin_label(workspace))}</code></li>
       <li><span>Path</span><code>{escape(_workspace_execution_label(workspace))}</code></li>
       <li><span>Runs</span><code>{len(workspace.run_ids)}</code></li>
       <li><span>Claims</span><code>{len(workspace.claim_ids)}</code></li>
@@ -889,6 +1105,24 @@ def _workspace_execution_label(workspace: WorkspaceView) -> str:
             return f"{harness}:{worker_mode}"
         return harness
     return "standard"
+
+
+def _workspace_origin_label(workspace: WorkspaceView) -> str:
+    if _workspace_is_worker_origin(workspace):
+        return "worker import"
+    if str(workspace.participant_role) == "verifier" and workspace.tags.get("simulated_contribution") == "true":
+        return "proxy verifier"
+    if str(workspace.participant_role) == "verifier":
+        return "verifier handoff"
+    if workspace.tags.get("simulated_contribution") == "true":
+        return "proxy loop"
+    if workspace.tags.get("external_harness"):
+        return "external harness"
+    return "hosted handoff"
+
+
+def _workspace_is_worker_origin(workspace: WorkspaceView) -> bool:
+    return bool(workspace.tags.get("worker_mode"))
 
 
 def _effort_state_label(effort) -> dict[str, str]:

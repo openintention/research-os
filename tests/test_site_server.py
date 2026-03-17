@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from apps.site.server import _build_effort_proof
+from apps.site.server import _participant_visibility_summary
 from apps.site.server import create_site_app
+from research_os.domain.models import WorkspaceView
 
 
 def test_site_server_serves_generated_index_and_evidence(tmp_path):
@@ -339,6 +342,10 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "mlx-history:overnight-autoresearch" in response.text
     assert "New best #1" in response.text
     assert "Latest public handoff" in response.text
+    assert "Who is involved" in response.text
+    assert "People and agents visible on this effort" in response.text
+    assert "worker import" in response.text
+    assert "first visible" in response.text
     assert "Recent handoffs" in response.text
     assert "Work the next person can continue" in response.text
     assert "mlx-beta" in response.text
@@ -346,6 +353,86 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "/api/v1/publications/workspaces/workspace-beta/discussion" in response.text
     assert "claim-beta" in response.text
     assert "snap-beta" in response.text
+
+
+def test_build_effort_proof_tracks_participant_visibility_summary():
+    workspaces = [
+        WorkspaceView.model_validate(
+            {
+                "workspace_id": "workspace-current",
+                "name": "current",
+                "actor_id": "repeat-actor",
+                "participant_role": "contributor",
+                "run_ids": ["run-current"],
+                "claim_ids": ["claim-current"],
+                "reproduction_count": 0,
+                "adoption_count": 0,
+                "objective": "val_bpb",
+                "platform": "A100",
+                "budget_seconds": 300,
+                "tags": {"external_harness": "mlx-history", "worker_mode": "overnight-autoresearch"},
+                "updated_at": "2026-03-17T10:00:00Z",
+            }
+        ),
+        WorkspaceView.model_validate(
+            {
+                "workspace_id": "workspace-carried",
+                "name": "carried",
+                "actor_id": "repeat-actor",
+                "participant_role": "verifier",
+                "run_ids": ["run-carried"],
+                "claim_ids": [],
+                "reproduction_count": 1,
+                "adoption_count": 0,
+                "objective": "val_bpb",
+                "platform": "A100",
+                "budget_seconds": 300,
+                "tags": {"simulated_contribution": "true"},
+                "updated_at": "2026-03-16T10:00:00Z",
+            }
+        ),
+        WorkspaceView.model_validate(
+            {
+                "workspace_id": "workspace-new",
+                "name": "new",
+                "actor_id": "new-actor",
+                "participant_role": "contributor",
+                "run_ids": ["run-new"],
+                "claim_ids": [],
+                "reproduction_count": 0,
+                "adoption_count": 0,
+                "objective": "val_bpb",
+                "platform": "A100",
+                "budget_seconds": 300,
+                "tags": {},
+                "updated_at": "2026-03-15T10:00:00Z",
+            }
+        ),
+    ]
+
+    proof = _build_effort_proof(
+        workspaces,
+        workspace_events={},
+        current_workspace_ids={"workspace-current", "workspace-new"},
+        scope_label="proof series",
+    )
+
+    assert proof.contributor_count == 2
+    assert proof.current_window_participant_count == 2
+    assert proof.repeat_contributor_count == 1
+    assert proof.worker_contributor_count == 1
+    assert proof.verifier_contributor_count == 1
+    assert proof.new_arrival_count == 1
+    assert [spotlight.actor for spotlight in proof.participant_spotlights] == [
+        "repeat-actor",
+        "new-actor",
+    ]
+    assert proof.participant_spotlights[0].workspace_count == 2
+    assert proof.participant_spotlights[0].has_worker_handoff is True
+    assert (
+        _participant_visibility_summary(proof, scope_label="proof series")
+        == "This proof series currently shows 2 visible participants, all visible in the current window, 1 through worker import, 1 acting as verifier, 1 returning contributor, and 1 first-time visible contributor."
+    )
 
 
 def test_site_server_carries_forward_proof_series_context_for_fresh_successor(monkeypatch, tmp_path):
