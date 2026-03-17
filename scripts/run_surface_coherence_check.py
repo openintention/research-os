@@ -68,16 +68,16 @@ REQUIRED_PHRASES = {
         "python3 scripts/run_surface_coherence_check.py",
     ],
     "apps/site/dist/index.html": [
-        "Hosted effort explorer is live",
-        "Snapshot evidence bundled",
+        "Live goal pages are real",
+        "Visible proof bundled",
         "Freshness model:",
-        "generated effort briefs packaged with this build",
+        "generated goal briefs packaged with this build",
         "Open deterministic join proof",
         "Open repeated hosted participation proof",
     ],
     "apps/site/dist/evidence/public-ingress-smoke.html": [
         "Deterministic smoke report",
-        "not a live effort counter",
+        "not a live goal counter",
     ],
     "apps/site/dist/evidence/repeated-external-participation.html": [
         "Hosted network proof",
@@ -85,11 +85,11 @@ REQUIRED_PHRASES = {
     ],
     "apps/site/dist/evidence/eval-effort.html": [
         "Generated snapshot",
-        "Use /efforts for live hosted state.",
+        "Use /efforts for live goal state.",
     ],
     "apps/site/dist/evidence/inference-effort.html": [
         "Generated snapshot",
-        "Use /efforts for live hosted state.",
+        "Use /efforts for live goal state.",
     ],
     "apps/site/dist/evidence/join-with-ai.html": [
         "Repo brief",

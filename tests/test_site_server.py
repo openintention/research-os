@@ -100,8 +100,8 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
 
     response = client.get("/efforts")
     assert response.status_code == 200
-    assert "Live external-harness proof" in response.text
-    assert "Hosted shared state, proxy contribution loop" in response.text
+    assert "Live external-harness goal" in response.text
+    assert "Live goal, proxy join path" in response.text
     assert "/efforts/effort-1" in response.text
     assert "/efforts/effort-2" in response.text
     assert "https://api.example.com/api/v1/publications/efforts/effort-1" in response.text
@@ -371,7 +371,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     response = client.get("/efforts/effort-mlx")
     assert response.status_code == 200
     assert "MLX History Sprint: improve val_bpb on Apple Silicon" in response.text
-    assert "Live external-harness proof" in response.text
+    assert "Live external-harness goal" in response.text
     assert "README.md#real-overnight-autoresearch-worker" in response.text
     assert "python3 scripts/run_overnight_autoresearch_worker.py" in response.text
     assert "&lt;external_harness_command&gt;" in response.text
@@ -379,7 +379,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "Latest claim signal" in response.text
     assert "Best next move" in response.text
     assert "Compounding proof" in response.text
-    assert "Visible work is stacking up on this effort" in response.text
+    assert "Visible work is stacking up on this goal" in response.text
     assert "2 contributors" in response.text
     assert "2 visible handoffs" in response.text
     assert "2 successful runs" in response.text
@@ -392,9 +392,9 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "New best #1" in response.text
     assert "Latest public handoff" in response.text
     assert "Who is involved" in response.text
-    assert "People and agents visible on this effort" in response.text
+    assert "People and agents visible on this goal" in response.text
     assert "Worker coordination" in response.text
-    assert "Worker liveness and lease state on this effort" in response.text
+    assert "Worker liveness and lease state on this goal" in response.text
     assert "No worker is active right now" in response.text
     assert "Open lease observation" in response.text
     assert "node_mlxworkerproof01" in response.text
@@ -402,7 +402,7 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "worker import" in response.text
     assert "first visible" in response.text
     assert "Recent handoffs" in response.text
-    assert "Work the next person can continue" in response.text
+    assert "Work the next person can continue on this goal" in response.text
     assert "mlx-beta" in response.text
     assert "Left behind 1 run, 1 claim, 1 reproduction, and 1 adoption" in response.text
     assert "/api/v1/publications/workspaces/workspace-beta/discussion" in response.text
@@ -546,7 +546,7 @@ def test_build_effort_worker_coordination_summarizes_released_worker_windows():
     assert coordination.latest_observation is not None
     assert (
         coordination.summary_line
-        == "1 worker lease window has touched this effort. No worker is active right now; node_workerproofsummary01 left its latest lease in status released after 1 renewal. The last observed heartbeat is stale."
+        == "1 worker lease window has touched this goal. No worker is active right now; node_workerproofsummary01 left its latest lease in status released after 1 renewal. The last observed heartbeat is stale."
     )
 
 
@@ -772,7 +772,7 @@ def test_site_server_carries_forward_proof_series_context_for_fresh_successor(mo
     assert "Current window</span><code>0</code>" in response.text
     assert "Series proof</span><code>2</code>" in response.text
     assert "proof cards below carry forward" in response.text
-    assert "This proof series already has 2 contributors" in response.text
+    assert "This goal series already has 2 contributors" in response.text
     assert "current proof window is fresh" in response.text.lower()
     assert "mlx-beta" in response.text
     assert "from <code>unknown</code>" not in response.text
@@ -895,6 +895,6 @@ def test_site_server_splits_current_and_historical_proof_efforts(monkeypatch, tm
 
     response = client.get("/efforts")
     assert response.status_code == 200
-    assert "Historical proof runs" in response.text
-    assert "Historical proof run" in response.text
+    assert "Historical goal windows" in response.text
+    assert "Historical goal window" in response.text
     assert "Current successor: <code>effort-current</code>" in response.text

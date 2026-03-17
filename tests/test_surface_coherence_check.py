@@ -86,10 +86,10 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         ),
         "apps/site/dist/index.html": "\n".join(
             [
-                "Hosted effort explorer is live",
-                "Snapshot evidence bundled",
+                "Live goal pages are real",
+                "Visible proof bundled",
                 "Freshness model:",
-                "generated effort briefs packaged with this build",
+                "generated goal briefs packaged with this build",
                 "Open deterministic join proof",
                 "Open repeated hosted participation proof",
             ]
@@ -97,7 +97,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         "apps/site/dist/evidence/public-ingress-smoke.html": "\n".join(
             [
                 "Deterministic smoke report",
-                "not a live effort counter",
+                "not a live goal counter",
             ]
         ),
         "apps/site/dist/evidence/repeated-external-participation.html": "\n".join(
@@ -109,7 +109,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         "apps/site/dist/evidence/eval-effort.html": "\n".join(
             [
                 "Generated snapshot",
-                "Use /efforts for live hosted state.",
+                "Use /efforts for live goal state.",
             ]
         ),
         "apps/site/dist/evidence/join-with-ai.html": "\n".join(
@@ -121,7 +121,7 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         "apps/site/dist/evidence/inference-effort.html": "\n".join(
             [
                 "Generated snapshot",
-                "Use /efforts for live hosted state.",
+                "Use /efforts for live goal state.",
             ]
         ),
         "data/publications/launch/public-ingress/public-ingress-smoke.md": "# report",

@@ -18,7 +18,7 @@ DEFAULT_SITE_URL = "https://openintention.io"
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run a deterministic two-loop nightly contribution rehearsal against the hosted effort state."
+        description="Run a deterministic two-loop nightly contribution rehearsal against the hosted goal state."
     )
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="Hosted OpenIntention API base URL.")
     parser.add_argument("--site-url", default=DEFAULT_SITE_URL, help="Public OpenIntention site URL.")
@@ -26,7 +26,7 @@ def main() -> None:
         "--profile",
         choices=("eval-sprint", "inference-sprint"),
         default="eval-sprint",
-        help="Which seeded effort to rehearse the nightly window against.",
+        help="Which seeded goal to rehearse the nightly window against.",
     )
     parser.add_argument(
         "--actor-id",

@@ -36,7 +36,7 @@ def export_effort_briefs(*, db_path: str, output_dir: str) -> list[Path]:
 
 def main() -> None:
     settings = Settings.from_env()
-    parser = argparse.ArgumentParser(description="Export seeded effort briefs as markdown files.")
+    parser = argparse.ArgumentParser(description="Export seeded goal briefs as markdown files.")
     parser.add_argument(
         "--output-dir",
         default="data/publications/efforts",

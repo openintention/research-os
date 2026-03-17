@@ -1,6 +1,6 @@
 # Public Launch Runbook
 
-This is the current narrow public-build flow for seeded efforts.
+This is the current narrow public-build flow for seeded goals.
 
 Use it to produce artifacts that are honest, inspectable, and derived from machine state.
 
@@ -9,16 +9,16 @@ Canonical newcomer path:
 
 ## Goal
 
-Show one believable loop around shared efforts without overclaiming what the system already
+Show one believable loop around shared goals without overclaiming what the system already
 proves.
 
 The goal is not only that a newcomer can run commands.
 The goal is that a newcomer can:
 - become onboarded into the product boundary
-- join a specific effort
+- join a specific goal
 - participate by leaving behind durable shared research state
 
-Current seeded efforts:
+Current seeded goals:
 - `Eval Sprint: improve validation loss under fixed budget`
 - `Inference Sprint: improve flash-path throughput on H100`
 
@@ -29,7 +29,7 @@ Use the public evidence surfaces this way:
 - live hosted state:
   - `https://openintention.io/efforts`
   - hosted API endpoints and publication mirrors
-  - this is the current shared effort state
+  - this is the current shared goal state
 - generated snapshot evidence:
   - `data/publications/efforts/*.md`
   - `apps/site/dist/evidence/*.html`
@@ -50,7 +50,7 @@ curl -fsSL https://openintention.io/join | bash
 ```
 
 That is the current public join command. It bootstraps the repo locally, targets the live hosted
-seeded effort path, and writes a report under `data/publications/launch/hosted-join/`.
+seeded-goal path, and writes a report under `data/publications/launch/hosted-join/`.
 
 Verify the deterministic public-ingress path next:
 
@@ -59,7 +59,7 @@ python3 scripts/run_public_ingress_smoke.py
 ```
 
 That command starts from `https://openintention.io`, discovers the public repo, clones it,
-and verifies the canonical seeded-effort path through a fresh local checkout. The durable
+and verifies the canonical seeded-goal path through a fresh local checkout. The durable
 report lands under `data/publications/launch/public-ingress/`.
 
 Verify shared participation next, once a hosted API exists:
@@ -69,7 +69,7 @@ python3 scripts/run_shared_participation_smoke.py --base-url https://api.openint
 ```
 
 That command is the minimal proof that two separate participants can land into the same
-seeded eval effort on one shared control plane.
+seeded eval goal on one shared control plane.
 
 Verify repeated hosted participation next:
 
@@ -78,7 +78,7 @@ python3 scripts/run_repeated_external_participation_proof.py --base-url https://
 ```
 
 That command lands multiple distinct participants through the canonical hosted endpoint,
-checks that their actor attribution is visible on the live effort pages, and writes the
+checks that their actor attribution is visible on the live goal pages, and writes the
 public proof report under `data/publications/launch/repeated-external-participation/`.
 
 Seed the current local state:
@@ -121,10 +121,10 @@ python3 scripts/run_surface_coherence_check.py
 ## What to share publicly
 
 Share:
-- the seeded effort brief markdown
-- one client run snippet showing the effort name, workspace id, and planner action
+- the seeded goal brief markdown
+- one client run snippet showing the goal name, current effort id, workspace id, and planner action
 - one publication mirror excerpt
-- one sentence on why the effort is interesting to join
+- one sentence on why the goal is interesting to join
 
 Do not lead with:
 - architecture diagrams
@@ -134,7 +134,7 @@ Do not lead with:
 ## Honesty line
 
 Be explicit about the current proxy contribution loops:
-- the seeded effort join flows are real
+- the seeded goal join flows are real
 - the event log, planner, projections, and publication mirrors are real
 - the tiny-loop client is a local proxy contribution path
 - the current proxy runs are not the same thing as real A100 or H100 benchmarking evidence
@@ -147,13 +147,13 @@ Do not call the flow successful just because a command returned zero.
 
 For launch, success means:
 - onboarded: the newcomer understands what OpenIntention is, what it is not, and what is real today
-- joined: the newcomer is attached to a specific seeded effort via a visible workspace
+- joined: the newcomer is attached to a specific seeded goal via a visible workspace
 - participated: the newcomer leaves behind durable contribution state and at least one inspectable artifact
 
 ## Recommended public post shape
 
 Use a short post structure:
-1. one sentence on the effort
+1. one sentence on the goal
 2. one sentence on the contribution loop
 3. one artifact excerpt or screenshot from the exported brief
 4. one exact join command someone can run locally
@@ -169,7 +169,7 @@ Recommended anchor:
 ## Message discipline
 
 Prefer:
-- shared effort
+- shared goal
 - joinable loop
 - machine-native research control plane
 - publication mirror derived from state

@@ -117,7 +117,7 @@ def build_worker_smoke_report(result: OvernightWorkerSmokeResult) -> str:
             f"- Base URL: `{result.base_url}`",
             f"- Fixture repo: `{result.repo_path}`",
             f"- Worker report: `{result.worker_report_path}`",
-            f"- Live effort page hint: `{result.effort_page_hint}`",
+            f"- Live goal page hint: `{result.effort_page_hint}`",
             "",
             "## Worker Report Excerpt",
             "```text",

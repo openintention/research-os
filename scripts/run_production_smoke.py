@@ -44,8 +44,8 @@ def run_production_smoke(
 
     _require_text(f"{api_base_url.rstrip('/')}/healthz", must_include="ok")
     homepage_url = f"{site_url.rstrip('/')}/"
-    homepage_html = _require_text(homepage_url, must_include="Hosted effort explorer is live")
-    for phrase in ("Snapshot evidence bundled", "Freshness model:", "Open deterministic join proof"):
+    homepage_html = _require_text(homepage_url, must_include="Live goal pages are real")
+    for phrase in ("Visible proof bundled", "Freshness model:", "Open deterministic join proof"):
         if phrase not in homepage_html:
             raise RuntimeError(f"homepage missing freshness phrase `{phrase}`: {homepage_url}")
     public_ingress_report = run_public_ingress_smoke(
@@ -61,11 +61,11 @@ def run_production_smoke(
 
     efforts = _get_json(f"{api_base_url.rstrip('/')}/api/v1/efforts")
     if not isinstance(efforts, list) or not efforts:
-        raise RuntimeError("production smoke expected at least one hosted effort")
+        raise RuntimeError("production smoke expected at least one hosted goal")
 
     effort_names = [str(item["name"]) for item in efforts]
     effort_index_url = f"{site_url.rstrip('/')}/efforts"
-    effort_index_html = _require_text(effort_index_url, must_include="Shared efforts")
+    effort_index_html = _require_text(effort_index_url, must_include="Shared ML goals")
     for effort_name in effort_names:
         if effort_name not in effort_index_html:
             raise RuntimeError(f"effort explorer index missing effort name: {effort_name}")
@@ -77,10 +77,10 @@ def run_production_smoke(
         effort_page_url = f"{site_url.rstrip('/')}/efforts/{effort_id}"
         effort_page_html = _require_text(effort_page_url, must_include=effort_name)
         if (
-            "Full live state" not in effort_page_html
-            and "Machine-readable frontier and claim state" not in effort_page_html
+            "Full live goal state" not in effort_page_html
+            and "Machine-readable goal state" not in effort_page_html
         ):
-            raise RuntimeError(f"effort page missing current-state section: {effort_page_url}")
+            raise RuntimeError(f"goal page missing current-state section: {effort_page_url}")
         effort_page_urls.append(effort_page_url)
 
     result = ProductionSmokeResult(
@@ -114,8 +114,8 @@ def build_production_smoke_report(result: ProductionSmokeResult) -> str:
             f"- Shared participation smoke: `{result.shared_participation_report}`",
             "- Hosted API healthz returned 200",
             "- Hosted homepage distinguishes live hosted state, bundled snapshot evidence, and deterministic smoke proofs",
-            "- Hosted effort explorer index rendered current effort state",
-            "- Hosted effort detail pages rendered current state for each effort",
+            "- Hosted goal explorer index rendered current goal state",
+            "- Hosted goal pages rendered current state for each goal",
             "",
             "## Hosted Efforts Observed",
             *effort_lines,
@@ -124,8 +124,8 @@ def build_production_smoke_report(result: ProductionSmokeResult) -> str:
             *page_lines,
             "",
             "## Outcome",
-            "- The live public site, hosted API, and shared seeded-effort path are all reachable from the current production deployment.",
-            "- A newcomer can still enter through the public surface while separate participants append into one hosted effort state.",
+            "- The live public site, hosted API, and shared seeded-goal path are all reachable from the current production deployment.",
+            "- A newcomer can still enter through the public surface while separate participants append into one hosted goal state.",
         ]
     ) + "\n"
 

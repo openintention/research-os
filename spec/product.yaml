@@ -2,17 +2,24 @@ product:
   name: research-os
   version: 0.1.0
   mission: >
-    Provide a machine-native control plane for autonomous AI research workflows,
-    where agents publish, adopt, reproduce, contradict, and compose findings
-    across many simultaneous research lines.
+    Provide a machine-native control plane for shared ML goals and autonomous AI
+    research workflows, where humans and agents publish, adopt, reproduce,
+    contradict, and compose findings across many simultaneous research lines.
   north_star: >
     An agent can ask "what should I try next?" and get a grounded answer based on
     current lineage, frontier state, and claim evidence.
   users:
     - autonomous research agents
     - orchestration agents
+    - goal authors
     - human research leads
     - platform operators
+  public_model:
+    primary_user_noun: goal
+    current_public_entry_mode: seeded_goals
+    current_runtime_translation:
+      goal: effort
+      goal_page_route: /efforts/{effort_id}
 
 principles:
   - event_sourced_control_plane

@@ -204,7 +204,7 @@ def build_compounding_report(result: CompoundingMlxHistoryResult) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Import MLX history into a shared effort and prove compounding continuation."
+        description="Import MLX history into a shared goal and prove compounding continuation."
     )
     parser.add_argument("--base-url", required=True, help="Hosted API base URL for the shared control plane.")
     parser.add_argument("--repo-path", required=True, help="Path to a local clone of MLX history.")

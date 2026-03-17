@@ -120,9 +120,9 @@ def build_join_report(result: HostedJoinResult) -> str:
             f"- Reproduction run: `{result.reproduction_run_id or 'unknown'}`",
             "",
             "## Inspect Next",
-            f"- Live effort page: `{effort_url}`",
+            f"- Live goal page: `{effort_url}`",
             f"- Workspace discussion: `{discussion_url}`",
-            "- Hand the live effort page or this report to the next human or agent.",
+            "- Hand the live goal page or this report to the next human or agent.",
             "",
             "## Verifier-Ready Provenance",
             *(result.provenance_snippet if result.provenance_snippet else ["- Not available yet."]),
@@ -133,7 +133,7 @@ def build_join_report(result: HostedJoinResult) -> str:
             "```",
             "",
             "## Honesty Line",
-            "- This lands visible work in the live hosted shared effort state.",
+            "- This lands visible work in the live hosted shared goal state.",
             "- The default eval and inference contribution paths are still proxy loops.",
             "- A stronger external-harness compounding path exists separately in the repo.",
         ]
@@ -151,7 +151,7 @@ def main() -> None:
         "--profile",
         choices=("eval-sprint", "inference-sprint"),
         default="eval-sprint",
-        help="Which seeded effort path to join.",
+        help="Which seeded goal path to join.",
     )
     parser.add_argument(
         "--base-url",
@@ -185,7 +185,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    print("Joining OpenIntention from the public repo into the live hosted effort state...")
+    print("Joining OpenIntention from the public repo into the live hosted goal state...")
     report_path = run_hosted_join(
         actor_id=args.actor_id,
         profile=args.profile,

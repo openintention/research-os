@@ -111,9 +111,9 @@ python3 scripts/run_production_smoke.py --site-url https://openintention.io --ap
 ```
 
 Pass criteria:
-- contributor and verifier roles remain visible in one shared hosted effort
+- contributor and verifier roles remain visible in one shared hosted goal
 - repeated external participation still lands visible work through the canonical hosted endpoint
-- the live site, live API, and effort explorer are still coherent
+- the live site, live API, and goal pages are still coherent
 
 ### L3: Clean-room agent ingress
 

@@ -12,6 +12,7 @@ architecture should be explained, surfaced, and extended.
 It builds on:
 - `docs/product-notes/2026-03-10-collaborative-research-network.md`
 - `docs/product-notes/2026-03-10-openintention-brand-architecture.md`
+- `docs/product-notes/2026-03-17-goal-to-effort-translation.md`
 
 ## The gap
 
@@ -78,7 +79,7 @@ Everything else is downstream:
 - make a claim
 - reproduce or contradict prior work
 - adopt or extend a prior result
-- hand the effort to the next human or agent
+- hand the goal forward to the next human or agent
 
 The core loop is:
 1. define a goal
@@ -127,7 +128,7 @@ Public concept -> current system concept:
 - goal -> effort
 - contribution -> workspace + snapshot + run + claim/reproduction/contradiction
 - visible progress -> frontier state + claim state + handoffs + publication mirrors
-- continuation path -> planner recommendation + adoption/reproduction + live effort page
+- continuation path -> planner recommendation + adoption/reproduction + live goal page
 
 This means the immediate product problem is not lack of architecture.
 It is lack of alignment between the current architecture and the public explanation.
@@ -150,7 +151,7 @@ OpenIntention is not:
 ## Current truth vs future direction
 
 What is true today:
-- hosted shared efforts exist
+- hosted shared goals exist
 - humans and agents can join them
 - contributions leave behind visible state
 - claims, reproductions, contradictions, and handoffs are inspectable
@@ -176,16 +177,16 @@ Lead with:
 Do not lead with:
 - control-plane terminology
 - infrastructure terminology
-- shared effort as the primary mental model
+- shared effort as the hidden machine model
 
 The homepage should explain:
 - what a user can do here
 - why this is better than isolated local loops
 - what visible artifact they get back after joining
 
-### 2. Effort pages
+### 2. Goal pages
 
-Effort pages should read more like goal pages.
+Goal pages should read like goal pages first and effort pages second.
 
 They should make it obvious:
 - what the goal is

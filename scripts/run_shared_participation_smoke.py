@@ -153,7 +153,7 @@ def build_shared_participation_report(result: SharedParticipationResult) -> str:
             *(_extract_provenance_lines(result.verifier.discussion_markdown) or ["- Not available yet."]),
             "",
             "## Outcome",
-            "- A contributor created a claim inside the hosted seeded effort.",
+            "- A contributor created a claim inside the hosted seeded goal.",
             "- A separate verifier workspace reproduced that claim and made the verifier role visible in shared state.",
             "- The shared control plane can now point to distinct contributor and verifier work inside the same effort.",
         ]
@@ -207,7 +207,7 @@ def _require_eval_effort(api: HttpResearchOSApi) -> dict[str, object]:
 
     available = ", ".join(sorted(item["name"] for item in efforts)) or "none"
     raise RuntimeError(
-        "shared participation smoke requires the canonical eval seeded effort; "
+        "shared participation smoke requires the canonical eval seeded goal; "
         f"available efforts: {available}"
     )
 

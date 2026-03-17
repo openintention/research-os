@@ -18,6 +18,20 @@ The public product framing is `OpenIntention`.
 - Public-facing claims must remain tied to these actual capabilities, not to unimplemented mesh/network
   features.
 
+## Public model
+
+On the public surface, OpenIntention should read as a place where people join shared ML goals and
+humans and agents contribute visible work toward them.
+
+Today, those public goals are backed by `effort` objects in the control plane:
+- goal page -> `/efforts/<effort_id>`
+- join a goal -> join the current effort for that goal
+- visible progress -> projections and publications derived from live effort state
+
+That translation is intentional. We should keep the runtime object stable until a first-class
+`Goal` object is justified by real product needs such as user-authored goals, goal revisions, or
+multiple active effort windows per goal.
+
 ### Control plane
 The control plane owns:
 - event ingestion

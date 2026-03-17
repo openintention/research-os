@@ -1,6 +1,9 @@
-# First Public Seeded Efforts
+# First Public Seeded Goals
 
-These are the first two seeded efforts the system should present publicly.
+These are the first two seeded goals the system should present publicly.
+
+In the current control plane, each public goal is backed by an `effort` object. The product should
+lead with the goal; the machine contract still uses effort ids underneath.
 
 They are intentionally narrow and legible.
 
@@ -14,7 +17,7 @@ Shape:
 - budget: `300` seconds
 - contribution pattern: propose or reproduce short model-improvement runs
 
-Why this effort comes first:
+Why this goal comes first:
 - it creates the cleanest collaborative evidence loop
 - claims, reproductions, contradictions, and frontier changes are easy to inspect
 - contributors can understand what a “good” result looks like quickly
@@ -41,7 +44,7 @@ Shape:
 - budget: `300` seconds
 - contribution pattern: improve or reproduce throughput on a bounded kernel path
 
-Why this effort comes first:
+Why this goal comes first:
 - it makes hardware-aware participation concrete
 - it highlights that frontiers are platform-specific
 - it creates a practical reason for multiple contributors with different systems expertise to join
@@ -64,5 +67,5 @@ Together they express the product correctly:
 - eval work proves collaborative evidence and claim quality
 - inference work proves hardware-aware contribution and platform-specific frontier value
 
-Other effort classes remain valid later, including tiny model-improvement
+Other goal classes remain valid later, including tiny model-improvement
 loops, but these two are the best first public shape for the network.

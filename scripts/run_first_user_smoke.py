@@ -168,7 +168,7 @@ def build_smoke_report(result: SmokeResult) -> str:
             *effort_lines,
             "",
             "## Participation Outcome",
-            "- Onboarded: the newcomer discovered the public repo and seeded effort path from the public surface.",
+            "- Onboarded: the newcomer discovered the public repo and seeded goal path from the public surface.",
             *joined_lines,
             *participation_lines,
             "",

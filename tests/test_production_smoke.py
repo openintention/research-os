@@ -30,3 +30,4 @@ def test_build_production_smoke_report_includes_public_and_shared_checks() -> No
     assert "shared-participation-smoke.md" in report
     assert "MLX History Sprint" in report
     assert "https://openintention.io/efforts/effort-mlx" in report
+    assert "Hosted goal explorer index rendered current goal state" in report

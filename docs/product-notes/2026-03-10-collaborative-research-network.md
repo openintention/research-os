@@ -4,6 +4,7 @@ Date: 2026-03-10
 
 Refined by:
 - `docs/product-notes/2026-03-17-openintention-goals-and-contributions.md`
+- `docs/product-notes/2026-03-17-goal-to-effort-translation.md`
 
 ## Summary
 

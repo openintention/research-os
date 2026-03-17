@@ -256,20 +256,21 @@ def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, obje
     if historical_cards:
         historical_section = f"""
         <section class="panel">
-          <h2>Historical proof runs</h2>
-          <p class="footer-note">Older proof windows stay visible and inspectable, but new proof work should continue on the current successor effort.</p>
+          <h2>Historical goal windows</h2>
+          <p class="footer-note">Older proof windows stay visible and inspectable, but new proof work should continue on the current successor goal window.</p>
           <section class="efforts">{historical_cards}</section>
         </section>
         """
     return _page_html(
-        "Live Efforts",
+        "Live Goals",
         """
         <section class="hero">
           <div class="eyebrow">Live explorer</div>
-          <h1>Shared efforts, visible state, and clear next steps.</h1>
+          <h1>Shared ML goals, visible progress, and clear next steps.</h1>
           <p class="lede">
-            These pages are generated from the hosted control plane. They show what is active now,
-            what is still proxy, and what the next participant can continue.
+            These pages are generated from the hosted control plane. Today the public surface starts
+            with seeded goals, and each page shows what people and agents have tried, what moved
+            the frontier, and what the next contributor can continue.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="/">Back to OpenIntention</a>
@@ -297,7 +298,7 @@ def _render_effort_index_card(*, public_api_base_url: str, effort: dict[str, obj
         {f'<li>Current successor: <code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
       </ul>
       <div class="hero-actions">
-        <a class="button primary" href="/efforts/{escape(str(effort_model.effort_id))}">Open live effort page</a>
+        <a class="button primary" href="/efforts/{escape(str(effort_model.effort_id))}">Open live goal page</a>
         <a class="button secondary" href="{escape(public_api_base_url)}/api/v1/publications/efforts/{escape(str(effort_model.effort_id))}">Open markdown mirror</a>
       </div>
     </article>
@@ -413,7 +414,7 @@ def _effort_detail_html(
         display_workspace_models,
         proof_surface.display_workspace_events,
         current_workspace_ids=current_workspace_ids,
-        scope_label="proof series" if proof_surface.carries_forward else "effort",
+        scope_label="goal series" if proof_surface.carries_forward else "goal",
     )
     worker_coordination = _build_effort_worker_coordination(lease_observations)
     show_worker_coordination = bool(worker_coordination.observations) or any(
@@ -477,7 +478,7 @@ def _effort_detail_html(
         worker_coordination_section = f"""
         <section class="panel">
           <div class="eyebrow">Worker coordination</div>
-          <h2>Worker liveness and lease state on this effort</h2>
+          <h2>Worker liveness and lease state on this goal</h2>
           <p class="section-lede">{escape(worker_coordination.summary_line)}</p>
           <ul class="state-pills proof-stat-pills">
             <li><span>Observed leases</span><code>{len(worker_coordination.observations)}</code></li>
@@ -491,7 +492,7 @@ def _effort_detail_html(
             {'<li><span>Expired</span><code>%s</code></li>' % worker_coordination.expired_count if worker_coordination.expired_count else ''}
           </ul>
           <div class="handoff-grid">
-            {worker_cards or '<p>No worker lease observations are visible on this effort yet.</p>'}
+            {worker_cards or '<p>No worker lease observations are visible on this goal yet.</p>'}
           </div>
           <p class="footer-note">This panel is derived from lease observations and signed node heartbeats on the hosted control plane.</p>
         </section>
@@ -505,7 +506,7 @@ def _effort_detail_html(
           <p class="lede">{escape(state["description"])}</p>
           <div class="hero-actions">
             <a class="button primary" href="/">Back to OpenIntention</a>
-            <a class="button secondary" href="/efforts">See all live efforts</a>
+            <a class="button secondary" href="/efforts">See all live goals</a>
           </div>
         </section>
 
@@ -539,9 +540,9 @@ def _effort_detail_html(
             <p class="footer-note">Rendered directly from live hosted control-plane state.</p>
           </div>
           <div id="join-this-effort" class="summary-card join-summary-card">
-            <div class="effort-type">Join this effort</div>
+            <div class="effort-type">Join this goal</div>
             <h2>Pick up the current line of work</h2>
-            <p>Pick up the current line of work, then leave behind a workspace, a claim or reproduction, and an inspectable brief for the next participant.</p>
+            <p>Pick up the current line of work on this goal, then leave behind a workspace, a claim or reproduction, and an inspectable brief for the next participant.</p>
             <p class="command">{escape(join_command)}</p>
             <ul>
               <li>Brief: <code>{escape(join_brief)}</code></li>
@@ -552,7 +553,7 @@ def _effort_detail_html(
 
         <section class="panel">
           <div class="eyebrow">Compounding proof</div>
-          <h2>Visible work is stacking up on this effort</h2>
+          <h2>Visible work is stacking up on this goal</h2>
           <p class="section-lede">{escape(proof_summary_line)}</p>
           <ul class="state-pills proof-stat-pills">
             <li><span>Contributors</span><code>{proof.contributor_count}</code></li>
@@ -585,13 +586,13 @@ def _effort_detail_html(
                       is_current_window=latest_workspace.workspace_id in current_workspace_ids,
                   )
                   if latest_workspace is not None
-                  else '<p class="footer-note">Use the join command above to leave the first hosted handoff on this effort.</p>'
+                  else '<p class="footer-note">Use the join command above to leave the first hosted handoff on this goal.</p>'
               }
               {
                   f'''
                   <div class="card-links">
                     <a href="{escape(latest_discussion_url)}">View discussion</a>
-                    <a href="#join-this-effort">Continue from this effort</a>
+                    <a href="#join-this-effort">Continue from this goal</a>
                   </div>
                   '''
                   if latest_workspace is not None and latest_discussion_url is not None
@@ -603,8 +604,8 @@ def _effort_detail_html(
 
         <section class="panel">
           <div class="eyebrow">Who is involved</div>
-          <h2>People and agents visible on this effort</h2>
-          <p class="section-lede">{escape(_participant_visibility_summary(proof, scope_label="proof series" if proof_surface.carries_forward else "effort"))}</p>
+          <h2>People and agents visible on this goal</h2>
+          <p class="section-lede">{escape(_participant_visibility_summary(proof, scope_label="goal series" if proof_surface.carries_forward else "goal"))}</p>
           <div class="handoff-grid">
             {participant_cards or '<p>No participants are visible yet. Use the join command above to leave the first hosted handoff.</p>'}
           </div>
@@ -614,7 +615,7 @@ def _effort_detail_html(
 
         <section class="panel">
           <div class="eyebrow">Recent handoffs</div>
-          <h2>Work the next person can continue</h2>
+          <h2>Work the next person can continue on this goal</h2>
           <p class="section-lede">These are the most recent hosted contributions. Each one links back to a discussion mirror and leaves behind enough evidence for the next participant to inspect or extend.</p>
           <div class="handoff-grid">
             {recent_handoffs or '<p>No handoffs yet. Use the join command above to leave the first visible result.</p>'}
@@ -622,8 +623,8 @@ def _effort_detail_html(
         </section>
 
         <section class="panel machine-state-panel">
-          <div class="eyebrow">Full live state</div>
-          <h2>Machine-readable frontier and claim state</h2>
+          <div class="eyebrow">Full live goal state</div>
+          <h2>Machine-readable goal state</h2>
           <p class="section-lede">{escape(machine_state_lede)}</p>
           <section class="grid two">
           <div>
@@ -674,7 +675,7 @@ def _render_recent_handoff(
       </p>
       <div class="card-links">
         <a href="{escape(discussion_url)}">View discussion</a>
-        <a href="#join-this-effort">Continue from this effort</a>
+        <a href="#join-this-effort">Continue from this goal</a>
       </div>
     </article>
     """
@@ -918,7 +919,7 @@ def _render_participant_spotlight(
       </p>
       <div class="card-links">
         <a href="{escape(discussion_url)}">View latest discussion</a>
-        <a href="#join-this-effort">Continue from this effort</a>
+        <a href="#join-this-effort">Continue from this goal</a>
       </div>
     </article>
     """
@@ -943,7 +944,7 @@ def _participant_spotlight_summary(spotlight: ParticipantSpotlight) -> str:
         summary = f"{summary}, and {parts[-1]}" if summary else parts[-1]
     else:
         summary = parts[0]
-    return f"Visible through {summary} on this effort."
+    return f"Visible through {summary} on this goal."
 
 
 def _participant_visibility_summary(proof: EffortProof, *, scope_label: str) -> str:
@@ -1023,7 +1024,7 @@ def _build_effort_worker_coordination(
 
     if not sorted_observations:
         summary_line = (
-            "No worker lease or heartbeat state is visible on this effort yet."
+            "No worker lease or heartbeat state is visible on this goal yet."
         )
     elif active_count:
         bits = [f"{active_count} active worker lease{'s' if active_count != 1 else ''}"]
@@ -1038,7 +1039,7 @@ def _build_effort_worker_coordination(
             lead = f"{lead}, and {bits[-1]}" if lead else bits[-1]
         else:
             lead = bits[0]
-        summary_line = f"This effort currently has {lead}."
+        summary_line = f"This goal currently has {lead}."
     else:
         latest_node = latest_observation.lease.holder_node_id or "the latest worker"
         latest_status = latest_observation.lease.status.value
@@ -1057,7 +1058,7 @@ def _build_effort_worker_coordination(
             )
         summary_line = (
             f"{len(sorted_observations)} worker lease window"
-            f"{'s have' if len(sorted_observations) != 1 else ' has'} touched this effort. "
+            f"{'s have' if len(sorted_observations) != 1 else ' has'} touched this goal. "
             f"No worker is active right now; {latest_node} left its latest lease in status {latest_status}{renewal_note}."
             f"{heartbeat_note}"
         )
@@ -1149,7 +1150,7 @@ def _worker_lease_summary(observation: LeaseObservation) -> str:
 def _lease_subject_label(observation: LeaseObservation) -> str:
     lease = observation.lease
     if lease.subject_type.value == "effort" and lease.effort_id == lease.subject_id:
-        return "this effort"
+        return "this goal"
     return f"{lease.subject_type.value}:{_short_id(lease.subject_id)}"
 
 
@@ -1189,7 +1190,7 @@ def _render_workspace_proof_meta(workspace: WorkspaceView, *, is_current_window:
       <li><span>Reproductions</span><code>{workspace.reproduction_count}</code></li>
       <li><span>Workspace</span><code>{escape(_short_id(workspace.workspace_id))}</code></li>
     </ul>
-    <p class="handoff-meta">Updated <code>{escape(_format_timestamp(workspace.updated_at))}</code> on the hosted effort page{'' if is_current_window else '; carried forward from an earlier proof window in this series'}.</p>
+    <p class="handoff-meta">Updated <code>{escape(_format_timestamp(workspace.updated_at))}</code> on the hosted goal page{'' if is_current_window else '; carried forward from an earlier proof window in this series'}.</p>
     """
 
 
@@ -1386,27 +1387,27 @@ def _effort_state_label(effort) -> dict[str, str]:
     tags = effort.tags if hasattr(effort, "tags") else effort.get("tags", {})
     if is_historical_proof_effort(effort):
         return {
-            "label": "Historical proof run",
-            "description": "This proof window remains inspectable in the immutable event log, but new proof work should continue on its successor effort.",
+            "label": "Historical goal window",
+            "description": "This proof window remains inspectable in the immutable event log, but new proof work should continue on its successor goal window.",
         }
     if tags.get("external_harness") == "mlx-history":
         return {
-            "label": "Live external-harness proof",
-            "description": "Real kept-history from an external MLX line is compounding through adoption in the hosted shared control plane.",
+            "label": "Live external-harness goal",
+            "description": "Real kept-history from an external MLX line is compounding on a live hosted goal through adoption and visible handoffs.",
         }
     if tags.get("effort_type") == "inference":
         return {
-            "label": "Hosted shared state, proxy contribution loop",
-            "description": "The shared effort state is live, while the current contribution path is still a narrow proxy loop for the larger inference objective.",
+            "label": "Live goal, proxy join path",
+            "description": "This goal is live on the hosted control plane, while the current public join path is still a narrow proxy loop for the larger inference objective.",
         }
     if tags.get("effort_type") == "eval":
         return {
-            "label": "Hosted shared state, proxy contribution loop",
-            "description": "The shared effort state is live, while the current contribution path is still a narrow proxy loop for the larger eval objective.",
+            "label": "Live goal, proxy join path",
+            "description": "This goal is live on the hosted control plane, while the current public join path is still a narrow proxy loop for the larger eval objective.",
         }
     return {
-        "label": "Live shared effort",
-        "description": "This effort page is generated from hosted control-plane state.",
+        "label": "Live goal",
+        "description": "This goal page is generated from hosted control-plane state.",
     }
 
 
@@ -1431,9 +1432,9 @@ def _page_html(title: str, body: str) -> str:
       {body}
     </main>
     <footer class="site-footer">
-      <p class="site-footer-copy">OpenIntention stays public, inspectable, and easy to hand forward.</p>
+      <p class="site-footer-copy">OpenIntention keeps goals, evidence, and handoffs public enough to compound.</p>
       <div class="site-footer-links">
-        <a href="/efforts">Live efforts</a>
+        <a href="/efforts">Live goals</a>
         <a href="/evidence/join-with-ai.html">Agent brief</a>
         <a href="{escape(DEFAULT_PUBLIC_REPO_URL)}">GitHub repo</a>
       </div>

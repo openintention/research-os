@@ -220,7 +220,7 @@ def build_nightly_contribution_window_report(result: NightlyContributionWindowRe
             f"- Duration budget: `{result.window_seconds}` seconds",
             f"- Interval between loops: `{result.interval_seconds}` seconds",
             f"- Max loops: `{result.max_loops if result.max_loops is not None else 'until window ends'}`",
-            f"- Live effort page: `{effort_url}`",
+            f"- Live goal page: `{effort_url}`",
             "",
             "## Loops Completed",
             f"- Completed loops: `{result.loops_completed}`",
@@ -233,12 +233,12 @@ def build_nightly_contribution_window_report(result: NightlyContributionWindowRe
             f"- Frontier members: `{result.frontier_member_count}`",
             "",
             "## What To Hand Forward",
-            f"- Live effort page: `{effort_url}`",
+            f"- Live goal page: `{effort_url}`",
             f"- Latest discussion: `{result.iterations[-1].discussion_url if result.iterations else 'n/a'}`",
-            "- Hand the live effort page or the latest discussion to the next human or agent.",
+            "- Hand the live goal page or the latest discussion to the next human or agent.",
             "",
             "## Honesty Line",
-            "- This is an opt-in local contribution window pointed at one hosted shared effort.",
+            "- This is an opt-in local contribution window pointed at one hosted shared goal.",
             "- It does not auto-detect idleness and it is not a mesh worker system.",
             "- The default eval and inference loops are still proxy contribution paths.",
         ]
@@ -253,7 +253,7 @@ def main() -> None:
         "--profile",
         choices=sorted(NIGHTLY_PROFILES),
         default=EVAL_SPRINT_PROFILE.name,
-        help="Which seeded effort to contribute to during the window.",
+        help="Which seeded goal to contribute to during the window.",
     )
     parser.add_argument(
         "--actor-id",
@@ -321,7 +321,7 @@ def _require_effort(api: HttpResearchOSApi, profile: ExperimentProfile) -> dict[
         return effort
     available = ", ".join(sorted(item["name"] for item in efforts)) or "none"
     raise RuntimeError(
-        "nightly contribution window requires the canonical seeded effort; "
+        "nightly contribution window requires the canonical seeded goal; "
         f"available efforts: {available}"
     )
 

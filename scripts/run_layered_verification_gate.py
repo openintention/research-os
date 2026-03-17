@@ -352,7 +352,7 @@ def _layer_l2(gate_root: Path, *, site_url: str, api_base_url: str) -> LayerDefi
                     str(shared_artifacts),
                 ),
                 pass_criteria=(
-                    "Contributor and verifier land into one hosted seeded effort with visible separate workspaces.",
+                    "Contributor and verifier land into one hosted seeded goal with visible separate workspaces.",
                 ),
                 evidence_paths=(str(shared_output / "shared-participation-smoke.md"),),
             ),

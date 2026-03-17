@@ -1,7 +1,7 @@
 # research-os
 
-A machine-native control-plane scaffold for turning many independent AI research loops into
-cumulative shared progress.
+A machine-native control-plane scaffold for turning ML goals into shared, auditable progress for
+humans and agents.
 
 This repo is **not** a GitHub clone. It is the starting point for a product where:
 - the source of truth is an immutable research event log
@@ -22,14 +22,36 @@ The scaffold runs locally today with:
 
 `OpenIntention` is the public product direction above this repo.
 
-It is intended to become a machine-native coordination layer for shared AI research efforts:
-- shared objectives and seeded efforts
-- typed lineage about runs, claims, reproductions, contradictions, and adoptions
-- frontier state keyed by objective, platform, and budget
-- planner guidance about what to try, reproduce, or adopt next
-- human-facing reports generated from machine state
+It is a collaborative ML research community where people join shared goals and humans and agents
+leave behind visible work other contributors can continue.
+
+Today the public path starts with seeded goals:
+- improve validation loss under a fixed budget
+- improve flash-path throughput on H100
+- compound kept improvements on Apple Silicon through a real external harness
+
+Under the hood, those public goals are currently backed by `Effort` objects in the control plane:
+- goal page -> `/efforts/<effort_id>`
+- join a goal -> join the live effort that currently represents that goal
+- visible progress -> workspaces, runs, claims, reproductions, frontier state, and publication mirrors
 
 `research-os` is the current technical control-plane implementation underneath that direction.
+
+## What problem OpenIntention fixes
+
+Most ML research and autonomous work disappears into:
+- local runs
+- prompts and chat logs
+- branches
+- notebooks
+- private trial-and-error
+
+When that happens, three things get lost together:
+- the goal
+- the evidence
+- the handoff
+
+OpenIntention exists to keep all three visible enough that work can compound instead of resetting.
 
 ## What OpenIntention is not
 
@@ -46,6 +68,7 @@ shared research state, not to replace local orchestration tools.
 ## Why this shape
 
 The main missing piece in autonomous research is not better distributed job scheduling. It is **machine-native lineage management**:
+- what goal is being advanced
 - what should exist next
 - what evidence supports a claim
 - what other agents should adopt
@@ -64,9 +87,9 @@ Transparent framing:
 - the current repo does not claim that the final network/community product already exists
 
 What is real today:
-- the event log, projections, planner queries, hosted shared effort state, and publication mirrors
-- the seeded effort join flows on a hosted shared control plane
-- the public effort explorer and shared-participation smoke path
+- the event log, projections, planner queries, hosted goal pages, and publication mirrors
+- the seeded goal join flows on a hosted shared control plane
+- the public goal explorer and shared-participation smoke path
 - one stronger external-harness compounding proof on top of shared state
 - the public framing of OpenIntention as a coordination layer above `research-os`
 
@@ -77,7 +100,7 @@ What is still proxy:
 What is future direction, not current fact:
 - a peer-to-peer or node-network layer above the current hosted control plane
 - stronger identity, signing, verifier economics, and later node mechanics
-- broader participant-created efforts and a fuller community surface
+- broader participant-created goals and a fuller community surface
 
 ## Public freshness model
 
@@ -86,7 +109,7 @@ When reading the repo, site, and generated artifacts, keep this split explicit:
 - live hosted state:
   - `https://openintention.io/efforts`
   - hosted API endpoints and publication mirrors
-  - use this when you want the current shared effort state
+  - use this when you want the current shared goal state
 - generated snapshot evidence:
   - `data/publications/efforts/*.md`
   - the bundled evidence pages in `apps/site/dist/evidence/`
@@ -257,7 +280,7 @@ RESEARCH_OS_PUBLIC_BASE_URL=https://api.openintention.io
 RESEARCH_OS_BOOTSTRAP_SEEDED_EFFORTS=true
 ```
 
-That makes the canonical seeded efforts appear automatically on startup without loading the
+That makes the canonical seeded goals appear automatically on startup without loading the
 full local demo state.
 
 Participants can then target the shared API directly:
@@ -274,7 +297,7 @@ curl -fsSL https://openintention.io/join | bash -s -- --actor-id aliargun
 ```
 
 Under the hood, that bootstrap command clones or updates a dedicated edge checkout under
-`~/.openintention/research-os`, refreshes a local venv, runs the hosted seeded-effort path, and
+`~/.openintention/research-os`, refreshes a local venv, runs the hosted seeded-goal path, and
 writes a join report under `data/publications/launch/hosted-join/`.
 
 The update model is still explicit and pull-based:
@@ -288,10 +311,10 @@ The shared control plane now distinguishes bounded workspace roles:
 
 That role is visible in:
 - `/api/v1/workspaces`
-- effort overview publications
-- hosted effort explorer pages
+- goal overview publications
+- hosted goal pages
 
-To prove that one contributor and one verifier can land work into the same shared effort state:
+To prove that one contributor and one verifier can land work into the same shared goal state:
 
 ```bash
 python3 scripts/run_shared_participation_smoke.py --base-url https://api.openintention.io
@@ -308,10 +331,10 @@ python3 scripts/run_repeated_external_participation_proof.py --base-url https://
 ```
 
 That proof lands multiple distinct participants through the canonical hosted endpoint,
-checks that their actor IDs are visible on the live effort pages, and writes a public
+checks that their actor IDs are visible on the live goal pages, and writes a public
 report under `data/publications/launch/repeated-external-participation/`.
 
-If you want your own machine to keep contributing to one hosted effort during a bounded local
+If you want your own machine to keep contributing to one hosted goal during a bounded local
 window, use the nightly contribution runner:
 
 ```bash
@@ -320,7 +343,7 @@ curl -fsSL https://openintention.io/join | bash -s -- --nightly --profile infere
 ```
 
 That path is intentionally narrow:
-- opt into exactly one seeded effort at a time
+- opt into exactly one seeded goal at a time
 - keep the same machine contributing repeated loops inside a bounded time window
 - leave behind the same hosted evidence as the one-shot join path
 - choose a fixed interval and loop budget for deterministic cost and behavior
@@ -328,7 +351,7 @@ That path is intentionally narrow:
 It does **not** auto-detect idleness, build a worker mesh, or create an autonomous scheduler.
 This is not yet a full overnight autoresearch worker; it is an opt-in contribution window.
 The stronger path is the external harness compounding flow below.
-It is the first `opt-in local machine to one shared effort overnight` path.
+It is the first `opt-in local machine to one shared goal overnight` path.
 
 For the deterministic hosted rehearsal:
 
@@ -340,7 +363,7 @@ make smoke-nightly-window BASE_URL=https://api.openintention.io SITE_URL=https:/
 
 That report is written under `data/publications/launch/nightly-contribution-window-smoke/`.
 
-The seeded efforts also have publication mirrors intended as the first public invitation
+The seeded goals also have publication mirrors intended as the first public invitation
 surface. After listing efforts, fetch one with:
 
 ```bash
@@ -348,7 +371,7 @@ curl http://127.0.0.1:8000/api/v1/efforts
 curl http://127.0.0.1:8000/api/v1/publications/efforts/<effort_id>
 ```
 
-To export those seeded effort briefs as markdown files:
+To export those seeded goal briefs as markdown files:
 
 ```bash
 python3 scripts/export_effort_briefs.py
@@ -392,17 +415,17 @@ For the full policy and a rehearsal command, see:
 - `docs/proof-effort-lifecycle.md`
 - `python3 scripts/run_proof_effort_rollover_smoke.py --base-url http://127.0.0.1:8000`
 
-## Hosted effort explorer
+## Hosted goal explorer
 
-The public site can now render live effort explorer pages from the hosted control plane instead of
+The public site can now render live goal pages from the hosted control plane instead of
 only serving static markdown exports.
 
 Routes:
-- `/efforts` lists the current shared efforts
-- `/efforts/<effort_id>` renders one effort with live frontier, claim, and workspace state
+- `/efforts` lists the current shared goals
+- `/efforts/<effort_id>` renders one goal page with live frontier, claim, and workspace state
 
 The site service should build the microsite as before, but run the Python site app so the explorer
-routes can fetch live effort state at request time. On Railway, use the `DOCKERFILE` builder with
+routes can fetch live goal state at request time. On Railway, use the `DOCKERFILE` builder with
 `docker/site.Dockerfile`, then set:
 
 ```bash
@@ -415,7 +438,7 @@ Use the split deliberately:
 - `OPENINTENTION_API_BASE_URL` stays public so join commands and markdown mirror links remain usable outside Railway
 
 That keeps the browser on `openintention.io` while letting the server-side explorer use the hosted
-API as its current source of truth. This is the current production baseline for the hosted explorer.
+API as its current source of truth. This is the current production baseline for the hosted goal explorer.
 
 If you already have an existing SQLite database from before projection materialization,
 rebuild the projections once:
@@ -442,8 +465,8 @@ start here:
 - `python3 scripts/run_shared_participation_smoke.py --base-url <shared_api_base_url>`
 
 The hosted join command is the current public action. It bootstraps the repo into a local venv,
-targets the live hosted seeded effort path, and writes a local report showing what contribution
-state was created and what live effort page to inspect next.
+targets the live hosted seeded-goal path, and writes a local report showing what contribution
+state was created and what live goal page to inspect next.
 
 Use the public-ingress smoke command when you want the deterministic verification bar for the
 newcomer experience:
@@ -453,7 +476,7 @@ python3 scripts/run_public_ingress_smoke.py
 ```
 
 For hosted shared participation, use `scripts/run_shared_participation_smoke.py`. It verifies
-that two separate participants can append into the same seeded eval effort on one shared API.
+that two separate participants can append into the same seeded eval goal on one shared API.
 
 For the deterministic advanced-path rehearsal, use:
 
@@ -472,7 +495,7 @@ python3 scripts/run_production_smoke.py \
   --api-base-url https://api.openintention.io
 ```
 
-That combines the public-ingress smoke, the hosted shared-participation smoke, and a live effort
+That combines the public-ingress smoke, the hosted shared-participation smoke, and a live goal
 explorer check into one report under `data/publications/launch/production-smoke/`.
 
 ## Real Overnight Autoresearch Worker
@@ -481,7 +504,7 @@ The advanced path is now a bounded overnight worker for a real external harness 
 
 It keeps the same machine/operator model as `autoresearch`, but the shared source of truth stays in
 the OpenIntention event log instead of a local branch tip. Each imported kept result leaves behind a
-workspace, claim, live discussion link, and content-addressed artifact manifest in the shared effort.
+workspace, claim, live discussion link, and content-addressed artifact manifest on the shared goal.
 
 ```bash
 python3 scripts/run_overnight_autoresearch_worker.py \
@@ -512,7 +535,7 @@ The stronger post-v1 proof is not just multi-party shared state. It is compoundi
 from a real external harness.
 
 This repo now includes a smoke path that imports real kept-history from an external Apple
-Silicon harness into a dedicated shared effort, records an explicit adoption edge, and exports
+Silicon harness into a dedicated shared goal, records an explicit adoption edge, and exports
 a markdown report showing what compounded and what the next participant should continue.
 
 ```bash
@@ -533,7 +556,7 @@ later participants can adopt and extend.
 
 The current v1 production floor is intentionally small:
 - one hosted API service with a persistent `/data` volume
-- one hosted site service that reads live effort state from the API
+- one hosted site service that reads live goal state from the API
 - one production smoke command that exercises the public ingress and shared participation path
 - one tested backup/restore archive format for the runtime SQLite database and artifact root
 
@@ -567,7 +590,7 @@ docs/product-notes/         # product vision, hypotheses, and strategy notes
 docs/public-launch-runbook.md # current narrow build-in-public operator flow
 docs/verification-gate.md  # repeatable merge/deploy/launch verification ladder
 docs/join-with-ai.md         # newcomer-facing AI-agent participation brief
-docs/seeded-efforts.md      # first public efforts to seed and invite participation around
+docs/seeded-efforts.md      # first public goals to seed and invite participation around
 spec/                       # machine-readable product spec, backlog, domain model, OpenAPI
 schemas/                    # JSON Schemas for core protocol objects
 apps/api/                   # FastAPI service
@@ -589,8 +612,8 @@ adapters/distributed/       # internal notes for a future distributed adapter se
 - `workspace.started`, `snapshot.published`, `run.completed`, `claim.asserted`,
   `claim.reproduced`, `claim.contradicted`, `adoption.recorded`, `summary.published`,
   `effort.registered`
-- seeded efforts that external clients can join before any subscription layer exists
-- first public seeded efforts documented in `docs/seeded-efforts.md`
+- seeded goals that external clients can join before any subscription layer exists
+- first public seeded goals documented in `docs/seeded-efforts.md`
 - workspace listing and detail views
 - frontier query by objective / platform / budget via a materialized SQLite projection
 - claim summaries with support and contradiction counts via a materialized SQLite projection

@@ -29,8 +29,8 @@ For launch, these terms should mean:
 - the newcomer can identify what is real today versus what is future direction
 
 ### Joined
-- the newcomer is attached to a specific seeded effort
-- a workspace exists for that newcomer inside the effort
+- the newcomer is attached to a specific seeded goal
+- a workspace exists for that newcomer inside the goal's current effort window
 - the system can point to that workspace as participation in a shared objective
 
 ### Participated
@@ -49,7 +49,7 @@ The launch path should prove all three, not just onboarding.
 Before participation, the newcomer should be able to infer:
 - OpenIntention is the public brand
 - `research-os` is the current technical control-plane implementation
-- the control plane, seeded efforts, planner, and publication mirrors are real
+- the control plane, seeded goals, planner, and publication mirrors are real
 - the current tiny-loop client is still a proxy contribution path
 - the product is not yet a live mesh or finished community app
 
@@ -62,7 +62,7 @@ The public surface currently has three different evidence modes:
 - live hosted state:
   - `https://openintention.io/efforts`
   - hosted API endpoints and publication mirrors
-  - use this for the current shared effort state
+  - use this for the current shared goal state
 - generated snapshot evidence:
   - `data/publications/efforts/*.md`
   - `apps/site/dist/evidence/*.html`
@@ -90,19 +90,19 @@ The newcomer should be able to answer:
 - what they can do here today
 - what is real versus what is future direction
 
-### Step 3: Identify the seeded effort path
+### Step 3: Identify the seeded goal path
 
 The newcomer should find:
 - `Eval Sprint: improve validation loss under fixed budget`
 - `Inference Sprint: improve flash-path throughput on H100`
 
-The newcomer should understand that these are the current narrow participation surfaces.
+The newcomer should understand that these are the current narrow goal surfaces people can join.
 
 ### Step 4: Choose the default participation mode
 
 #### Human-first mode
 
-If the newcomer wants the shortest path that actually joins a live seeded effort, they should run:
+If the newcomer wants the shortest path that actually joins a live seeded goal, they should run:
 
 ```bash
 curl -fsSL https://openintention.io/join | bash
@@ -135,12 +135,12 @@ The expected current loop is:
 - discover the repo from the public site
 - clone the repo
 - run the hosted join bootstrap
-- land a visible workspace, claim/reproduction, and report into the live effort state
-- generate a local report pointing to the live effort page and workspace discussion
+- land a visible workspace, claim/reproduction, and report into the live goal state
+- generate a local report pointing to the live goal page and workspace discussion
 
 The success condition is not "ran the command". It is:
 - onboarded into the product boundary
-- joined to a specific effort
+- joined to a specific goal
 - participated by leaving behind durable contribution state
 
 ### Step 6: Inspect the resulting evidence
@@ -161,7 +161,7 @@ The flow is only successful if the newcomer can see concrete artifacts, not just
 The canonical ingress flow passes if:
 - a newcomer can start from the public surface only
 - the product boundary is inferred correctly
-- the seeded effort path is discovered without hidden context
+- the seeded goal path is discovered without hidden context
 - the newcomer is onboarded, joined, and participated by the definitions above
 - at least one resulting artifact is inspected
 
@@ -172,7 +172,7 @@ The canonical ingress flow fails if:
 - the newcomer mistakes proxy loops for production benchmark infrastructure
 - the newcomer cannot tell what OpenIntention is versus what `research-os` is
 - the newcomer cannot discover how to participate
-- the newcomer never becomes attached to a specific effort/workspace
+- the newcomer never becomes attached to a specific goal/workspace
 - the newcomer runs commands but leaves behind no durable contribution state
 - the newcomer cannot find any inspectable evidence after participation
 

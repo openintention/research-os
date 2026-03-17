@@ -41,35 +41,36 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
 
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
-    assert "Join a live AI research effort with your agent." in html
-    assert "Hosted effort explorer is live" in html
+    assert "Turn an ML goal into shared progress for humans and agents." in html
+    assert "Live goal pages are real" in html
     assert "1 command to join" in html
-    assert "Snapshot evidence bundled" in html
+    assert "Visible proof bundled" in html
     assert "For ML engineers, benchmark tinkerers, and agent-native builders" in html
-    assert "OpenIntention gives small research loops a shared place to land." in html
+    assert "Most ML work disappears into local runs, branches, and chat logs." in html
     assert "Freshness model:" in html
-    assert "See how it works" in html
+    assert "See how goals work" in html
     assert "What you get back" in html
     assert "A visible workspace" in html
     assert "A visible result" in html
     assert "A handoff" in html
     assert "Open deterministic join proof" in html
     assert "./styles.css?v=" in html
-    assert "Pick your first effort and run one command" in html
-    assert "The linked briefs below are generated snapshots from the last export." in html
+    assert "Pick a goal and run one command" in html
+    assert "The join command lands work in hosted goal state." in html
+    assert "snapshots from the last export." in html
     assert "Best first path" in html
     assert "Alternative path" in html
-    assert "Start here if you want the easiest first contribution." in html
-    assert "Use this path if you care more about performance work." in html
+    assert "Start here if you want the easiest first goal." in html
+    assert "Use this goal if you care more about performance work." in html
     assert "Copy this" in html
     assert "Copy command" in html
     assert "Run it yourself or paste the same one-liner into Claude or Codex." in html
     assert "This starts with" in html
-    assert "Eval Sprint, the easiest first path." in html
-    assert "What your first run leaves behind" in html
-    assert "Bundled snapshot evidence" in html
+    assert "Eval Sprint, the easiest first goal." in html
+    assert "What your first contribution leaves behind" in html
+    assert "Bundled goal snapshots" in html
     assert "Open repeated hosted participation proof" in html
-    assert "A successful join should leave behind visible work" in html
+    assert "A successful join should leave behind visible work on a goal page" in html
     assert "A recent public-surface join" in html
     assert "Each successful join leaves behind a workspace" in html
     assert "Eval Sprint" in html
@@ -78,7 +79,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "2 workspaces" in html
     assert "For agents and technical users" in html
     assert "Technical appendix" in html
-    assert "Use the live explorer for current hosted state" in html
+    assert "Use the live goal pages for current hosted state" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
@@ -89,7 +90,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "data-copy-eval=" in html
     assert "data-copy-inference=" in html
     assert "Open the agent brief" in html
-    assert "These counts come from generated effort briefs packaged with this build." in html
+    assert "These counts come from generated goal briefs packaged with this build." in html
     assert "Both seeded efforts already have visible work" not in html
     assert "Already live now" not in html
     assert "What an effort is" not in html

@@ -134,7 +134,7 @@ def build_repeated_external_participation_report(result: RepeatedExternalPartici
         "\n".join(
             [
                 f"### {summary.effort_name}",
-                f"- effort page: `{summary.effort_page_url}`",
+                f"- goal page: `{summary.effort_page_url}`",
                 f"- visible actors on live page: {', '.join(f'`{actor}`' for actor in summary.visible_actor_ids)}",
                 f"- visible workspaces in effort: {summary.visible_workspace_count}",
                 f"- claims in effort scope: {summary.claim_count}",
@@ -164,7 +164,7 @@ def build_repeated_external_participation_report(result: RepeatedExternalPartici
             "",
             "## Outcome",
             "- Multiple distinct participants appended work through the canonical hosted endpoint.",
-            "- The resulting work is visible from the public effort pages and workspace discussion mirrors.",
+            "- The resulting work is visible from the public goal pages and workspace discussion mirrors.",
             "- The hosted-network story now has repeated participation evidence, not only one internal shared-participation proof.",
         ]
     ) + "\n"
@@ -311,7 +311,7 @@ def _build_effort_summaries(
         if len(visible_actor_ids) != len(effort_records):
             missing = sorted({record.actor_id for record in effort_records} - set(visible_actor_ids))
             raise RuntimeError(
-                f"effort page {effort_page_url} missing visible actor attribution for: {', '.join(missing)}"
+                f"goal page {effort_page_url} missing visible actor attribution for: {', '.join(missing)}"
             )
 
         claims = read_json(
@@ -356,7 +356,7 @@ def _observed_breakpoints() -> list[str]:
         ),
         (
             "Handoff: public attribution is currently lightweight `actor_id` assertion visible on "
-            "effort pages and discussion mirrors, not an authenticated account system."
+            "goal pages and discussion mirrors, not an authenticated account system."
         ),
     ]
 

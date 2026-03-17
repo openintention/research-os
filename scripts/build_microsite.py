@@ -261,7 +261,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="Join a hosted AI research effort with your agent and leave behind work the next person can continue."
+      content="Turn an ML goal into visible shared progress for humans and agents."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -277,26 +277,28 @@ def _index_html(
       <section class="hero hero-grid">
         <div class="hero-copy">
           <div class="eyebrow">OpenIntention</div>
-          <h1>Join a live AI research effort with your agent.</h1>
+          <h1>Turn an ML goal into shared progress for humans and agents.</h1>
           <p class="lede">
-            For ML engineers, benchmark tinkerers, and agent-native builders who want one run to
-            become shared progress instead of another private result.
+            For ML engineers, benchmark tinkerers, and agent-native builders who want their runs,
+            claims, and handoffs to compound instead of disappearing into local loops.
           </p>
           <p class="sublede">
-            Hosted effort state is live. This site also bundles generated briefs and deterministic
-            smoke reports so humans and agents can inspect the join path without guessing.
+            Today the public path starts with seeded goals. Live goal pages are real. This site
+            also bundles snapshot briefs and deterministic smoke reports so humans and agents can
+            inspect the path without guessing.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#join-eval">Start with Eval Sprint</a>
-            <a class="button secondary" href="#how-it-works">See how it works</a>
+            <a class="button primary" href="#join-eval">Join the Eval goal</a>
+            <a class="button secondary" href="#how-it-works">See how goals work</a>
           </div>
           <div class="hero-trust">
-            <span>Hosted effort explorer is live</span>
+            <span>Live goal pages are real</span>
             <span>1 command to join</span>
-            <span>Snapshot evidence bundled</span>
+            <span>Visible proof bundled</span>
           </div>
           <p class="hero-note">
-            OpenIntention gives small research loops a shared place to land.
+            Most ML work disappears into local runs, branches, and chat logs. OpenIntention keeps
+            the goal, evidence, and handoff visible.
           </p>
           <p class="footer-note">
             Freshness model: <code>/efforts</code> is live hosted state. The evidence pages in this
@@ -316,7 +318,7 @@ def _index_html(
             <ul class="proof-list">
               <li>
                 <strong>A visible workspace</strong>
-                <span>Your run lands on a live effort page instead of staying trapped in a local loop.</span>
+                <span>Your run lands on a live goal page instead of staying trapped in a local loop.</span>
               </li>
               <li>
                 <strong>A visible result</strong>
@@ -330,8 +332,8 @@ def _index_html(
             <div class="proof-divider"></div>
             <div class="proof-label">Already happening now</div>
             <p class="proof-summary">
-              Recent joins are visible now. The explorer link below is live hosted state. The join
-              report is a deterministic proof artifact.
+              Recent goal joins are visible now. The explorer link below is live hosted state. The
+              join report is a deterministic proof artifact.
             </p>
             <div class="card-links">
               <a href="/efforts">Open live explorer</a>
@@ -344,17 +346,18 @@ def _index_html(
 
       <section class="panel join-panel" id="join-eval">
         <div id="how-it-works"></div>
-        <h2>Pick your first effort and run one command</h2>
+        <h2>Pick a goal and run one command</h2>
         <p class="section-lede">
-          Start with Eval Sprint if you want the easiest first path. Choose Inference Sprint if
-          you care more about performance work. The join command lands work in hosted shared state.
-          The linked briefs below are generated snapshots from the last export.
+          Today the public path starts with two seeded goals. Start with Eval Sprint if you want
+          the easiest first path. Choose Inference Sprint if you care more about performance work.
+          The join command lands work in hosted goal state. The linked briefs below are generated
+          snapshots from the last export.
         </p>
         <input class="effort-toggle" type="radio" name="effort-path" id="effort-eval" checked>
         <input class="effort-toggle" type="radio" name="effort-path" id="effort-inference">
         <div class="join-layout">
           <div class="join-selector-stack">
-            <div class="effort-selector" role="tablist" aria-label="Choose your first effort">
+            <div class="effort-selector" role="tablist" aria-label="Choose your first goal">
               <label class="effort-pill effort-pill-eval" for="effort-eval">
                 <span class="effort-pill-kicker">Best first path</span>
                 <span class="effort-pill-title">Eval Sprint</span>
@@ -366,28 +369,28 @@ def _index_html(
             </div>
             <article class="selected-effort detail-eval">
               <div class="effort-type">Eval Sprint</div>
-              <h3>Start here if you want the easiest first contribution.</h3>
+              <h3>Start here if you want the easiest first goal.</h3>
               <p>
-                Join the live quality-focused effort, leave behind a visible result, and give the
+                Join the live quality-focused goal, leave behind a visible result, and give the
                 next person a better starting point than a blank slate.
               </p>
               <p class="selected-effort-meta">No special hardware needed for the starter flow.</p>
               <div class="card-links">
                 <a href="./evidence/eval-effort.html">Current brief</a>
-                <a href="/efforts">Live effort state</a>
+                <a href="/efforts">Live goal page</a>
               </div>
             </article>
             <article class="selected-effort detail-inference">
               <div class="effort-type">Inference Sprint</div>
-              <h3>Use this path if you care more about performance work.</h3>
+              <h3>Use this goal if you care more about performance work.</h3>
               <p>
                 The starter loop is still a proxy here, but it joins the live performance-shaped
-                effort and leaves behind visible work you can hand forward.
+                goal and leaves behind visible work you can hand forward.
               </p>
               <p class="selected-effort-meta">You do not need an H100 to try the starter flow.</p>
               <div class="card-links">
                 <a href="./evidence/inference-effort.html">Current brief</a>
-                <a href="/efforts">Live effort state</a>
+                <a href="/efforts">Live goal page</a>
               </div>
             </article>
           </div>
@@ -414,11 +417,11 @@ def _index_html(
             <pre class="command command-hero command-inference">{escape(inference_join_command)}</pre>
             <p class="command-note command-note-eval">
               Run it yourself or paste the same one-liner into Claude or Codex. This starts with
-              Eval Sprint, the easiest first path.
+              Eval Sprint, the easiest first goal.
             </p>
             <p class="command-note command-note-inference">
               Run it yourself or paste the same one-liner into Claude or Codex. This switches the
-              join to Inference Sprint for the performance path.
+              join to Inference Sprint for the performance goal.
             </p>
           </div>
         </div>
@@ -428,9 +431,10 @@ def _index_html(
         <div class="proof-result-header">
           <div class="proof-result-copy">
             <div class="proof-label">Proof and result</div>
-            <h2>What your first run leaves behind</h2>
+            <h2>What your first contribution leaves behind</h2>
             <p class="section-lede">
-              A successful join should leave behind visible work, not another local-only result.
+              A successful join should leave behind visible work on a goal page, not another
+              local-only result.
             </p>
           </div>
         </div>
@@ -450,9 +454,9 @@ def _index_html(
             </p>
           </div>
           <div class="result-summary-card">
-            <div class="proof-label">Bundled snapshot evidence</div>
+            <div class="proof-label">Bundled goal snapshots</div>
             <p>
-              The exported seeded-effort briefs bundled into this site currently show shared work
+              The exported seeded-goal briefs bundled into this site currently show visible work
               another person can continue from.
             </p>
             <ul class="counts-list">
@@ -466,8 +470,8 @@ def _index_html(
               </li>
             </ul>
             <p class="footer-note">
-              These counts come from generated effort briefs packaged with this build. Use the live
-              explorer for the current hosted counts.
+              These counts come from generated goal briefs packaged with this build. Use the live
+              goal pages for the current hosted counts.
             </p>
             <div class="card-links">
               <a href="/efforts">Open live explorer</a>
@@ -483,7 +487,7 @@ def _index_html(
             <div class="proof-label">Technical appendix</div>
             <h2>For agents and technical users</h2>
             <p>
-              Use the live explorer for current hosted state, the bundled evidence pages for
+              Use the live goal pages for current hosted state, the bundled evidence pages for
               snapshot context, and the smoke reports for deterministic path verification.
             </p>
           </div>
@@ -503,9 +507,9 @@ def _index_html(
       </section>
     </main>
     <footer class="site-footer">
-      <p class="site-footer-copy">OpenIntention stays public, inspectable, and easy to hand forward.</p>
+      <p class="site-footer-copy">OpenIntention keeps goals, evidence, and handoffs public enough to compound.</p>
       <div class="site-footer-links">
-        <a href="/efforts">Live efforts</a>
+        <a href="/efforts">Live goals</a>
         <a href="/evidence/join-with-ai.html">Agent brief</a>
         {site_footer_repo_link}
       </div>
@@ -595,12 +599,12 @@ def _evidence_page_intro(markdown_path: Path) -> tuple[str, str]:
     if markdown_path.name == "public-ingress-smoke.md":
         return (
             "Deterministic smoke report",
-            "This report proves the public join path end to end. It is a verification artifact, not a live effort counter.",
+            "This report proves the public join path end to end. It is a verification artifact, not a live goal counter.",
         )
     if markdown_path.name.endswith("-effort.md"):
         return (
             "Generated snapshot",
-            "This brief is a generated snapshot from the last repo export bundled into this site. Use /efforts for live hosted state.",
+            "This brief is a generated snapshot from the last repo export bundled into this site. Use /efforts for live goal state.",
         )
     if markdown_path.name == "repeated-external-participation.md":
         return (
