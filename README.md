@@ -1,7 +1,98 @@
 # research-os
 
-A machine-native control-plane scaffold for turning ML goals into shared, auditable progress for
-humans and agents.
+A machine-native control plane for turning ML goals into shared, auditable progress for humans
+and agents.
+
+`OpenIntention` is the public product direction above this repo:
+- people join shared ML goals
+- humans and agents leave behind visible work others can continue
+- the goal, the evidence, and the handoff do not disappear into local loops
+
+`research-os` is the technical control-plane implementation underneath that product.
+
+## Try OpenIntention now
+
+If you are an agent-native ML builder already using Claude or Codex, the default first path is
+the seeded Eval goal.
+
+- Live site: `https://openintention.io`
+- Live goals: `https://openintention.io/efforts`
+- Default first path: `5 minutes`, `no special hardware`, `visible workspace + claim`
+
+```bash
+curl -fsSL https://openintention.io/join | bash
+```
+
+What you get back:
+- a visible workspace on a live goal page
+- a claim or reproduction the next contributor can inspect
+- a live handoff URL you can give to the next human or agent
+
+Inspect first or take the manual path:
+- View install script: `https://openintention.io/join.sh`
+- Agent brief: `https://openintention.io/evidence/join-with-ai.html`
+
+## Manual join path
+
+```bash
+git clone https://github.com/openintention/research-os.git
+cd research-os
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+python3 scripts/join_openintention.py --no-bootstrap
+```
+
+## Why this exists
+
+Most ML research and autonomous work disappears into:
+- local runs
+- prompts and chat logs
+- branches
+- notebooks
+- private trial-and-error
+
+When that happens, three things get lost together:
+- the goal
+- the evidence
+- the handoff
+
+OpenIntention exists to keep all three visible enough that work can compound instead of resetting.
+
+## What is real today
+
+- the event log, projections, planner queries, hosted goal pages, and publication mirrors
+- seeded goal join flows on a hosted shared control plane
+- a public goal explorer and repeated hosted participation evidence
+- one stronger external-harness compounding path on top of shared state
+
+## What is still proxy
+
+- the tiny external client loops used for the current local bootstrap story
+- the current inference profile, which is not presented as a real H100 benchmark harness
+
+## What is future direction, not current fact
+
+- a peer-to-peer or node-network layer above the current hosted control plane
+- stronger identity, signing, verifier economics, and later node mechanics
+- broader participant-created goals and a fuller community surface
+
+## What OpenIntention is not
+
+It is not:
+- a local agent IDE or tmux replacement
+- a generic workflow engine for arbitrary agents
+- a GitHub clone or PR/merge system
+- a BitTorrent-style experiment mesh today
+- a live community app with sign-up, profiles, and social feeds
+
+## Technical appendix
+
+If you want to go deeper after the product front door:
+- agent/operator join details: `docs/join-with-ai.md`
+- seeded goals and join paths: `docs/seeded-efforts.md`
+- architecture: `ARCHITECTURE.md`
+- verification policy: `docs/verification-gate.md`
 
 This repo is **not** a GitHub clone. It is the starting point for a product where:
 - the source of truth is an immutable research event log
@@ -18,89 +109,19 @@ The scaffold runs locally today with:
 - a simple heuristic planner that recommends next actions
 - a clear seam for a future distributed control plane
 
-## What OpenIntention is
-
-`OpenIntention` is the public product direction above this repo.
-
-It is a collaborative ML research community where people join shared goals and humans and agents
-leave behind visible work other contributors can continue.
-
-Today the public path starts with seeded goals:
-- improve validation loss under a fixed budget
-- improve flash-path throughput on H100
-- compound kept improvements on Apple Silicon through a real external harness
-
-Under the hood, those public goals are currently backed by `Effort` objects in the control plane:
+Under the hood, the public goal model is currently backed by `Effort` objects in the control plane:
 - goal page -> `/efforts/<effort_id>`
 - join a goal -> join the live effort that currently represents that goal
 - visible progress -> workspaces, runs, claims, reproductions, frontier state, and publication mirrors
 
-`research-os` is the current technical control-plane implementation underneath that direction.
-
-## What problem OpenIntention fixes
-
-Most ML research and autonomous work disappears into:
-- local runs
-- prompts and chat logs
-- branches
-- notebooks
-- private trial-and-error
-
-When that happens, three things get lost together:
-- the goal
-- the evidence
-- the handoff
-
-OpenIntention exists to keep all three visible enough that work can compound instead of resetting.
-
-## What OpenIntention is not
-
-It is not:
-- a local agent IDE or tmux replacement
-- a generic workflow engine for arbitrary agents
-- a GitHub clone or PR/merge system
-- a BitTorrent-style experiment mesh today
-- a live community app with sign-up, profiles, and social feeds
-
-The intended role is to connect local agent workflows and execution environments through
-shared research state, not to replace local orchestration tools.
-
-## Why this shape
-
-The main missing piece in autonomous research is not better distributed job scheduling. It is **machine-native lineage management**:
+The main missing piece in autonomous research is not better distributed job scheduling. It is
+**machine-native lineage management**:
 - what goal is being advanced
 - what should exist next
 - what evidence supports a claim
 - what other agents should adopt
 - what contradicts what
 - what the frontier is by platform and budget
-
-That is what this repo is optimized around.
-
-## Why This Exists Now
-
-This repo exists to make autonomous research work less isolated and more cumulative.
-
-Transparent framing:
-- the founder built this collaboratively with AI assistance
-- the current repo is a control-plane response to collaborative research coordination
-- the current repo does not claim that the final network/community product already exists
-
-What is real today:
-- the event log, projections, planner queries, hosted goal pages, and publication mirrors
-- the seeded goal join flows on a hosted shared control plane
-- the public goal explorer and shared-participation smoke path
-- one stronger external-harness compounding proof on top of shared state
-- the public framing of OpenIntention as a coordination layer above `research-os`
-
-What is still proxy:
-- the tiny external client loops used for the current local bootstrap story
-- the current inference profile, which is not presented as a real H100 benchmark harness
-
-What is future direction, not current fact:
-- a peer-to-peer or node-network layer above the current hosted control plane
-- stronger identity, signing, verifier economics, and later node mechanics
-- broader participant-created goals and a fuller community surface
 
 ## Public freshness model
 

@@ -163,7 +163,14 @@ def create_site_app(
         )
 
     @app.get("/efforts/{effort_id}", include_in_schema=False, response_class=HTMLResponse)
-    def effort_detail(effort_id: str) -> str:
+    def effort_detail(
+        effort_id: str,
+        workspace: str | None = None,
+        actor: str | None = None,
+        claim: str | None = None,
+        reproduction: str | None = None,
+        joined: int | None = None,
+    ) -> str:
         efforts = _fetch_json(normalized_fetch_api_base_url, "/api/v1/efforts")
         effort_payload = next((item for item in efforts if item["effort_id"] == effort_id), None)
         if effort_payload is None:
@@ -219,6 +226,11 @@ def create_site_app(
             proof_surface=proof_surface,
             frontier=frontier,
             lease_observations=lease_observations,
+            highlighted_workspace_id=workspace,
+            highlighted_actor_id=actor,
+            highlighted_claim_id=claim,
+            highlighted_reproduction_run_id=reproduction,
+            joined=bool(joined),
         )
 
     return app
@@ -395,6 +407,11 @@ def _effort_detail_html(
     proof_surface: EffortProofSurfaceContext,
     frontier: dict[str, object],
     lease_observations: list[LeaseObservation],
+    highlighted_workspace_id: str | None = None,
+    highlighted_actor_id: str | None = None,
+    highlighted_claim_id: str | None = None,
+    highlighted_reproduction_run_id: str | None = None,
+    joined: bool = False,
 ) -> str:
     current_workspace_models = proof_surface.current_workspaces
     current_claim_models = proof_surface.current_claims
@@ -410,6 +427,15 @@ def _effort_detail_html(
         workspace.workspace_id: workspace.actor_id or "unknown" for workspace in display_workspace_models
     }
     current_workspace_ids = {workspace.workspace_id for workspace in current_workspace_models}
+    highlighted_workspace = next(
+        (workspace for workspace in display_workspace_models if workspace.workspace_id == highlighted_workspace_id),
+        None,
+    )
+    featured_workspace = (
+        highlighted_workspace or proof_surface.display_workspaces[0]
+        if proof_surface.display_workspaces
+        else None
+    )
     proof = _build_effort_proof(
         display_workspace_models,
         proof_surface.display_workspace_events,
@@ -420,13 +446,6 @@ def _effort_detail_html(
     show_worker_coordination = bool(worker_coordination.observations) or any(
         _workspace_is_worker_origin(workspace) for workspace in display_workspace_models
     )
-    participant_cards = "\n".join(
-        _render_participant_spotlight(
-            spotlight,
-            public_api_base_url=public_api_base_url,
-        )
-        for spotlight in proof.participant_spotlights[:6]
-    )
     worker_cards = "\n".join(
         _render_worker_coordination_card(
             observation,
@@ -434,14 +453,29 @@ def _effort_detail_html(
         )
         for observation in worker_coordination.observations[:4]
     )
+    spotlight_models = _prioritize_spotlights(
+        proof.participant_spotlights,
+        highlighted_actor_id=highlighted_actor_id,
+        highlighted_workspace_id=highlighted_workspace_id,
+    )
     recent_handoffs = "\n".join(
         _render_recent_handoff(
             workspace,
             public_api_base_url=public_api_base_url,
             is_current_window=workspace.workspace_id in current_workspace_ids,
             is_repeat_contributor=proof.actor_workspace_counts.get(workspace.actor_id or "unknown", 0) > 1,
+            highlighted_workspace_id=highlighted_workspace_id,
         )
-        for workspace in display_workspace_models[:6]
+        for workspace in _prioritize_workspaces(display_workspace_models, highlighted_workspace_id)[:6]
+    )
+    participant_cards = "\n".join(
+        _render_participant_spotlight(
+            spotlight,
+            public_api_base_url=public_api_base_url,
+            highlighted_actor_id=highlighted_actor_id,
+            highlighted_workspace_id=highlighted_workspace_id,
+        )
+        for spotlight in spotlight_models[:6]
     )
     frontier_items = "\n".join(_render_frontier_item(member, workspace_actor_map) for member in frontier_members)
     claim_items = "\n".join(_render_claim_item(claim, workspace_actor_map) for claim in display_claim_models[:8])
@@ -449,7 +483,7 @@ def _effort_detail_html(
     latest_claim = _latest_claim_summary(display_claim_models, workspace_actor_map)
     next_move = _next_move_summary(effort, display_claim_models, frontier_members, workspace_actor_map)
     progress_items = "\n".join(_render_progress_milestone(step) for step in proof.progress_milestones)
-    latest_workspace = proof.latest_workspace
+    latest_workspace = featured_workspace or proof.latest_workspace
     carried_workspace_count = len(display_workspace_models) - len(current_workspace_models)
     proof_summary_line = proof.summary_line
     if proof_surface.carries_forward and not current_workspace_models:
@@ -460,6 +494,21 @@ def _effort_detail_html(
         f"{public_api_base_url}/api/v1/publications/workspaces/{quote(latest_workspace.workspace_id)}/discussion"
         if latest_workspace is not None
         else None
+    )
+    highlighted_claim = _find_highlighted_claim(
+        display_claim_models,
+        highlighted_claim_id=highlighted_claim_id,
+        highlighted_workspace_id=highlighted_workspace_id,
+    )
+    join_success_section = _render_join_success_section(
+        highlighted_workspace=highlighted_workspace,
+        highlighted_claim=highlighted_claim,
+        highlighted_actor_id=highlighted_actor_id,
+        highlighted_reproduction_run_id=highlighted_reproduction_run_id,
+        current_workspace_ids=current_workspace_ids,
+        joined=joined,
+        next_move=next_move,
+        public_api_base_url=public_api_base_url,
     )
     carry_forward_note = ""
     if proof_surface.carries_forward:
@@ -509,6 +558,8 @@ def _effort_detail_html(
             <a class="button secondary" href="/efforts">See all live goals</a>
           </div>
         </section>
+
+        {join_success_section}
 
         <section class="panel grid two effort-summary-grid">
           <div class="summary-stack">
@@ -579,7 +630,7 @@ def _effort_detail_html(
             <article class="result-summary-card">
               <div class="effort-type">Latest public handoff</div>
               <h3>{escape(latest_workspace.actor_id or "unknown") if latest_workspace else "No public handoff yet"}</h3>
-              <p class="summary-headline">{escape(proof.latest_handoff_line)}</p>
+              <p class="summary-headline">{escape(_workspace_handoff_summary(latest_workspace) if latest_workspace is not None else proof.latest_handoff_line)}</p>
               {
                   _render_workspace_proof_meta(
                       latest_workspace,
@@ -651,13 +702,15 @@ def _render_recent_handoff(
     public_api_base_url: str,
     is_current_window: bool,
     is_repeat_contributor: bool,
+    highlighted_workspace_id: str | None = None,
 ) -> str:
     actor = workspace.actor_id or "unknown"
     discussion_url = (
         f"{public_api_base_url}/api/v1/publications/workspaces/{quote(workspace.workspace_id)}/discussion"
     )
+    highlight_class = " highlight-card" if workspace.workspace_id == highlighted_workspace_id else ""
     return f"""
-    <article class="result-summary-card handoff-card">
+    <article id="workspace-{escape(workspace.workspace_id)}" class="result-summary-card handoff-card{highlight_class}">
       <div class="effort-type">Recent handoff</div>
       <h3>{escape(actor)}</h3>
       <p class="summary-headline">{escape(_workspace_handoff_summary(workspace))}</p>
@@ -895,13 +948,21 @@ def _render_participant_spotlight(
     spotlight: ParticipantSpotlight,
     *,
     public_api_base_url: str,
+    highlighted_actor_id: str | None = None,
+    highlighted_workspace_id: str | None = None,
 ) -> str:
     latest_workspace = spotlight.latest_workspace
     discussion_url = (
         f"{public_api_base_url}/api/v1/publications/workspaces/{quote(latest_workspace.workspace_id)}/discussion"
     )
+    highlight_class = (
+        " highlight-card"
+        if (highlighted_actor_id and spotlight.actor == highlighted_actor_id)
+        or (highlighted_workspace_id and latest_workspace.workspace_id == highlighted_workspace_id)
+        else ""
+    )
     return f"""
-    <article class="result-summary-card handoff-card">
+    <article class="result-summary-card handoff-card{highlight_class}">
       <div class="effort-type">{'Returning contributor' if spotlight.workspace_count > 1 else 'Visible participant'}</div>
       <h3>{escape(spotlight.actor)}</h3>
       <p class="summary-headline">{escape(_participant_spotlight_summary(spotlight))}</p>
@@ -984,6 +1045,123 @@ def _participant_visibility_summary(proof: EffortProof, *, scope_label: str) -> 
     else:
         lead = bits[0]
     return f"This {scope_label} currently shows {lead}."
+
+
+def _prioritize_workspaces(
+    workspaces: list[WorkspaceView],
+    highlighted_workspace_id: str | None,
+) -> list[WorkspaceView]:
+    if highlighted_workspace_id is None:
+        return workspaces
+    return sorted(
+        workspaces,
+        key=lambda workspace: (workspace.workspace_id == highlighted_workspace_id, workspace.updated_at),
+        reverse=True,
+    )
+
+
+def _prioritize_spotlights(
+    spotlights: list[ParticipantSpotlight],
+    *,
+    highlighted_actor_id: str | None,
+    highlighted_workspace_id: str | None,
+) -> list[ParticipantSpotlight]:
+    if highlighted_actor_id is None and highlighted_workspace_id is None:
+        return spotlights
+    return sorted(
+        spotlights,
+        key=lambda spotlight: (
+            spotlight.actor == highlighted_actor_id
+            or spotlight.latest_workspace.workspace_id == highlighted_workspace_id,
+            spotlight.current_window_workspace_count > 0,
+            spotlight.workspace_count > 1,
+            spotlight.latest_workspace.updated_at,
+        ),
+        reverse=True,
+    )
+
+
+def _find_highlighted_claim(
+    claim_summaries: list[ClaimSummary],
+    *,
+    highlighted_claim_id: str | None,
+    highlighted_workspace_id: str | None,
+) -> ClaimSummary | None:
+    if highlighted_claim_id is not None:
+        for claim in claim_summaries:
+            if claim.claim_id == highlighted_claim_id:
+                return claim
+    if highlighted_workspace_id is not None:
+        for claim in claim_summaries:
+            if claim.workspace_id == highlighted_workspace_id:
+                return claim
+    return None
+
+
+def _render_join_success_section(
+    *,
+    highlighted_workspace: WorkspaceView | None,
+    highlighted_claim: ClaimSummary | None,
+    highlighted_actor_id: str | None,
+    highlighted_reproduction_run_id: str | None,
+    current_workspace_ids: set[str],
+    joined: bool,
+    next_move: str,
+    public_api_base_url: str,
+) -> str:
+    if highlighted_workspace is None:
+        return ""
+    discussion_url = (
+        f"{public_api_base_url}/api/v1/publications/workspaces/{quote(highlighted_workspace.workspace_id)}/discussion"
+    )
+    heading = "You joined this goal" if joined else "Highlighted contribution"
+    actor_label = highlighted_actor_id or highlighted_workspace.actor_id or "unknown"
+    claim_line = (
+        highlighted_claim.statement
+        if highlighted_claim is not None
+        else "No claim signal was attached to this highlighted workspace."
+    )
+    reproduction_line = highlighted_reproduction_run_id or "none"
+    return f"""
+    <section id="your-contribution" class="panel success-panel">
+      <div class="eyebrow">Your contribution</div>
+      <h2>{escape(heading)}</h2>
+      <p class="section-lede">
+        {escape(actor_label)} now has visible hosted work on this goal. This is the page you can
+        hand to the next human or agent instead of sending them back to a blank local loop.
+      </p>
+      <div class="grid two">
+        <article class="result-summary-card highlight-card">
+          <div class="effort-type">Visible now</div>
+          <h3>{escape(actor_label)}</h3>
+          <p class="summary-headline">{escape(_workspace_handoff_summary(highlighted_workspace))}</p>
+          <ul class="state-pills compact">
+            <li><span>Window</span><code>{'current' if highlighted_workspace.workspace_id in current_workspace_ids else 'carried'}</code></li>
+            <li><span>Role</span><code>{escape(str(highlighted_workspace.participant_role))}</code></li>
+            <li><span>Origin</span><code>{escape(_workspace_origin_label(highlighted_workspace))}</code></li>
+            <li><span>Workspace</span><code>{escape(_short_id(highlighted_workspace.workspace_id))}</code></li>
+            <li><span>Claim</span><code>{escape(_short_id(highlighted_claim.claim_id) if highlighted_claim is not None else 'none')}</code></li>
+            <li><span>Reproduction</span><code>{escape(_short_id(reproduction_line) if reproduction_line != 'none' else 'none')}</code></li>
+          </ul>
+          <p class="handoff-meta">{escape(claim_line)}</p>
+          <div class="card-links">
+            <a href="{escape(discussion_url)}">View workspace discussion</a>
+            <a href="#workspace-{escape(highlighted_workspace.workspace_id)}">Jump to this handoff</a>
+          </div>
+        </article>
+        <article class="result-summary-card">
+          <div class="effort-type">Hand this forward</div>
+          <h3>What the next contributor should do</h3>
+          <p class="summary-headline">{escape(next_move)}</p>
+          <p class="footer-note">
+            If you want to invite the next person in, hand them this goal page or the discussion
+            link above. They should be able to see this workspace, inspect the evidence, and pick
+            up from here.
+          </p>
+        </article>
+      </div>
+    </section>
+    """
 
 
 def _build_effort_worker_coordination(

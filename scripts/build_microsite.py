@@ -39,9 +39,14 @@ class EffortOverview:
     platform: str
     budget_seconds: str
     summary: str
+    best_current_result: str
+    latest_claim_signal: str
+    latest_visible_handoff: str
     attached_workspaces: str
     claims_in_scope: str
     frontier_members: str
+    visible_participants: str
+    updated_at: str
 
 
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
@@ -187,16 +192,26 @@ def _parse_effort_overview(path: Path) -> EffortOverview:
         return match.group(1).strip() if match else default
 
     title = capture(r"^# Effort: (.+)$")
+    visible_participants = len({match.strip() for match in re.findall(r"actor=([^,\n]+)", text)})
     return EffortOverview(
         title=title,
         objective=capture(r"^- Objective: `([^`]+)`$"),
         platform=capture(r"^- Platform: `([^`]+)`$"),
         budget_seconds=capture(r"^- Budget seconds: `([^`]+)`$"),
         summary=capture(r"^- Summary: (.+)$"),
+        best_current_result=_clean_display_text(capture(r"^- Best current result: (.+)$")),
+        latest_claim_signal=_clean_display_text(capture(r"^- Latest claim signal: (.+)$")),
+        latest_visible_handoff=_clean_display_text(capture(r"^- Latest visible handoff: (.+)$")),
         attached_workspaces=capture(r"^- Attached workspaces: (\d+)$", "0"),
         claims_in_scope=capture(r"^- Claims in effort scope: (\d+)$", "0"),
         frontier_members=capture(r"^- Frontier members: (\d+)$", "0"),
+        visible_participants=str(visible_participants),
+        updated_at=capture(r"^- Updated at: `([^`]+)`$"),
     )
+
+
+def _clean_display_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value.replace("`", "")).strip()
 
 
 def _human_join_summary(participation_excerpt: str) -> str:
@@ -239,6 +254,11 @@ def _index_html(
     inference_join_command: str,
     styles_version: str,
 ) -> str:
+    manual_path_url = (
+        f"{config.repo_url}#manual-join-path"
+        if config.repo_url
+        else "./evidence/join-with-ai.html"
+    )
     repo_action = (
         f'<a class="button secondary" href="{escape(config.repo_url)}">Open the GitHub repo</a>'
         if config.repo_url
@@ -252,7 +272,6 @@ def _index_html(
     site_footer_repo_link = (
         f'<a href="{escape(config.repo_url)}">GitHub repo</a>' if config.repo_url else ""
     )
-    hero_participation_excerpt = _human_join_summary(participation_excerpt)
     return f"""<!doctype html>
 <html lang="en">
   <head>
@@ -276,25 +295,25 @@ def _index_html(
     <main class="page">
       <section class="hero hero-grid">
         <div class="hero-copy">
-          <div class="eyebrow">OpenIntention</div>
+          <div class="eyebrow">OpenIntention · be early</div>
           <h1>Turn an ML goal into shared progress for humans and agents.</h1>
           <p class="lede">
-            For ML engineers, benchmark tinkerers, and agent-native builders who want their runs,
-            claims, and handoffs to compound instead of disappearing into local loops.
+            For agent-native ML builders already using Claude or Codex who want experiments to
+            compound instead of disappearing into local runs, branches, and chat logs.
           </p>
           <p class="sublede">
-            Today the public path starts with seeded goals. Live goal pages are real. This site
-            also bundles snapshot briefs and deterministic smoke reports so humans and agents can
-            inspect the path without guessing.
+            Start with the seeded Eval goal. It takes about five minutes, needs no special
+            hardware, and leaves behind a visible workspace, a claim or reproduction, and a live
+            handoff the next contributor can continue.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#join-eval">Join the Eval goal</a>
-            <a class="button secondary" href="#how-it-works">See how goals work</a>
+            <a class="button primary" href="#join-eval">Join Eval in 1 command</a>
+            <a class="button secondary" href="/efforts">Watch live goals</a>
           </div>
           <div class="hero-trust">
-            <span>Live goal pages are real</span>
-            <span>1 command to join</span>
-            <span>Visible proof bundled</span>
+            <span>5 minutes</span>
+            <span>No special hardware</span>
+            <span>Visible workspace + claim</span>
           </div>
           <p class="hero-note">
             Most ML work disappears into local runs, branches, and chat logs. OpenIntention keeps
@@ -302,8 +321,8 @@ def _index_html(
           </p>
           <p class="footer-note">
             Freshness model: <code>/efforts</code> is live hosted state. The evidence pages in this
-            site are generated snapshots from the last repo refresh. Smoke reports prove the join
-            path end to end; they are not live counters.
+            site are generated snapshots from the last repo refresh. Verification artifacts still
+            exist, but they live in the technical appendix instead of the main story.
           </p>
         </div>
         <aside class="hero-proof">
@@ -312,88 +331,63 @@ def _index_html(
               <div class="shell-dots" aria-hidden="true">
                 <span></span><span></span><span></span>
               </div>
-              <div class="shell-title">live effort · proof</div>
+              <div class="shell-title">default goal · live result</div>
             </div>
-            <div class="proof-label">What you get back</div>
+            <div class="proof-label">What joining gives you</div>
             <ul class="proof-list">
               <li>
-                <strong>A visible workspace</strong>
-                <span>Your run lands on a live goal page instead of staying trapped in a local loop.</span>
+                <strong>Your experiment shows up on a live goal page.</strong>
+                <span>Your work lands in shared hosted state instead of staying trapped in a local loop.</span>
               </li>
               <li>
-                <strong>A visible result</strong>
-                <span>You leave behind a claim or reproduction the next person can inspect.</span>
+                <strong>Your finding stays attached to the goal.</strong>
+                <span>The next person can inspect your claim or reproduction instead of repeating your first step.</span>
               </li>
               <li>
-                <strong>A handoff</strong>
-                <span>Your run produces a short report the next person or agent can continue from.</span>
+                <strong>The next contributor gets a clear handoff.</strong>
+                <span>The goal page and discussion mirror make it obvious what happened and what to try next.</span>
               </li>
             </ul>
             <div class="proof-divider"></div>
-            <div class="proof-label">Already happening now</div>
+            <div class="proof-label">Already moving on Eval</div>
             <p class="proof-summary">
-              Recent goal joins are visible now. The explorer link below is live hosted state. The
-              join report is a deterministic proof artifact.
+              {escape(eval_effort.best_current_result or "The default goal already has visible record-setting work.")}
             </p>
+            <p class="footer-note">{escape(eval_effort.latest_visible_handoff or "A newcomer can join the default goal and continue from a real handoff.")}</p>
             <div class="card-links">
-              <a href="/efforts">Open live explorer</a>
-              <a href="./evidence/public-ingress-smoke.html">Open deterministic join proof</a>
-              <a href="./evidence/repeated-external-participation.html">Open repeated hosted participation proof</a>
+              <a href="/efforts">Open live goals</a>
+              <a href="./evidence/eval-effort.html">Read the Eval brief</a>
             </div>
           </div>
         </aside>
       </section>
 
       <section class="panel join-panel" id="join-eval">
-        <div id="how-it-works"></div>
-        <h2>Pick a goal and run one command</h2>
+        <h2>Join Eval in 1 command</h2>
         <p class="section-lede">
-          Today the public path starts with two seeded goals. Start with Eval Sprint if you want
-          the easiest first path. Choose Inference Sprint if you care more about performance work.
-          The join command lands work in hosted goal state. The linked briefs below are generated
-          snapshots from the last export.
+          This is the default first path because it is the fastest way to feel the product: one
+          command, one visible hosted contribution, one live page you can hand to the next human
+          or agent.
         </p>
-        <input class="effort-toggle" type="radio" name="effort-path" id="effort-eval" checked>
-        <input class="effort-toggle" type="radio" name="effort-path" id="effort-inference">
         <div class="join-layout">
-          <div class="join-selector-stack">
-            <div class="effort-selector" role="tablist" aria-label="Choose your first goal">
-              <label class="effort-pill effort-pill-eval" for="effort-eval">
-                <span class="effort-pill-kicker">Best first path</span>
-                <span class="effort-pill-title">Eval Sprint</span>
-              </label>
-              <label class="effort-pill effort-pill-inference" for="effort-inference">
-                <span class="effort-pill-kicker">Alternative path</span>
-                <span class="effort-pill-title">Inference Sprint</span>
-              </label>
+          <article class="result-summary-card join-path-card">
+            <div class="effort-type">Default first path</div>
+            <h3>Start with the seeded Eval goal.</h3>
+            <p>
+              It is the lowest-friction way to join OpenIntention today: no special hardware,
+              short runtime, visible hosted output, and a concrete handoff when it finishes.
+            </p>
+            <ul class="state-pills compact">
+              <li><span>Time</span><code>~5m</code></li>
+              <li><span>Hardware</span><code>standard</code></li>
+              <li><span>Visible contributors</span><code>{escape(eval_effort.visible_participants)}</code></li>
+              <li><span>Visible workspaces</span><code>{escape(eval_effort.attached_workspaces)}</code></li>
+            </ul>
+            <div class="card-links">
+              <a href="/efforts">Open live goals</a>
+              <a href="./evidence/eval-effort.html">Read the Eval brief</a>
             </div>
-            <article class="selected-effort detail-eval">
-              <div class="effort-type">Eval Sprint</div>
-              <h3>Start here if you want the easiest first goal.</h3>
-              <p>
-                Join the live quality-focused goal, leave behind a visible result, and give the
-                next person a better starting point than a blank slate.
-              </p>
-              <p class="selected-effort-meta">No special hardware needed for the starter flow.</p>
-              <div class="card-links">
-                <a href="./evidence/eval-effort.html">Current brief</a>
-                <a href="/efforts">Live goal page</a>
-              </div>
-            </article>
-            <article class="selected-effort detail-inference">
-              <div class="effort-type">Inference Sprint</div>
-              <h3>Use this goal if you care more about performance work.</h3>
-              <p>
-                The starter loop is still a proxy here, but it joins the live performance-shaped
-                goal and leaves behind visible work you can hand forward.
-              </p>
-              <p class="selected-effort-meta">You do not need an H100 to try the starter flow.</p>
-              <div class="card-links">
-                <a href="./evidence/inference-effort.html">Current brief</a>
-                <a href="/efforts">Live goal page</a>
-              </div>
-            </article>
-          </div>
+          </article>
           <div class="join-command-stack shell-card">
             <div class="shell-bar">
               <div class="shell-dots" aria-hidden="true">
@@ -402,39 +396,81 @@ def _index_html(
               <div class="shell-title">join command · session</div>
             </div>
             <div class="command-head">
-            <div class="proof-label">Copy this</div>
+              <div class="proof-label">Copy this</div>
               <button
                 class="copy-button"
                 type="button"
                 data-copy-default="Copy command"
-                data-copy-eval="{escape(default_join_command)}"
-                data-copy-inference="{escape(inference_join_command)}"
+                data-copy-text="{escape(default_join_command)}"
               >
                 Copy command
               </button>
             </div>
-            <pre class="command command-hero command-eval">{escape(default_join_command)}</pre>
-            <pre class="command command-hero command-inference">{escape(inference_join_command)}</pre>
-            <p class="command-note command-note-eval">
-              Run it yourself or paste the same one-liner into Claude or Codex. This starts with
-              Eval Sprint, the easiest first goal.
+            <pre class="command command-hero">{escape(default_join_command)}</pre>
+            <p class="command-note">
+              Run it yourself, or paste the same one-liner into Claude or Codex. The join flow
+              returns a live goal URL that points back to your contribution.
             </p>
-            <p class="command-note command-note-inference">
-              Run it yourself or paste the same one-liner into Claude or Codex. This switches the
-              join to Inference Sprint for the performance goal.
-            </p>
+            <div class="hero-trust command-pills">
+              <span>Visible workspace</span>
+              <span>Claim or reproduction</span>
+              <span>Live handoff URL</span>
+            </div>
+            <div class="card-links">
+              <a href="/join.sh">View install script</a>
+              <a href="./evidence/join-with-ai.html">Use with Claude or Codex</a>
+            </div>
           </div>
+        </div>
+        <div class="secondary-join-grid">
+          <article class="result-summary-card secondary-path-card">
+            <div class="effort-type">Secondary path</div>
+            <h3>Prefer performance work?</h3>
+            <p>
+              The Inference goal stays available as the secondary join path. The starter loop is
+              still a proxy there, but the hosted goal and handoff surface are real.
+            </p>
+            <pre class="command command-secondary">{escape(inference_join_command)}</pre>
+            <div class="card-links">
+              <button
+                class="copy-button secondary-copy"
+                type="button"
+                data-copy-default="Copy inference command"
+                data-copy-text="{escape(inference_join_command)}"
+              >
+                Copy inference command
+              </button>
+              <a href="./evidence/inference-effort.html">Read the inference brief</a>
+            </div>
+          </article>
+          <article class="result-summary-card secondary-path-card">
+            <div class="effort-type">Inspect or run manually</div>
+            <h3>Prefer not to use <code>curl | bash</code>?</h3>
+            <p>
+              Inspect the install script first, or take the manual repo path. Both routes land in
+              the same hosted goal state.
+            </p>
+            <pre class="command command-secondary">git clone {escape(config.repo_url or DEFAULT_PUBLIC_REPO_URL)}
+cd research-os
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
+python3 scripts/join_openintention.py --no-bootstrap</pre>
+            <div class="card-links">
+              <a href="/join.sh">View install script</a>
+              <a href="{escape(manual_path_url)}">Manual path</a>
+            </div>
+          </article>
         </div>
       </section>
 
       <section class="panel proof-result-section">
         <div class="proof-result-header">
           <div class="proof-result-copy">
-            <div class="proof-label">Proof and result</div>
-            <h2>What your first contribution leaves behind</h2>
+            <div class="proof-label">Already visible</div>
+            <h2>What is already moving on the default goal</h2>
             <p class="section-lede">
-              A successful join should leave behind visible work on a goal page, not another
-              local-only result.
+              Start with Eval because it already has visible contributors, a current best result,
+              and a live handoff to continue from.
             </p>
           </div>
         </div>
@@ -444,38 +480,40 @@ def _index_html(
               <div class="shell-dots" aria-hidden="true">
                 <span></span><span></span><span></span>
               </div>
-              <div class="shell-title">recent join · result</div>
+              <div class="shell-title">eval goal · visible outcome</div>
             </div>
-            <div class="proof-label">A recent public-surface join</div>
-            <pre class="proof-pre">{escape(hero_participation_excerpt)}</pre>
-            <p class="footer-note">
-              Each successful join leaves behind a workspace, a visible result, and a report linked
-              back to the effort.
-            </p>
+            <div class="proof-label">Best visible result</div>
+            <p class="summary-headline">{escape(eval_effort.best_current_result)}</p>
+            <pre class="proof-pre">{escape(eval_effort.latest_claim_signal)}</pre>
+            <p class="footer-note">{escape(eval_effort.latest_visible_handoff)}</p>
           </div>
           <div class="result-summary-card">
-            <div class="proof-label">Bundled goal snapshots</div>
+            <div class="proof-label">Current goal momentum</div>
             <p>
-              The exported seeded-goal briefs bundled into this site currently show visible work
-              another person can continue from.
+              The current packaged snapshot shows a real line of work other people can already pick
+              up. Use the live goal pages for the current hosted view.
             </p>
             <ul class="counts-list">
               <li>
-                <strong>{escape(eval_effort.title)}</strong>
-                <span>{escape(eval_effort.attached_workspaces)} workspaces · {escape(eval_effort.claims_in_scope)} claim signals · {escape(eval_effort.frontier_members)} frontier entries</span>
+                <strong>{escape(eval_effort.visible_participants)} visible contributor{'s' if eval_effort.visible_participants != '1' else ''} on Eval</strong>
+                <span>{escape(eval_effort.attached_workspaces)} visible workspaces and {escape(eval_effort.claims_in_scope)} claim signals are already attached to the default goal.</span>
               </li>
               <li>
-                <strong>{escape(inference_effort.title)}</strong>
-                <span>{escape(inference_effort.attached_workspaces)} workspaces · {escape(inference_effort.claims_in_scope)} claim signals · {escape(inference_effort.frontier_members)} frontier entries</span>
+                <strong>Latest handoff stays inspectable</strong>
+                <span>{escape(eval_effort.latest_visible_handoff)}</span>
+              </li>
+              <li>
+                <strong>Inference stays available as a secondary path</strong>
+                <span>{escape(inference_effort.best_current_result)}</span>
               </li>
             </ul>
             <p class="footer-note">
-              These counts come from generated goal briefs packaged with this build. Use the live
-              goal pages for the current hosted counts.
+              Snapshot counts come from the packaged brief. The live goal pages remain the current
+              hosted source of truth.
             </p>
             <div class="card-links">
-              <a href="/efforts">Open live explorer</a>
-              <a href="./evidence/public-ingress-smoke.html">Open deterministic join proof</a>
+              <a href="/efforts">Open live goals</a>
+              <a href="./evidence/inference-effort.html">See the inference path</a>
             </div>
           </div>
         </div>
@@ -488,7 +526,8 @@ def _index_html(
             <h2>For agents and technical users</h2>
             <p>
               Use the live goal pages for current hosted state, the bundled evidence pages for
-              snapshot context, and the smoke reports for deterministic path verification.
+              snapshot context, and the verification artifacts below when you want to inspect the
+              system more deeply.
             </p>
           </div>
           <div class="hero-actions">
@@ -498,6 +537,8 @@ def _index_html(
         </div>
         <ul class="link-list">
           <li><a href="/efforts">Live hosted explorer</a></li>
+          <li><a href="/join.sh">View install script</a></li>
+          <li><a href="{escape(manual_path_url)}">Manual join path</a></li>
           <li><a href="./evidence/public-ingress-smoke.html">Deterministic ingress proof</a></li>
           <li><a href="./evidence/repeated-external-participation.html">Repeated hosted participation proof</a></li>
           <li><a href="./evidence/eval-effort.html">Snapshot brief: Eval Sprint</a></li>
@@ -515,11 +556,10 @@ def _index_html(
       </div>
     </footer>
     <script>
-      document.querySelectorAll(".copy-button[data-copy-eval]").forEach((button) => {{
+      document.querySelectorAll(".copy-button[data-copy-text]").forEach((button) => {{
         button.addEventListener("click", async () => {{
           const defaultLabel = button.dataset.copyDefault || "Copy command";
-          const inferenceSelected = document.getElementById("effort-inference")?.checked;
-          const command = inferenceSelected ? button.dataset.copyInference : button.dataset.copyEval;
+          const command = button.dataset.copyText;
           if (!command) {{
             return;
           }}
@@ -970,6 +1010,21 @@ li {
   align-items: start;
 }
 
+.join-path-card {
+  min-height: 100%;
+}
+
+.secondary-join-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.secondary-path-card {
+  min-height: 100%;
+}
+
 .join-selector-stack {
   display: grid;
   gap: var(--space-3);
@@ -1091,19 +1146,15 @@ li {
   color: #d5e1f1;
 }
 
-.command-inference,
-.command-note-inference {
-  display: none;
+.command-pills {
+  margin-top: 0;
 }
 
-#effort-inference:checked ~ .join-layout .command-eval,
-#effort-inference:checked ~ .join-layout .command-note-eval {
-  display: none;
-}
-
-#effort-inference:checked ~ .join-layout .command-inference,
-#effort-inference:checked ~ .join-layout .command-note-inference {
-  display: block;
+.command-secondary {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  padding: 16px;
 }
 
 .effort-type {
@@ -1130,6 +1181,10 @@ li {
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
+}
+
+.card-links .copy-button {
+  min-height: 38px;
 }
 
 .proof-result-section {
@@ -1268,6 +1323,19 @@ li {
   border: 1px solid var(--line);
   background: rgba(18, 27, 41, 0.76);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.success-panel {
+  border-color: rgba(126, 247, 184, 0.34);
+  background:
+    linear-gradient(180deg, rgba(16, 29, 32, 0.9), rgba(10, 18, 24, 0.94));
+}
+
+.highlight-card {
+  border-color: rgba(126, 247, 184, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(126, 247, 184, 0.08),
+    0 0 0 1px rgba(126, 247, 184, 0.12);
 }
 
 .effort-summary-grid {
@@ -1439,7 +1507,8 @@ a {
   .proof-result-grid,
   .proof-surface-grid,
   .handoff-grid,
-  .technical-footer-copy {
+  .technical-footer-copy,
+  .secondary-join-grid {
     grid-template-columns: 1fr;
   }
 

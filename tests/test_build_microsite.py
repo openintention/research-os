@@ -15,11 +15,11 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
         encoding="utf-8",
     )
     eval_brief.write_text(
-        "# Effort: Eval Sprint\n\n## Objective\n- Objective: `val_bpb`\n- Platform: `A100`\n- Budget seconds: `300`\n- Summary: Seeded eval effort.\n\n## Current State\n- Attached workspaces: 4\n- Claims in effort scope: 3\n- Frontier members: 5\n\n## Active Workspaces\n- `eval-workspace`\n",
+        "# Effort: Eval Sprint\n\n## Objective\n- Objective: `val_bpb`\n- Platform: `A100`\n- Budget seconds: `300`\n- Summary: Seeded eval effort.\n\n## Proof Context\n- Best current result: `val_bpb` = `0.447392` from `participant-alpha` with `1` claim signal.\n- Latest claim signal: `participant-alpha` left a `supported` claim: Quadratic features improved the seeded eval objective.\n- Latest visible handoff: Left behind 3 runs, 1 claim, and 1 reproduction that the next participant can inspect and continue.\n\n## Current State\n- Attached workspaces: 4\n- Claims in effort scope: 3\n- Frontier members: 5\n- Updated at: `2026-03-17T11:00:00Z`\n\n## Active Workspaces\n- `eval-workspace` actor=participant-alpha, role=contributor, window=current, path=proxy, runs=3, claims=1, reproductions=1, updated=2026-03-17T11:00:00Z\n",
         encoding="utf-8",
     )
     inference_brief.write_text(
-        "# Effort: Inference Sprint\n\n## Objective\n- Objective: `tokens_per_second`\n- Platform: `H100`\n- Budget seconds: `300`\n- Summary: Seeded inference effort.\n\n## Current State\n- Attached workspaces: 2\n- Claims in effort scope: 1\n- Frontier members: 3\n\n## Active Workspaces\n- `inference-workspace`\n",
+        "# Effort: Inference Sprint\n\n## Objective\n- Objective: `tokens_per_second`\n- Platform: `H100`\n- Budget seconds: `300`\n- Summary: Seeded inference effort.\n\n## Proof Context\n- Best current result: `tokens_per_second` = `1284.0` from `seed` with `0` claim signals.\n- Latest claim signal: `participant-beta` left a `supported` claim: Candidate path improved the seeded inference objective.\n- Latest visible handoff: Left behind 3 runs, 1 claim, and 1 reproduction that the next participant can inspect and continue.\n\n## Current State\n- Attached workspaces: 2\n- Claims in effort scope: 1\n- Frontier members: 3\n- Updated at: `2026-03-17T11:00:00Z`\n\n## Active Workspaces\n- `inference-workspace` actor=participant-beta, role=contributor, window=current, path=proxy, runs=3, claims=1, reproductions=1, updated=2026-03-17T11:00:00Z\n",
         encoding="utf-8",
     )
     join_with_ai.write_text("# Join With an AI Agent\nline\n", encoding="utf-8")
@@ -42,43 +42,33 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
     assert "Turn an ML goal into shared progress for humans and agents." in html
-    assert "Live goal pages are real" in html
-    assert "1 command to join" in html
-    assert "Visible proof bundled" in html
-    assert "For ML engineers, benchmark tinkerers, and agent-native builders" in html
+    assert "Join Eval in 1 command" in html
+    assert "Visible workspace + claim" in html
+    assert "For agent-native ML builders already using Claude or Codex" in html
     assert "Most ML work disappears into local runs, branches, and chat logs." in html
     assert "Freshness model:" in html
-    assert "See how goals work" in html
-    assert "What you get back" in html
-    assert "A visible workspace" in html
-    assert "A visible result" in html
-    assert "A handoff" in html
-    assert "Open deterministic join proof" in html
+    assert "What joining gives you" in html
+    assert "Your experiment shows up on a live goal page." in html
+    assert "Your finding stays attached to the goal." in html
+    assert "The next contributor gets a clear handoff." in html
     assert "./styles.css?v=" in html
-    assert "Pick a goal and run one command" in html
-    assert "The join command lands work in hosted goal state." in html
-    assert "snapshots from the last export." in html
-    assert "Best first path" in html
-    assert "Alternative path" in html
-    assert "Start here if you want the easiest first goal." in html
-    assert "Use this goal if you care more about performance work." in html
+    assert "This is the default first path because it is the fastest way to feel the product" in html
+    assert "Start with the seeded Eval goal." in html
+    assert "Prefer performance work?" in html
+    assert "Prefer not to use <code>curl | bash</code>?" in html
     assert "Copy this" in html
     assert "Copy command" in html
-    assert "Run it yourself or paste the same one-liner into Claude or Codex." in html
-    assert "This starts with" in html
-    assert "Eval Sprint, the easiest first goal." in html
-    assert "What your first contribution leaves behind" in html
-    assert "Bundled goal snapshots" in html
-    assert "Open repeated hosted participation proof" in html
-    assert "A successful join should leave behind visible work on a goal page" in html
-    assert "A recent public-surface join" in html
-    assert "Each successful join leaves behind a workspace" in html
+    assert "Run it yourself, or paste the same one-liner into Claude or Codex." in html
+    assert "What is already moving on the default goal" in html
+    assert "Current goal momentum" in html
+    assert "Best visible result" in html
     assert "Eval Sprint" in html
     assert "Inference Sprint" in html
-    assert "4 workspaces" in html
-    assert "2 workspaces" in html
+    assert "4 visible workspaces" in html
     assert "For agents and technical users" in html
     assert "Technical appendix" in html
+    assert "View install script" in html
+    assert "Manual join path" in html
     assert "Use the live goal pages for current hosted state" in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
@@ -87,16 +77,16 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert 'href="/efforts"' in html
     assert "curl -fsSL https://openintention.io/join | bash" in html
     assert "--profile inference-sprint" in html
-    assert "data-copy-eval=" in html
-    assert "data-copy-inference=" in html
+    assert "data-copy-text=" in html
     assert "Open the agent brief" in html
-    assert "These counts come from generated goal briefs packaged with this build." in html
+    assert "Snapshot counts come from the packaged brief." in html
     assert "Both seeded efforts already have visible work" not in html
     assert "Already live now" not in html
     assert "What an effort is" not in html
     assert "What we are trying to prove" not in html
     assert "What we are inviting you into" not in html
     assert "What happens next" not in html
+    assert "Visible proof bundled" not in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(

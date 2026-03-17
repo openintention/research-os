@@ -28,10 +28,14 @@ def test_build_join_report_includes_live_inspection_targets() -> None:
     )
 
     assert "# Joined OpenIntention" in report
-    assert "https://openintention.io/efforts/effort-1" in report
+    assert (
+        "https://openintention.io/efforts/effort-1?workspace=workspace-1&joined=1&actor=aliargun&claim=claim-1&reproduction=run-1#workspace-workspace-1"
+        in report
+    )
     assert "https://api.example.com/api/v1/publications/workspaces/workspace-1/discussion" in report
     assert "stronger external-harness compounding path exists" in report
     assert "Hand the live goal page or this report to the next human or agent." in report
+    assert "The live goal URL is intended to land back on your own highlighted contribution." in report
 
 
 def test_run_hosted_join_bootstraps_and_runs_hosted_path(monkeypatch, tmp_path: Path) -> None:

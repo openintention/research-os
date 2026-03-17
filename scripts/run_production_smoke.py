@@ -44,8 +44,8 @@ def run_production_smoke(
 
     _require_text(f"{api_base_url.rstrip('/')}/healthz", must_include="ok")
     homepage_url = f"{site_url.rstrip('/')}/"
-    homepage_html = _require_text(homepage_url, must_include="Live goal pages are real")
-    for phrase in ("Visible proof bundled", "Freshness model:", "Open deterministic join proof"):
+    homepage_html = _require_text(homepage_url, must_include="Join Eval in 1 command")
+    for phrase in ("Visible workspace + claim", "Freshness model:", "View install script", "Manual join path"):
         if phrase not in homepage_html:
             raise RuntimeError(f"homepage missing freshness phrase `{phrase}`: {homepage_url}")
     public_ingress_report = run_public_ingress_smoke(
@@ -113,7 +113,7 @@ def build_production_smoke_report(result: ProductionSmokeResult) -> str:
             f"- Public ingress smoke: `{result.public_ingress_report}`",
             f"- Shared participation smoke: `{result.shared_participation_report}`",
             "- Hosted API healthz returned 200",
-            "- Hosted homepage distinguishes live hosted state, bundled snapshot evidence, and deterministic smoke proofs",
+            "- Hosted homepage exposes one default join path plus visible trust/manual alternatives",
             "- Hosted goal explorer index rendered current goal state",
             "- Hosted goal pages rendered current state for each goal",
             "",

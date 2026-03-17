@@ -86,12 +86,13 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         ),
         "apps/site/dist/index.html": "\n".join(
             [
-                "Live goal pages are real",
-                "Visible proof bundled",
+                "Join Eval in 1 command",
+                "Visible workspace + claim",
                 "Freshness model:",
-                "generated goal briefs packaged with this build",
-                "Open deterministic join proof",
-                "Open repeated hosted participation proof",
+                "View install script",
+                "Manual join path",
+                "Current goal momentum",
+                "Deterministic ingress proof",
             ]
         ),
         "apps/site/dist/evidence/public-ingress-smoke.html": "\n".join(

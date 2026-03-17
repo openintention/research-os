@@ -68,12 +68,13 @@ REQUIRED_PHRASES = {
         "python3 scripts/run_surface_coherence_check.py",
     ],
     "apps/site/dist/index.html": [
-        "Live goal pages are real",
-        "Visible proof bundled",
+        "Join Eval in 1 command",
+        "Visible workspace + claim",
         "Freshness model:",
-        "generated goal briefs packaged with this build",
-        "Open deterministic join proof",
-        "Open repeated hosted participation proof",
+        "View install script",
+        "Manual join path",
+        "Current goal momentum",
+        "Deterministic ingress proof",
     ],
     "apps/site/dist/evidence/public-ingress-smoke.html": [
         "Deterministic smoke report",
@@ -114,6 +115,9 @@ FORBIDDEN_PHRASES = {
         "Both seeded efforts already have visible work",
         "Already live now",
         "Seeded efforts and proof effort visible",
+        "Visible proof bundled",
+        "Open deterministic join proof",
+        "Open repeated hosted participation proof",
     ],
 }
 

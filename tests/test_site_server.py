@@ -410,6 +410,154 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "snap-beta" in response.text
 
 
+def test_site_server_highlights_joined_contribution_on_goal_page(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    def fake_fetch_json(api_base_url: str, path: str, *, query=None):
+        assert api_base_url == "http://api.internal:8080"
+        if path == "/api/v1/efforts":
+            return [
+                {
+                    "effort_id": "effort-eval",
+                    "name": "Eval Sprint: improve validation loss under fixed budget",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                    "budget_seconds": 300,
+                    "workspace_ids": ["workspace-joined"],
+                    "tags": {"effort_type": "eval", "seeded": "true"},
+                    "successor_effort_id": None,
+                    "updated_at": "2026-03-17T11:00:00Z",
+                }
+            ]
+        if path == "/api/v1/workspaces":
+            assert query == {"effort_id": "effort-eval"}
+            return [
+                {
+                    "workspace_id": "workspace-joined",
+                    "name": "eval-joined",
+                    "actor_id": "aliargun",
+                    "participant_role": "contributor",
+                    "run_ids": ["run-joined"],
+                    "claim_ids": ["claim-joined"],
+                    "reproduction_count": 1,
+                    "adoption_count": 0,
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                    "budget_seconds": 300,
+                    "tags": {"simulated_contribution": "true"},
+                    "updated_at": "2026-03-17T11:00:00Z",
+                }
+            ]
+        if path == "/api/v1/claims":
+            return [
+                {
+                    "claim_id": "claim-joined",
+                    "workspace_id": "workspace-joined",
+                    "status": "supported",
+                    "statement": "Quadratic features improved the seeded eval objective.",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-joined",
+                    "objective": "val_bpb",
+                    "platform": "A100",
+                    "support_count": 1,
+                    "contradiction_count": 0,
+                    "updated_at": "2026-03-17T11:00:00Z",
+                }
+            ]
+        if path == "/api/v1/events":
+            return [
+                {
+                    "event_id": "event-joined-started",
+                    "kind": "workspace.started",
+                    "occurred_at": "2026-03-17T10:59:59Z",
+                    "workspace_id": "workspace-joined",
+                    "aggregate_id": "workspace-joined",
+                    "aggregate_kind": "workspace",
+                    "actor_id": "aliargun",
+                    "payload": {},
+                    "tags": {},
+                },
+                {
+                    "event_id": "event-joined-run",
+                    "kind": "run.completed",
+                    "occurred_at": "2026-03-17T11:00:00Z",
+                    "workspace_id": "workspace-joined",
+                    "aggregate_id": "run-joined",
+                    "aggregate_kind": "run",
+                    "actor_id": "aliargun",
+                    "payload": {
+                        "run_id": "run-joined",
+                        "snapshot_id": "snap-joined",
+                        "metric_name": "val_bpb",
+                        "metric_value": 0.9,
+                        "direction": "min",
+                        "status": "success",
+                    },
+                    "tags": {},
+                },
+                {
+                    "event_id": "event-joined-claim",
+                    "kind": "claim.asserted",
+                    "occurred_at": "2026-03-17T11:00:01Z",
+                    "workspace_id": "workspace-joined",
+                    "aggregate_id": "claim-joined",
+                    "aggregate_kind": "claim",
+                    "actor_id": "aliargun",
+                    "payload": {"claim_id": "claim-joined"},
+                    "tags": {},
+                },
+            ]
+        if path == "/api/v1/frontiers/val_bpb/A100":
+            return {
+                "members": [
+                    {
+                        "snapshot_id": "snap-joined",
+                        "workspace_id": "workspace-joined",
+                        "run_id": "run-joined",
+                        "objective": "val_bpb",
+                        "platform": "A100",
+                        "budget_seconds": 300,
+                        "metric_name": "val_bpb",
+                        "metric_value": 0.9,
+                        "direction": "min",
+                        "claim_count": 1,
+                        "last_updated_at": "2026-03-17T11:00:01Z",
+                    }
+                ]
+            }
+        if path == "/api/v1/leases":
+            return []
+        raise AssertionError(f"unexpected path: {path}")
+
+    monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
+    client = TestClient(
+        create_site_app(
+            dist_dir,
+            api_base_url="https://api.example.com",
+            api_fetch_base_url="http://api.internal:8080",
+        )
+    )
+
+    response = client.get(
+        "/efforts/effort-eval?workspace=workspace-joined&actor=aliargun&claim=claim-joined&reproduction=run-joined&joined=1"
+    )
+    assert response.status_code == 200
+    assert "Your contribution" in response.text
+    assert "You joined this goal" in response.text
+    assert "aliargun now has visible hosted work on this goal" in response.text
+    assert "What the next contributor should do" in response.text
+    assert "Jump to this handoff" in response.text
+    assert 'id="workspace-workspace-joined"' in response.text
+    assert "highlight-card" in response.text
+
+
 def test_build_effort_proof_tracks_participant_visibility_summary():
     workspaces = [
         WorkspaceView.model_validate(

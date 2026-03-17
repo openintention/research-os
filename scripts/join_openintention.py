@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from urllib.parse import urlencode
 
 from research_os.http import read_json
 
@@ -96,9 +97,7 @@ def run_hosted_join(
 
 
 def build_join_report(result: HostedJoinResult) -> str:
-    effort_url = (
-        f"{result.site_url.rstrip('/')}/efforts/{result.effort_id}" if result.effort_id is not None else "n/a"
-    )
+    effort_url = _live_goal_url(result)
     discussion_url = (
         f"{result.base_url.rstrip('/')}/api/v1/publications/workspaces/{result.workspace_id}/discussion"
         if result.workspace_id is not None
@@ -122,6 +121,7 @@ def build_join_report(result: HostedJoinResult) -> str:
             "## Inspect Next",
             f"- Live goal page: `{effort_url}`",
             f"- Workspace discussion: `{discussion_url}`",
+            "- The live goal URL is intended to land back on your own highlighted contribution.",
             "- Hand the live goal page or this report to the next human or agent.",
             "",
             "## Verifier-Ready Provenance",
@@ -196,8 +196,10 @@ def main() -> None:
         venv_dir=args.venv_dir,
         bootstrap_environment=not args.no_bootstrap,
     )
+    report_text = report_path.read_text(encoding="utf-8")
     print()
-    print(report_path.read_text(encoding="utf-8"))
+    print(report_text)
+    print(f"live_goal_url={_live_goal_url_from_report(report_text)}")
     print(f"report_path={report_path}")
 
 
@@ -255,6 +257,31 @@ def _run_command(command: list[str], *, cwd: Path) -> str:
 
 def _venv_python(venv_dir: Path) -> Path:
     return venv_dir / "bin" / "python"
+
+
+def _live_goal_url(result: HostedJoinResult) -> str:
+    if result.effort_id is None:
+        return "n/a"
+    query: dict[str, str] = {}
+    if result.workspace_id is not None:
+        query["workspace"] = result.workspace_id
+        query["joined"] = "1"
+    if result.actor_id:
+        query["actor"] = result.actor_id
+    if result.claim_id is not None:
+        query["claim"] = result.claim_id
+    if result.reproduction_run_id is not None and result.reproduction_run_id != "n/a":
+        query["reproduction"] = result.reproduction_run_id
+    query_string = f"?{urlencode(query)}" if query else ""
+    fragment = f"#workspace-{result.workspace_id}" if result.workspace_id is not None else ""
+    return f"{result.site_url.rstrip('/')}/efforts/{result.effort_id}{query_string}{fragment}"
+
+
+def _live_goal_url_from_report(report: str) -> str:
+    for line in report.splitlines():
+        if line.startswith("- Live goal page: `") and line.endswith("`"):
+            return line.removeprefix("- Live goal page: `").removesuffix("`")
+    return "n/a"
 
 
 if __name__ == "__main__":
