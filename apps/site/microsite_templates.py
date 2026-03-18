@@ -404,7 +404,7 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
         </div>
         <ul class="link-list">
           <li><a href="/efforts">Live hosted explorer</a></li>
-          <li><a href="/publish">Publish a goal in v1</a></li>
+          <li><a href="/publish">Publish a goal (technical, proxy-only v1)</a></li>
           <li><a href="/join.sh">View install script</a></li>
           <li><a href="{escape(manual_path_url)}">Manual join path</a></li>
           <li><a href="./evidence/public-ingress-smoke.html">Deterministic ingress proof</a></li>
@@ -419,7 +419,6 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
       <p class="site-footer-copy">OpenIntention keeps goals, evidence, and handoffs public enough to compound.</p>
       <div class="site-footer-links">
         <a href="/efforts">Live goals</a>
-        <a href="/publish">Publish a goal</a>
         <a href="/evidence/join-with-ai.html">Agent brief</a>
         {site_footer_repo_link}
       </div>

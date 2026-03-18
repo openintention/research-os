@@ -403,7 +403,7 @@ def _effort_index_html(
           </p>
           <div class="hero-actions">
             <a class="button primary" href="/">Back to OpenIntention</a>
-            <a class="button secondary" href="/publish">Publish a goal</a>
+            <a class="button secondary" href="/evidence/join-with-ai.html">Read technical join brief</a>
           </div>
         </section>
         """
