@@ -11,6 +11,9 @@ import socket
 import subprocess
 import sys
 import time
+from urllib.parse import urlparse
+from urllib.request import ProxyHandler
+from urllib.request import build_opener
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -20,7 +23,6 @@ for path in (SRC_ROOT, REPO_ROOT):
 
 from research_os.http import build_request  # noqa: E402
 from research_os.http import open_url  # noqa: E402
-from research_os.http import read_json  # noqa: E402
 from research_os.settings import Settings  # noqa: E402
 
 
@@ -238,7 +240,7 @@ def _extract_workspace_provenance_excerpt(*, base_url: str, workspace_id: str | 
             f"{base_url}/api/v1/publications/workspaces/{workspace_id}/discussion",
             headers={"accept": "application/json"},
         )
-        with open_url(request, timeout=10) as response:
+        with _open_request(request, timeout=10) as response:
             body = json.loads(response.read().decode("utf-8"))
         lines = [
             line.strip()
@@ -281,14 +283,16 @@ def _run_command(command: list[str], *, env: dict[str, str]) -> str:
 
 
 def _get_json(url: str) -> list[dict[str, object]]:
-    return read_json(url, timeout=10)
+    request = build_request(url, headers={"accept": "application/json"})
+    with _open_request(request, timeout=10) as response:
+        return json.loads(response.read().decode("utf-8"))
 
 
 def _wait_for_healthz(base_url: str, *, timeout_seconds: float = 10.0) -> None:
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         try:
-            with open_url(build_request(f"{base_url}/healthz"), timeout=1):
+            with _open_request(build_request(f"{base_url}/healthz"), timeout=1):
                 return
         except OSError:
             time.sleep(0.1)
@@ -316,6 +320,14 @@ def _resolve_python_executable(python_executable: str | None) -> str:
         return str(repo_venv)
 
     return sys.executable
+
+
+def _open_request(request, *, timeout: float):
+    hostname = (urlparse(request.full_url).hostname or "").lower()
+    if hostname in {"127.0.0.1", "localhost"}:
+        opener = build_opener(ProxyHandler({}))
+        return opener.open(request, timeout=timeout)
+    return open_url(request, timeout=timeout)
 
 
 if __name__ == "__main__":

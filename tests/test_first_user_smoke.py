@@ -5,7 +5,8 @@ from pathlib import Path
 import subprocess
 import sys
 
-from scripts.run_first_user_smoke import SmokeResult, _resolve_python_executable, build_smoke_report
+from scripts.run_first_user_smoke import SmokeResult, _resolve_python_executable, _open_request, build_smoke_report
+from research_os.http import build_request
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -80,3 +81,23 @@ def test_resolve_python_executable_prefers_repo_venv_when_not_explicit(monkeypat
     monkeypatch.setattr("scripts.run_first_user_smoke.REPO_ROOT", fake_repo_root)
 
     assert _resolve_python_executable(None) == str(fake_python)
+
+
+def test_open_request_bypasses_proxy_for_loopback(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeOpener:
+        def open(self, request, *, timeout):
+            captured["url"] = request.full_url
+            captured["timeout"] = timeout
+            return "opened"
+
+    monkeypatch.setattr("scripts.run_first_user_smoke.build_opener", lambda handler: FakeOpener())
+
+    result = _open_request(build_request("http://127.0.0.1:9999/healthz"), timeout=1.5)
+
+    assert result == "opened"
+    assert captured == {
+        "url": "http://127.0.0.1:9999/healthz",
+        "timeout": 1.5,
+    }
