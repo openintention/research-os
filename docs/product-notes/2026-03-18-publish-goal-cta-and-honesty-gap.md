@@ -25,6 +25,9 @@ It builds on:
 - `docs/product-notes/2026-03-17-goal-to-effort-translation.md`
 - `docs/product-notes/2026-03-17-homepage-legibility-and-reward.md`
 
+See also:
+- `docs/product-notes/2026-03-18-canonical-public-messaging.md`
+
 ## What is clearer than the current framing
 
 The public product is easier to grasp when the user model is:

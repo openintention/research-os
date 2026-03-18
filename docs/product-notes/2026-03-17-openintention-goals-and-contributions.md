@@ -16,6 +16,7 @@ It builds on:
 
 Refined by:
 - `docs/product-notes/2026-03-18-publish-goal-cta-and-honesty-gap.md`
+- `docs/product-notes/2026-03-18-canonical-public-messaging.md`
 
 ## The gap
 
