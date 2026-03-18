@@ -1,113 +1,31 @@
 from __future__ import annotations
 
-import argparse
-import hashlib
-import re
-from dataclasses import dataclass
-from html import escape
-import os
-import sys
 from pathlib import Path
-import shutil
+from html import escape
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-_SRC_ROOT = _REPO_ROOT / "src"
-if str(_SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(_SRC_ROOT))
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-_SITE_STATIC_DIR = _REPO_ROOT / "apps" / "site" / "static"
-
-
-@dataclass(frozen=True, slots=True)
-class MicrositeEvidence:
-    smoke_report: Path
-    eval_brief: Path
-    inference_brief: Path
-    join_with_ai: Path
-    repeated_participation_report: Path
-
-
-@dataclass(frozen=True, slots=True)
-class MicrositeConfig:
-    repo_url: str | None = None
-    default_join_command: str = ""
-    inference_join_command: str = ""
-
-
-@dataclass(frozen=True, slots=True)
-class EffortOverview:
-    title: str
-    objective: str
-    platform: str
-    budget_seconds: str
-    summary: str
-    best_current_result: str
-    latest_claim_signal: str
-    latest_visible_handoff: str
-    attached_workspaces: str
-    claims_in_scope: str
-    frontier_members: str
-    visible_participants: str
-    updated_at: str
-
+from apps.site.context_contracts import (
+    MicrositeEffortOverview,
+    MicrositeEvidenceContext,
+    MicrositeIndexContext,
+)
 
 DEFAULT_PUBLIC_REPO_URL = "https://github.com/openintention/research-os"
-DEFAULT_PUBLIC_SITE_URL = "https://openintention.io"
 
 
-def _load_edge_join_commands() -> tuple[str, str]:
-    from research_os.edge_bootstrap import edge_join_command
-    from research_os.edge_bootstrap import edge_join_command_with_args
-
-    return (
-        edge_join_command(DEFAULT_PUBLIC_SITE_URL),
-        edge_join_command_with_args(DEFAULT_PUBLIC_SITE_URL, "--profile", "inference-sprint"),
-    )
-
-
-def build_microsite(
+def build_index_context(
     *,
-    repo_root: Path,
-    output_dir: Path,
-    evidence: MicrositeEvidence,
-    config: MicrositeConfig | None = None,
-) -> Path:
-    config = config or MicrositeConfig()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    assets_dir = output_dir / "assets"
-    evidence_dir = output_dir / "evidence"
-    assets_dir.mkdir(parents=True, exist_ok=True)
-    evidence_dir.mkdir(parents=True, exist_ok=True)
-
-    copied_smoke = evidence_dir / "public-ingress-smoke.md"
-    copied_eval = evidence_dir / "eval-effort.md"
-    copied_inference = evidence_dir / "inference-effort.md"
-    copied_join_with_ai = evidence_dir / "join-with-ai.md"
-    copied_repeated_participation = evidence_dir / "repeated-external-participation.md"
-    shutil.copyfile(evidence.smoke_report, copied_smoke)
-    shutil.copyfile(evidence.eval_brief, copied_eval)
-    shutil.copyfile(evidence.inference_brief, copied_inference)
-    shutil.copyfile(evidence.join_with_ai, copied_join_with_ai)
-    shutil.copyfile(evidence.repeated_participation_report, copied_repeated_participation)
-
-    participation_excerpt = _section_excerpt(evidence.smoke_report, heading="## Participation Outcome", lines=6)
-    eval_effort = _parse_effort_overview(evidence.eval_brief)
-    inference_effort = _parse_effort_overview(evidence.inference_brief)
-    default_join_command, inference_join_command = _load_edge_join_commands()
-    default_join_command = config.default_join_command or default_join_command
-    inference_join_command = config.inference_join_command or inference_join_command
-
-    styles = _load_stylesheet()
-    site_script = _load_site_script()
-    styles_version = _asset_version(styles)
-    scripts_version = _asset_version(site_script)
-    from apps.site import microsite_templates
-
-    (assets_dir / "favicon.svg").write_text(_favicon_svg(), encoding="utf-8")
-    (output_dir / "styles.css").write_text(styles, encoding="utf-8")
-    (output_dir / "site.js").write_text(site_script, encoding="utf-8")
-    index_context = microsite_templates.build_index_context(
+    participation_excerpt: str,
+    eval_effort: MicrositeEffortOverview,
+    inference_effort: MicrositeEffortOverview,
+    default_join_command: str,
+    inference_join_command: str,
+    styles_version: str,
+    scripts_version: str,
+    repo_url: str | None,
+    site_css_url: str = "/styles.css",
+    site_js_url: str | None = None,
+) -> MicrositeIndexContext:
+    return MicrositeIndexContext(
         participation_excerpt=participation_excerpt,
         eval_effort=eval_effort,
         inference_effort=inference_effort,
@@ -115,126 +33,53 @@ def build_microsite(
         inference_join_command=inference_join_command,
         styles_version=styles_version,
         scripts_version=scripts_version,
-        repo_url=config.repo_url,
-    )
-    (output_dir / "index.html").write_text(
-        microsite_templates.render_index_page(index_context),
-        encoding="utf-8",
-    )
-    for html_name, markdown_path, title in (
-        ("join-with-ai.html", copied_join_with_ai, "Join OpenIntention With an AI Agent"),
-        ("public-ingress-smoke.html", copied_smoke, "Public ingress report"),
-        (
-            "repeated-external-participation.html",
-            copied_repeated_participation,
-            "Repeated hosted participation proof",
-        ),
-        ("eval-effort.html", copied_eval, "Eval effort brief"),
-        ("inference-effort.html", copied_inference, "Inference effort brief"),
-    ):
-        evidence_context = microsite_templates.build_evidence_context(
-            markdown_path=markdown_path,
-            title=title,
-            styles_version=styles_version,
-        )
-        _write_evidence_page(
-            output_dir=output_dir,
-            html_name=html_name,
-            evidence_html=microsite_templates.render_evidence_page(evidence_context),
-        )
-    return output_dir / "index.html"
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the OpenIntention microsite.")
-    parser.add_argument(
-        "--output-dir",
-        default="apps/site/dist",
-        help="Directory to write the generated microsite into.",
-    )
-    parser.add_argument(
-        "--repo-url",
-        default=os.environ.get("OPENINTENTION_REPO_URL", DEFAULT_PUBLIC_REPO_URL),
-        help="Optional public repo URL to surface on the microsite.",
-    )
-    args = parser.parse_args()
-
-    repo_root = Path(__file__).resolve().parents[1]
-    build_microsite(
-        repo_root=repo_root,
-        output_dir=repo_root / args.output_dir,
-        evidence=MicrositeEvidence(
-            smoke_report=repo_root / "data/publications/launch/public-ingress/public-ingress-smoke.md",
-            eval_brief=repo_root / "data/publications/efforts/eval-sprint-improve-validation-loss-under-fixed-budget.md",
-            inference_brief=repo_root / "data/publications/efforts/inference-sprint-improve-flash-path-throughput-on-h100.md",
-            join_with_ai=repo_root / "docs" / "join-with-ai.md",
-            repeated_participation_report=repo_root
-            / "data/publications/launch/repeated-external-participation/repeated-external-participation.md",
-        ),
-        config=MicrositeConfig(repo_url=args.repo_url),
+        repo_url=repo_url,
+        site_css_url=site_css_url,
+        site_js_url=site_js_url,
     )
 
 
-def _excerpt(path: Path, *, lines: int) -> str:
-    content = path.read_text(encoding="utf-8").splitlines()
-    return "\n".join(content[:lines]).strip()
-
-
-def _section_excerpt(path: Path, *, heading: str, lines: int) -> str:
-    content = path.read_text(encoding="utf-8").splitlines()
-    try:
-        start_index = content.index(heading) + 1
-    except ValueError:
-        return ""
-    section_lines: list[str] = []
-    for line in content[start_index:]:
-        if line.startswith("## "):
-            break
-        if line.strip():
-            section_lines.append(line)
-        if len(section_lines) >= lines:
-            break
-    return "\n".join(section_lines).strip()
-
-
-def _parse_effort_overview(path: Path) -> EffortOverview:
-    text = path.read_text(encoding="utf-8")
-
-    def capture(pattern: str, default: str = "") -> str:
-        match = re.search(pattern, text, flags=re.MULTILINE)
-        return match.group(1).strip() if match else default
-
-    title = capture(r"^# Effort: (.+)$")
-    visible_participants = len({match.strip() for match in re.findall(r"actor=([^,\n]+)", text)})
-    return EffortOverview(
+def build_evidence_context(
+    *,
+    markdown_path: Path,
+    title: str,
+    styles_version: str,
+) -> MicrositeEvidenceContext:
+    return MicrositeEvidenceContext(
+        markdown_path=markdown_path,
         title=title,
-        objective=capture(r"^- Objective: `([^`]+)`$"),
-        platform=capture(r"^- Platform: `([^`]+)`$"),
-        budget_seconds=capture(r"^- Budget seconds: `([^`]+)`$"),
-        summary=capture(r"^- Summary: (.+)$"),
-        best_current_result=_clean_display_text(capture(r"^- Best current result: (.+)$")),
-        latest_claim_signal=_clean_display_text(capture(r"^- Latest claim signal: (.+)$")),
-        latest_visible_handoff=_clean_display_text(capture(r"^- Latest visible handoff: (.+)$")),
-        attached_workspaces=capture(r"^- Attached workspaces: (\d+)$", "0"),
-        claims_in_scope=capture(r"^- Claims in effort scope: (\d+)$", "0"),
-        frontier_members=capture(r"^- Frontier members: (\d+)$", "0"),
-        visible_participants=str(visible_participants),
-        updated_at=capture(r"^- Updated at: `([^`]+)`$"),
+        styles_version=styles_version,
     )
 
 
-def _clean_display_text(value: str) -> str:
-    return re.sub(r"\s+", " ", value.replace("`", "")).strip()
+def render_index_page(context: MicrositeIndexContext) -> str:
+    return _index_html(
+        participation_excerpt=context.participation_excerpt,
+        eval_effort=context.eval_effort,
+        inference_effort=context.inference_effort,
+        repo_url=context.repo_url,
+        default_join_command=context.default_join_command,
+        inference_join_command=context.inference_join_command,
+        styles_version=context.styles_version,
+        scripts_version=context.scripts_version,
+    )
+
+
+def render_evidence_page(context: MicrositeEvidenceContext) -> str:
+    return _render_evidence_page_html(
+        markdown_path=context.markdown_path,
+        title=context.title,
+        styles_version=context.styles_version,
+    )
 
 
 def _humanize_best_result(value: str) -> str:
-    cleaned = value.replace("claim signals", "recorded findings").replace(
-        "claim signal", "recorded finding"
-    )
-    return cleaned
+    return value.replace("claim signals", "recorded findings").replace("claim signal", "recorded finding")
 
 
 def _humanize_latest_finding(value: str) -> str:
+    import re
+
     match = re.match(r"^(?P<actor>.+?) left a [^:]+ claim: (?P<statement>.+)$", value)
     if match:
         actor = match.group("actor").strip()
@@ -251,34 +96,61 @@ def _humanize_handoff(value: str) -> str:
     return humanized
 
 
+def _evidence_page_intro(markdown_path: Path) -> tuple[str, str]:
+    if markdown_path.name == "public-ingress-smoke.md":
+        return (
+            "Deterministic smoke report",
+            "This report proves the public join path end to end. It is a verification artifact, not a live goal counter.",
+        )
+    if markdown_path.name.endswith("-effort.md"):
+        return (
+            "Generated snapshot",
+            "This brief is a generated snapshot from the last repo export bundled into this site. Use /efforts for live goal state.",
+        )
+    if markdown_path.name == "repeated-external-participation.md":
+        return (
+            "Hosted network proof",
+            "This report shows multiple distinct participants landing visible work through the canonical hosted network.",
+        )
+    if markdown_path.name == "join-with-ai.md":
+        return (
+            "Repo brief",
+            "This brief is copied from the repo at build time so agents can follow the current public join path.",
+        )
+    return (
+        "OpenIntention evidence",
+        "This is a public evidence artifact rendered for humans, with raw markdown kept alongside it for agents and scripts.",
+    )
+
+
 def _index_html(
     *,
     participation_excerpt: str,
-    eval_effort: EffortOverview,
-    inference_effort: EffortOverview,
-    config: MicrositeConfig,
+    eval_effort: MicrositeEffortOverview,
+    inference_effort: MicrositeEffortOverview,
+    repo_url: str | None,
     default_join_command: str,
     inference_join_command: str,
     styles_version: str,
     scripts_version: str,
 ) -> str:
     manual_path_url = (
-        f"{config.repo_url}#manual-join-path"
-        if config.repo_url
+        f"{repo_url}#manual-join-path"
+        if repo_url
         else "./evidence/join-with-ai.html"
     )
     repo_action = (
-        f'<a class="button secondary" href="{escape(config.repo_url)}">Open the GitHub repo</a>'
-        if config.repo_url
+        f'<a class="button secondary" href="{escape(repo_url)}">Open the GitHub repo</a>'
+        if repo_url
         else '<a class="button secondary" href="#inspect">Inspect what is already public</a>'
     )
     repo_list_item = (
-        f'<li><a href="{escape(config.repo_url)}">GitHub repo for code and docs</a></li>'
-        if config.repo_url
+        f'<li><a href="{escape(repo_url)}">GitHub repo for code and docs</a></li>'
+        if repo_url
         else "<li>The public repo link will land with the first announcement.</li>"
     )
     site_footer_repo_link = (
-        f'<a href="{escape(config.repo_url)}">GitHub repo</a>' if config.repo_url else ""
+        f'<a href="{escape(repo_url)}">GitHub repo</a>' if repo_url else ""
     )
     return f"""<!doctype html>
 <html lang="en">
@@ -445,7 +317,7 @@ def _index_html(
               Inspect the install script first, or take the manual repo path. Both routes land on
               the same live goal page in the end.
             </p>
-            <pre class="command command-secondary">git clone {escape(config.repo_url or DEFAULT_PUBLIC_REPO_URL)}
+            <pre class="command command-secondary">git clone {escape(repo_url or DEFAULT_PUBLIC_REPO_URL)}
 cd research-os
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
@@ -558,24 +430,6 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
 """
 
 
-def _favicon_svg() -> str:
-    return """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="OpenIntention">
-  <rect width="96" height="96" rx="24" fill="#1f1b16"/>
-  <circle cx="48" cy="48" r="28" fill="none" stroke="#f4efe4" stroke-width="8"/>
-  <path d="M48 20c11 0 20 9 20 20 0 10-7 18-16 20v16h-8V40h8c4 0 8-4 8-8 0-7-5-12-12-12s-12 5-12 12h-8c0-11 9-20 20-20Z" fill="#b73a2f"/>
-</svg>
-"""
-
-
-def _write_evidence_page(
-    *,
-    output_dir: Path,
-    html_name: str,
-    evidence_html: str,
-) -> None:
-    (output_dir / "evidence" / html_name).write_text(evidence_html, encoding="utf-8")
-
-
 def _render_evidence_page_html(
     *,
     markdown_path: Path,
@@ -617,47 +471,3 @@ def _render_evidence_page_html(
   </body>
 </html>
 """
-
-
-def _evidence_page_intro(markdown_path: Path) -> tuple[str, str]:
-    if markdown_path.name == "public-ingress-smoke.md":
-        return (
-            "Deterministic smoke report",
-            "This report proves the public join path end to end. It is a verification artifact, not a live goal counter.",
-        )
-    if markdown_path.name.endswith("-effort.md"):
-        return (
-            "Generated snapshot",
-            "This brief is a generated snapshot from the last repo export bundled into this site. Use /efforts for live goal state.",
-        )
-    if markdown_path.name == "repeated-external-participation.md":
-        return (
-            "Hosted network proof",
-            "This report shows multiple distinct participants landing visible work through the canonical hosted network.",
-        )
-    if markdown_path.name == "join-with-ai.md":
-        return (
-            "Repo brief",
-            "This brief is copied from the repo at build time so agents can follow the current public join path.",
-        )
-    return (
-        "OpenIntention evidence",
-        "This is a public evidence artifact rendered for humans, with raw markdown kept alongside it for agents and scripts.",
-    )
-
-
-def _asset_version(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:10]
-
-
-def _load_stylesheet() -> str:
-    return (_SITE_STATIC_DIR / "site.css").read_text(encoding="utf-8")
-
-
-def _load_site_script() -> str:
-    return (_SITE_STATIC_DIR / "site.js").read_text(encoding="utf-8")
-
-
-
-if __name__ == "__main__":
-    main()

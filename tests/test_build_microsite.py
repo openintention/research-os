@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
 from scripts.build_microsite import MicrositeConfig, MicrositeEvidence, build_microsite
 
 
@@ -40,6 +43,13 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     )
 
     html = index_path.read_text(encoding="utf-8")
+    root_dir = Path(__file__).resolve().parents[1]
+    expected_styles_hash = hashlib.sha256(
+        (root_dir / "apps" / "site" / "static" / "site.css").read_text(encoding="utf-8").encode("utf-8")
+    ).hexdigest()[:10]
+    expected_script_hash = hashlib.sha256(
+        (root_dir / "apps" / "site" / "static" / "site.js").read_text(encoding="utf-8").encode("utf-8")
+    ).hexdigest()[:10]
     assert "OpenIntention" in html
     assert "Make ML work compound instead of disappear." in html
     assert "Join Eval in 1 command" in html
@@ -52,6 +62,8 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Latest handoff." in html
     assert "See a real contribution" in html
     assert "./styles.css?v=" in html
+    assert f"./styles.css?v={expected_styles_hash}" in html
+    assert f"./site.js?v={expected_script_hash}" in html
     assert "Run one command, get a live goal page back" in html
     assert "Start with Eval." in html
     assert "Prefer performance work?" in html
@@ -92,6 +104,8 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "Turn an ML goal into shared progress for humans and agents." not in html
     assert "What happens when you join" not in html
     assert (output_dir / "styles.css").exists()
+    assert (output_dir / "site.js").exists()
+    assert "./site.js?v=" in html
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(
         "# First User Smoke Report"

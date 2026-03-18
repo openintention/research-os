@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
 from dataclasses import dataclass
 from html import escape
 import json
@@ -13,6 +14,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
+from apps.site import site_templates
 from research_os.effort_lifecycle import is_historical_proof_effort
 from research_os.effort_lifecycle import is_public_proof_effort
 from research_os.effort_lifecycle import proof_series
@@ -107,6 +109,12 @@ class EffortProofSurfaceContext:
     carries_forward: bool
 
 
+def _asset_version(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
+
+
 def create_site_app(
     dist_dir: Path | None = None,
     *,
@@ -137,6 +145,18 @@ def create_site_app(
         normalized_site_base_url = normalized_site_base_url.rstrip("/")
     assets_root.mkdir(parents=True, exist_ok=True)
     evidence_root.mkdir(parents=True, exist_ok=True)
+    site_css_url = "/styles.css"
+    site_css_hash = _asset_version(dist_root / "styles.css")
+    if site_css_hash:
+        site_css_url = f"/styles.css?v={site_css_hash}"
+    site_js_url = None
+    site_js_hash = _asset_version(dist_root / "site.js")
+    if site_js_hash:
+        site_js_url = f"/site.js?v={site_js_hash}"
+    template_asset_kwargs = {
+        "site_css_url": site_css_url,
+        "site_js_url": site_js_url,
+    }
     app = FastAPI(title="OpenIntention Site", docs_url=None, redoc_url=None, openapi_url=None)
     app.mount("/assets", StaticFiles(directory=assets_root), name="site-assets")
 
@@ -148,6 +168,13 @@ def create_site_app(
     def styles() -> FileResponse:
         return FileResponse(dist_root / "styles.css")
 
+    @app.get("/site.js", include_in_schema=False)
+    def site_script() -> FileResponse:
+        site_script_file = dist_root / "site.js"
+        if not site_script_file.is_file():
+            raise HTTPException(status_code=404, detail="site.js not found")
+        return FileResponse(site_script_file)
+
     @app.get("/join", include_in_schema=False, response_class=PlainTextResponse)
     @app.get("/join.sh", include_in_schema=False, response_class=PlainTextResponse)
     def join_script() -> PlainTextResponse:
@@ -158,7 +185,9 @@ def create_site_app(
 
     @app.get("/publish", include_in_schema=False, response_class=HTMLResponse)
     def publish_goal_page() -> str:
-        return _publish_goal_html()
+        return site_templates.render_publish_goal_page(
+            site_templates.build_publish_goal_context(**template_asset_kwargs)
+        )
 
     @app.post("/publish", include_in_schema=False)
     async def publish_goal(request: Request) -> dict[str, object]:
@@ -197,9 +226,12 @@ def create_site_app(
     @app.get("/efforts", include_in_schema=False, response_class=HTMLResponse)
     def effort_index() -> str:
         efforts = _fetch_json(normalized_fetch_api_base_url, "/api/v1/efforts")
-        return _effort_index_html(
-            public_api_base_url=normalized_public_api_base_url,
-            efforts=efforts,
+        return site_templates.render_effort_index_page(
+            site_templates.build_effort_index_context(
+                public_api_base_url=normalized_public_api_base_url,
+                efforts=efforts,
+                **template_asset_kwargs,
+            ),
         )
 
     @app.get("/efforts/{effort_id}", include_in_schema=False, response_class=HTMLResponse)
@@ -260,17 +292,20 @@ def create_site_app(
             all_claims=claims,
         )
 
-        return _effort_detail_html(
-            public_api_base_url=normalized_public_api_base_url,
-            effort=effort,
-            proof_surface=proof_surface,
-            frontier=frontier,
-            lease_observations=lease_observations,
-            highlighted_workspace_id=workspace,
-            highlighted_actor_id=actor,
-            highlighted_claim_id=claim,
-            highlighted_reproduction_run_id=reproduction,
-            joined=bool(joined),
+        return site_templates.render_effort_detail_page(
+            site_templates.build_effort_detail_context(
+                public_api_base_url=normalized_public_api_base_url,
+                effort=effort,
+                proof_surface=proof_surface,
+                frontier=frontier,
+                lease_observations=lease_observations,
+                highlighted_workspace_id=workspace,
+                highlighted_actor_id=actor,
+                highlighted_claim_id=claim,
+                highlighted_reproduction_run_id=reproduction,
+                joined=bool(joined),
+                **template_asset_kwargs,
+            )
         )
 
     return app
@@ -329,7 +364,13 @@ def _resolve_site_base_url(request: Request, *, configured_base_url: str | None)
     return str(request.base_url).rstrip("/")
 
 
-def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, object]]) -> str:
+def _effort_index_html(
+    *,
+    public_api_base_url: str,
+    efforts: list[dict[str, object]],
+    site_css_url: str = "/styles.css",
+    site_js_url: str | None = None,
+) -> str:
     effort_models = [EffortView.model_validate(effort) for effort in efforts]
     current_efforts, historical_efforts = split_current_and_historical_efforts(effort_models)
     cards = "\n".join(
@@ -368,6 +409,9 @@ def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, obje
         """
         + f'<section class="efforts">{cards or "<p>No efforts found.</p>"}</section>'
         + historical_section
+        ,
+        site_css_url=site_css_url,
+        site_js_url=site_js_url,
     )
 
 
@@ -489,6 +533,8 @@ def _effort_detail_html(
     highlighted_claim_id: str | None = None,
     highlighted_reproduction_run_id: str | None = None,
     joined: bool = False,
+    site_css_url: str = "/styles.css",
+    site_js_url: str | None = None,
 ) -> str:
     current_workspace_models = proof_surface.current_workspaces
     current_claim_models = proof_surface.current_claims
@@ -772,6 +818,8 @@ def _effort_detail_html(
           </section>
         </section>
         """,
+        site_css_url=site_css_url,
+        site_js_url=site_js_url,
     )
 
 
@@ -1614,7 +1662,11 @@ def _render_goal_contract_card(effort: EffortView) -> str:
     """
 
 
-def _publish_goal_html() -> str:
+def _publish_goal_html(
+    *,
+    site_css_url: str = "/styles.css",
+    site_js_url: str | None = None,
+) -> str:
     return _page_html(
         "Publish Goal",
         """
@@ -1675,56 +1727,9 @@ def _publish_goal_html() -> str:
             <a class="button secondary" id="publish-result-join-link" href="#">Copy join command</a>
           </div>
         </section>
-
-        <script>
-          const form = document.getElementById('publish-goal-form');
-          const resultPanel = document.getElementById('publish-result');
-          const resultSummary = document.getElementById('publish-result-summary');
-          const resultCommand = document.getElementById('publish-result-command');
-          const resultGoalLink = document.getElementById('publish-result-goal-link');
-          const resultJoinLink = document.getElementById('publish-result-join-link');
-
-          form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const formData = new FormData(form);
-            const payload = {
-              title: formData.get('title'),
-              summary: formData.get('summary'),
-              objective: formData.get('objective'),
-              metric_name: formData.get('metric_name'),
-              direction: formData.get('direction'),
-              platform: formData.get('platform'),
-              budget_seconds: Number(formData.get('budget_seconds')),
-              actor_id: formData.get('actor_id'),
-              constraints: String(formData.get('constraints') || '').split('\\n').map((line) => line.trim()).filter(Boolean),
-              evidence_requirement: formData.get('evidence_requirement'),
-              stop_condition: formData.get('stop_condition'),
-            };
-
-            const response = await fetch('/publish', {
-              method: 'POST',
-              headers: {'content-type': 'application/json'},
-              body: JSON.stringify(payload),
-            });
-            const body = await response.json();
-            if (!response.ok) {
-              alert(body.detail || 'Could not publish goal.');
-              return;
-            }
-
-            resultPanel.hidden = false;
-            resultSummary.textContent = `Published ${payload.title}. The live goal page is ready and the join command is attached.`;
-            resultCommand.textContent = body.join_command;
-            resultGoalLink.href = body.goal_page_url;
-            resultJoinLink.onclick = async (clickEvent) => {
-              clickEvent.preventDefault();
-              await navigator.clipboard.writeText(body.join_command);
-              resultJoinLink.textContent = 'Copied join command';
-            };
-            window.location = body.goal_page_url;
-          });
-        </script>
         """,
+        site_css_url=site_css_url,
+        site_js_url=site_js_url,
     )
 
 
@@ -1824,8 +1829,16 @@ def _effort_state_label(effort) -> dict[str, str]:
         "description": "This goal page is generated from hosted control-plane state.",
     }
 
-
-def _page_html(title: str, body: str) -> str:
+def _page_html(
+    title: str,
+    body: str,
+    *,
+    site_css_url: str = "/styles.css",
+    site_js_url: str | None = None,
+) -> str:
+    script_markup = (
+        f'<script src="{escape(site_js_url)}" defer></script>' if site_js_url else ""
+    )
     return f"""<!doctype html>
 <html lang="en">
   <head>
@@ -1839,7 +1852,7 @@ def _page_html(title: str, body: str) -> str:
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     >
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="{escape(site_css_url)}">
   </head>
   <body>
     <main class="page">
@@ -1853,6 +1866,7 @@ def _page_html(title: str, body: str) -> str:
         <a href="{escape(DEFAULT_PUBLIC_REPO_URL)}">GitHub repo</a>
       </div>
     </footer>
+    {script_markup}
   </body>
 </html>
 """

@@ -50,6 +50,23 @@ def test_site_server_serves_generated_index_and_evidence(tmp_path):
     assert join_sh_response.text == join_response.text
 
 
+def test_site_server_renders_publish_page_with_shared_assets(tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (dist_dir / "site.js").write_text("console.log('ok');", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    publish_html = TestClient(create_site_app(dist_dir)).get("/publish").text
+    assert "Publish a live ML goal people and agents can join." in publish_html
+    assert '<script src="/site.js?' in publish_html
+    assert "<script>" not in publish_html
+
+
 def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
     dist_dir = tmp_path / "dist"
     assets_dir = dist_dir / "assets"
