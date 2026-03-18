@@ -37,6 +37,7 @@ def run_hosted_join(
     *,
     actor_id: str | None,
     profile: str,
+    effort_id: str | None,
     base_url: str,
     site_url: str,
     artifact_root: str,
@@ -67,18 +68,20 @@ def run_hosted_join(
         "clients.tiny_loop.run",
         "--base-url",
         base_url,
-        "--profile",
-        profile,
         "--actor-id",
         resolved_actor_id,
         "--artifact-root",
         str(artifact_root_path),
     ]
+    if effort_id:
+        command.extend(["--effort-id", effort_id])
+    else:
+        command.extend(["--profile", profile])
     output = _run_command(command, cwd=REPO_ROOT)
     fields = _extract_fields(output)
     result = HostedJoinResult(
         actor_id=resolved_actor_id,
-        profile=profile,
+        profile=profile if effort_id is None else f"explicit-goal:{effort_id}",
         base_url=base_url,
         site_url=site_url,
         effort_id=fields.get("effort_id"),
@@ -109,7 +112,7 @@ def build_join_report(result: HostedJoinResult) -> str:
             "",
             "## Joined",
             f"- Actor: `{result.actor_id}`",
-            f"- Profile: `{result.profile}`",
+            f"- Join path: `{result.profile}`",
             f"- Participant role: `{result.participant_role or 'unknown'}`",
             f"- Effort: `{result.effort_name or 'unknown'}`",
             f"- Workspace: `{result.workspace_id or 'unknown'}`",
@@ -135,6 +138,7 @@ def build_join_report(result: HostedJoinResult) -> str:
             "## Honesty Line",
             "- This lands visible work in the live hosted shared goal state.",
             "- The default eval and inference contribution paths are still proxy loops.",
+            "- User-published goals currently join through the tiny-loop proxy contribution path in v1.",
             "- A stronger external-harness compounding path exists separately in the repo.",
         ]
     ) + "\n"
@@ -152,6 +156,11 @@ def main() -> None:
         choices=("eval-sprint", "inference-sprint"),
         default="eval-sprint",
         help="Which seeded goal path to join.",
+    )
+    parser.add_argument(
+        "--effort-id",
+        default=None,
+        help="Optional live goal id to join directly instead of using one of the seeded profiles.",
     )
     parser.add_argument(
         "--base-url",
@@ -189,6 +198,7 @@ def main() -> None:
     report_path = run_hosted_join(
         actor_id=args.actor_id,
         profile=args.profile,
+        effort_id=args.effort_id,
         base_url=args.base_url,
         site_url=args.site_url,
         artifact_root=args.artifact_root,

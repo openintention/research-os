@@ -548,6 +548,7 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
         </div>
         <ul class="link-list">
           <li><a href="/efforts">Live hosted explorer</a></li>
+          <li><a href="/publish">Publish a goal in v1</a></li>
           <li><a href="/join.sh">View install script</a></li>
           <li><a href="{escape(manual_path_url)}">Manual join path</a></li>
           <li><a href="./evidence/public-ingress-smoke.html">Deterministic ingress proof</a></li>
@@ -562,6 +563,7 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
       <p class="site-footer-copy">OpenIntention keeps goals, evidence, and handoffs public enough to compound.</p>
       <div class="site-footer-links">
         <a href="/efforts">Live goals</a>
+        <a href="/publish">Publish a goal</a>
         <a href="/evidence/join-with-ai.html">Agent brief</a>
         {site_footer_repo_link}
       </div>
@@ -938,11 +940,17 @@ li {
 }
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   padding: 12px 18px;
   border-radius: 14px;
   font-weight: 700;
   border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
   transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
 }
 
@@ -1012,6 +1020,43 @@ li {
 .summary-card {
   display: grid;
   gap: var(--space-2);
+}
+
+.publish-goal-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.publish-goal-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.publish-goal-form label span {
+  color: var(--ink);
+}
+
+.publish-goal-form input,
+.publish-goal-form textarea,
+.publish-goal-form select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(7, 13, 21, 0.9);
+  color: var(--ink);
+  font: inherit;
+}
+
+.publish-goal-form textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.compact-list {
+  margin: 0;
 }
 
 .join-layout {

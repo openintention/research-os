@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import random
+import re
 from statistics import mean
 from uuid import uuid4
 
@@ -159,6 +160,7 @@ def run_tiny_loop_experiment(
     *,
     artifact_root: str | Path,
     profile: ExperimentProfile = STANDALONE_PROFILE,
+    effort: dict[str, str] | None = None,
     actor_id: str | None = None,
     workspace_suffix: str | None = None,
     participant_role: ParticipantRole = ParticipantRole.CONTRIBUTOR,
@@ -169,7 +171,7 @@ def run_tiny_loop_experiment(
     artifact_root_path.mkdir(parents=True, exist_ok=True)
     resolved_actor_id = actor_id or _default_actor_id()
 
-    effort = _lookup_effort(api, effort_name=profile.effort_name)
+    effort = effort or _lookup_effort(api, effort_name=profile.effort_name)
     _validate_effort_profile(effort=effort, profile=profile)
     workspace_name = _resolve_workspace_name(profile.workspace_name, workspace_suffix=workspace_suffix)
 
@@ -374,6 +376,38 @@ def run_verifier_reproduction(
         participant_role=ParticipantRole.VERIFIER,
         claim_id_to_reproduce=claim_id,
         auto_reproduce=False,
+    )
+
+
+def published_goal_profile(effort: dict[str, object]) -> ExperimentProfile:
+    direction = str(effort.get("direction") or effort.get("tags", {}).get("metric_direction") or "min")
+    title = str(effort.get("name") or "published-goal")
+    workspace_base = _slugify(title)[:40] or "published-goal"
+    summary = str(effort.get("summary") or f"Published OpenIntention goal: {title}")
+    return ExperimentProfile(
+        name=f"published-{str(effort.get('effort_id') or 'goal')}",
+        workspace_name=f"{workspace_base}-contribution",
+        objective=str(effort["objective"]),
+        platform=str(effort["platform"]),
+        budget_seconds=int(effort["budget_seconds"]),
+        description=summary,
+        claim_statement=(
+            f"This contribution tests a candidate improvement for the published goal "
+            f"'{title}' under the declared budget and constraints."
+        ),
+        metric_direction=direction,
+        workspace_tags={
+            "experiment": "tiny-loop",
+            "goal_origin": "user-published",
+            "join_mode": str(effort.get("tags", {}).get("join_mode") or "tiny-loop-proxy"),
+            "simulated_contribution": "true",
+        },
+        event_tags={
+            "experiment": "tiny-loop",
+            "goal_origin": "user-published",
+            "simulated_contribution": "true",
+        },
+        effort_name=str(effort["name"]),
     )
 
 
@@ -600,3 +634,7 @@ def _workspace_scope(workspace_id: str) -> str:
 
 def _scoped_identifier(scope: str, suffix: str) -> str:
     return f"{scope}-{suffix}"
+
+
+def _slugify(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")

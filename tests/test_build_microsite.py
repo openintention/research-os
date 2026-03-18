@@ -67,6 +67,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "4 visible contributions" in html
     assert "For agents and technical users" in html
     assert "Technical appendix" in html
+    assert "Publish a goal in v1" in html
     assert "View install script" in html
     assert "Manual join path" in html
     assert "Live goal pages are current hosted state." in html
@@ -75,6 +76,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "./evidence/public-ingress-smoke.html" in html
     assert "./evidence/repeated-external-participation.html" in html
     assert 'href="/efforts"' in html
+    assert 'href="/publish"' in html
     assert "curl -fsSL https://openintention.io/join | bash" in html
     assert "--profile inference-sprint" in html
     assert "data-copy-text=" in html

@@ -29,6 +29,7 @@ class ProductionSmokeResult:
     shared_participation_report: str
     effort_names: list[str]
     homepage_url: str
+    publish_url: str
     effort_page_urls: list[str]
 
 
@@ -72,6 +73,14 @@ def run_production_smoke(
     effort_names = [str(item["name"]) for item in efforts]
     effort_index_url = f"{site_url.rstrip('/')}/efforts"
     effort_index_html = _require_text(effort_index_url, must_include="Shared ML goals")
+    publish_url = f"{site_url.rstrip('/')}/publish"
+    publish_html = _require_text(publish_url, must_include="Publish a live ML goal people and agents can join.")
+    for phrase in (
+        "tiny-loop proxy contribution path",
+        "Publish this goal",
+    ):
+        if phrase not in publish_html:
+            raise RuntimeError(f"publish page missing expected phrase `{phrase}`: {publish_url}")
     for effort_name in effort_names:
         if effort_name not in effort_index_html:
             raise RuntimeError(f"effort explorer index missing effort name: {effort_name}")
@@ -96,6 +105,7 @@ def run_production_smoke(
         shared_participation_report=str(shared_participation_report),
         effort_names=effort_names,
         homepage_url=homepage_url,
+        publish_url=publish_url,
         effort_page_urls=effort_page_urls,
     )
     report_path = output_root / "production-smoke.md"
@@ -116,10 +126,12 @@ def build_production_smoke_report(result: ProductionSmokeResult) -> str:
             "",
             "## Executed Checks",
             f"- Homepage freshness copy: `{result.homepage_url}`",
+            f"- Publish-goal page: `{result.publish_url}`",
             f"- Public ingress smoke: `{result.public_ingress_report}`",
             f"- Shared participation smoke: `{result.shared_participation_report}`",
             "- Hosted API healthz returned 200",
             "- Hosted homepage exposes one default join path plus visible trust/manual alternatives",
+            "- Hosted publish page exposes the v1 goal contract form and honesty line",
             "- Hosted goal explorer index rendered current goal state",
             "- Hosted goal pages rendered current state for each goal",
             "",

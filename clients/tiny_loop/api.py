@@ -12,7 +12,11 @@ from research_os.http import open_url
 class ResearchOSApi(Protocol):
     def list_efforts(self) -> list[dict[str, Any]]: ...
 
+    def get_effort(self, effort_id: str) -> dict[str, Any]: ...
+
     def create_effort(self, payload: dict[str, Any]) -> dict[str, Any]: ...
+
+    def publish_goal(self, payload: dict[str, Any]) -> dict[str, Any]: ...
 
     def list_workspaces(self, effort_id: str | None = None) -> list[dict[str, Any]]: ...
 
@@ -35,8 +39,18 @@ class HttpResearchOSApi:
     def list_efforts(self) -> list[dict[str, Any]]:
         return self._request("GET", "/api/v1/efforts")
 
+    def get_effort(self, effort_id: str) -> dict[str, Any]:
+        response = self._request("GET", f"/api/v1/efforts/{effort_id}")
+        assert isinstance(response, dict)
+        return response
+
     def create_effort(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._request("POST", "/api/v1/efforts", payload)
+
+    def publish_goal(self, payload: dict[str, Any]) -> dict[str, Any]:
+        response = self._request("POST", "/api/v1/goals/publish", payload)
+        assert isinstance(response, dict)
+        return response
 
     def create_workspace(self, payload: dict[str, Any]) -> dict[str, Any]:
         return self._request("POST", "/api/v1/workspaces", payload)

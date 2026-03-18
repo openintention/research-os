@@ -3,11 +3,13 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from html import escape
+import json
 import os
 from pathlib import Path
+from urllib import error
 from urllib.parse import quote, urlencode
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -146,6 +148,36 @@ def create_site_app(
             media_type="text/plain; charset=utf-8",
         )
 
+    @app.get("/publish", include_in_schema=False, response_class=HTMLResponse)
+    def publish_goal_page() -> str:
+        return _publish_goal_html()
+
+    @app.post("/publish", include_in_schema=False)
+    async def publish_goal(request: Request) -> dict[str, object]:
+        try:
+            payload = await request.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="request body must be valid JSON") from exc
+        if not isinstance(payload, dict):
+            raise HTTPException(status_code=422, detail="request body must be a JSON object")
+        created = _post_json(
+            normalized_fetch_api_base_url,
+            "/api/v1/goals/publish",
+            payload,
+        )
+        effort_id = str(created["effort_id"])
+        actor_id = str(payload.get("actor_id") or "unknown")
+        site_base_url = str(request.base_url).rstrip("/")
+        return {
+            **created,
+            "goal_page_url": f"{site_base_url}/efforts/{effort_id}",
+            "join_command": (
+                f"curl -fsSL {site_base_url}/join | bash -s -- "
+                f"--effort-id {effort_id} --actor-id <handle>"
+            ),
+            "author_id": actor_id,
+        }
+
     @app.get("/evidence/{path:path}", include_in_schema=False)
     def evidence(path: str) -> FileResponse:
         target = (evidence_root / path).resolve()
@@ -248,9 +280,35 @@ def _fetch_json(
     query_string = f"?{urlencode(query)}" if query else ""
     request = build_request(f"{api_base_url}{path}{query_string}")
     with open_url(request, timeout=30) as response:
-        import json
-
         return json.loads(response.read().decode("utf-8"))
+
+
+def _post_json(
+    api_base_url: str,
+    path: str,
+    payload: dict[str, object],
+) -> dict[str, object]:
+    request = build_request(
+        f"{api_base_url}{path}",
+        method="POST",
+        headers={"content-type": "application/json", "accept": "application/json"},
+        data=json.dumps(payload).encode("utf-8"),
+    )
+    try:
+        with open_url(request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        detail_text = exc.read().decode("utf-8")
+        detail: object = detail_text
+        try:
+            parsed = json.loads(detail_text)
+            if isinstance(parsed, dict) and "detail" in parsed:
+                detail = parsed["detail"]
+            else:
+                detail = parsed
+        except json.JSONDecodeError:
+            detail = detail_text
+        raise HTTPException(status_code=exc.code, detail=detail) from exc
 
 
 def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, object]]) -> str:
@@ -286,6 +344,7 @@ def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, obje
           </p>
           <div class="hero-actions">
             <a class="button primary" href="/">Back to OpenIntention</a>
+            <a class="button secondary" href="/publish">Publish a goal</a>
           </div>
         </section>
         """
@@ -482,6 +541,7 @@ def _effort_detail_html(
     best_result = _best_result_summary(frontier_members, workspace_actor_map)
     latest_claim = _latest_claim_summary(display_claim_models, workspace_actor_map)
     next_move = _next_move_summary(effort, display_claim_models, frontier_members, workspace_actor_map)
+    goal_contract_card = _render_goal_contract_card(effort)
     progress_items = "\n".join(_render_progress_milestone(step) for step in proof.progress_milestones)
     latest_workspace = featured_workspace or proof.latest_workspace
     carried_workspace_count = len(display_workspace_models) - len(current_workspace_models)
@@ -575,6 +635,7 @@ def _effort_detail_html(
               <div class="effort-type">What to try next</div>
               <p class="summary-headline">{escape(next_move)}</p>
             </div>
+            {goal_contract_card}
             <ul class="state-pills">
               <li><span>Objective</span><code>{escape(str(effort.objective))}</code></li>
               <li><span>Platform</span><code>{escape(str(effort.platform))}</code></li>
@@ -1502,6 +1563,153 @@ def _is_better_run_event(candidate: EventEnvelope, existing: EventEnvelope) -> b
     return candidate_metric > existing_metric
 
 
+def _render_goal_contract_card(effort: EffortView) -> str:
+    if not any(
+        (
+            effort.metric_name,
+            effort.direction,
+            effort.constraints,
+            effort.evidence_requirement,
+            effort.stop_condition,
+            effort.author_id,
+        )
+    ):
+        return ""
+    constraint_items = "".join(f"<li>{escape(item)}</li>" for item in effort.constraints)
+    constraint_block = (
+        f"<ul class=\"link-list compact-list\">{constraint_items}</ul>"
+        if constraint_items
+        else "<p class=\"footer-note\">No explicit constraints recorded on this goal yet.</p>"
+    )
+    return f"""
+    <div class="summary-card">
+      <div class="effort-type">Goal contract</div>
+      <p class="summary-headline">{escape(effort.metric_name or effort.objective)} · {escape(str(effort.direction or 'n/a'))}</p>
+      <ul class="state-pills compact">
+        <li><span>Author</span><code>{escape(effort.author_id or 'unknown')}</code></li>
+        <li><span>Join mode</span><code>{escape(effort.tags.get('join_mode') or 'standard')}</code></li>
+      </ul>
+      <p class="footer-note">{escape(effort.evidence_requirement or 'No explicit evidence requirement recorded.')}</p>
+      <p class="footer-note">{escape(effort.stop_condition or 'No explicit stop condition recorded.')}</p>
+      {constraint_block}
+    </div>
+    """
+
+
+def _publish_goal_html() -> str:
+    return _page_html(
+        "Publish Goal",
+        """
+        <section class="hero">
+          <div class="eyebrow">Publish a goal</div>
+          <h1>Publish a live ML goal people and agents can join.</h1>
+          <p class="lede">
+            This v1 publish path turns a scoped ML goal into a live goal page with a join command,
+            visible contributions, and a public handoff trail.
+          </p>
+          <p class="footer-note">
+            Honesty line: publication is public and attributed only by lightweight asserted handle in v1.
+            The default join path for newly published goals still runs through the tiny-loop proxy contribution path.
+          </p>
+        </section>
+
+        <section class="panel">
+          <div class="eyebrow">Goal form</div>
+          <h2>Define the goal contract</h2>
+          <p class="section-lede">Fill in the minimum contract needed for other people or agents to contribute without guessing what counts as progress.</p>
+          <form id="publish-goal-form" class="publish-goal-form">
+            <label><span>Title</span><input name="title" required placeholder="Improve val_bpb on Apple Silicon"></label>
+            <label><span>Summary</span><textarea name="summary" required rows="3" placeholder="What the goal is and why it matters."></textarea></label>
+            <div class="grid two">
+              <label><span>Objective key</span><input name="objective" required placeholder="val_bpb"></label>
+              <label><span>Metric name</span><input name="metric_name" required placeholder="validation bits-per-byte"></label>
+            </div>
+            <div class="grid two">
+              <label><span>Direction</span>
+                <select name="direction">
+                  <option value="min">Lower is better</option>
+                  <option value="max">Higher is better</option>
+                </select>
+              </label>
+              <label><span>Platform</span><input name="platform" required placeholder="Apple-Silicon-MLX"></label>
+            </div>
+            <div class="grid two">
+              <label><span>Budget seconds</span><input name="budget_seconds" required type="number" min="1" value="300"></label>
+              <label><span>Author handle</span><input name="actor_id" required placeholder="aliargun"></label>
+            </div>
+            <label><span>Constraints</span><textarea name="constraints" required rows="4" placeholder="One constraint per line"></textarea></label>
+            <label><span>Evidence requirement</span><textarea name="evidence_requirement" required rows="2" placeholder="What evidence should a contribution leave behind?"></textarea></label>
+            <label><span>Stop condition</span><textarea name="stop_condition" required rows="2" placeholder="When should this goal stop or be reconsidered?"></textarea></label>
+            <div class="hero-actions">
+              <button class="button primary" type="submit">Publish this goal</button>
+              <a class="button secondary" href="/efforts">Back to live goals</a>
+            </div>
+          </form>
+        </section>
+
+        <section id="publish-result" class="panel" hidden>
+          <div class="eyebrow">Published</div>
+          <h2>Your goal is live</h2>
+          <p class="section-lede" id="publish-result-summary"></p>
+          <p class="command" id="publish-result-command"></p>
+          <div class="hero-actions">
+            <a class="button primary" id="publish-result-goal-link" href="#">Open live goal page</a>
+            <a class="button secondary" id="publish-result-join-link" href="#">Copy join command</a>
+          </div>
+        </section>
+
+        <script>
+          const form = document.getElementById('publish-goal-form');
+          const resultPanel = document.getElementById('publish-result');
+          const resultSummary = document.getElementById('publish-result-summary');
+          const resultCommand = document.getElementById('publish-result-command');
+          const resultGoalLink = document.getElementById('publish-result-goal-link');
+          const resultJoinLink = document.getElementById('publish-result-join-link');
+
+          form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(form);
+            const payload = {
+              title: formData.get('title'),
+              summary: formData.get('summary'),
+              objective: formData.get('objective'),
+              metric_name: formData.get('metric_name'),
+              direction: formData.get('direction'),
+              platform: formData.get('platform'),
+              budget_seconds: Number(formData.get('budget_seconds')),
+              actor_id: formData.get('actor_id'),
+              constraints: String(formData.get('constraints') || '').split('\\n').map((line) => line.trim()).filter(Boolean),
+              evidence_requirement: formData.get('evidence_requirement'),
+              stop_condition: formData.get('stop_condition'),
+            };
+
+            const response = await fetch('/publish', {
+              method: 'POST',
+              headers: {'content-type': 'application/json'},
+              body: JSON.stringify(payload),
+            });
+            const body = await response.json();
+            if (!response.ok) {
+              alert(body.detail || 'Could not publish goal.');
+              return;
+            }
+
+            resultPanel.hidden = false;
+            resultSummary.textContent = `Published ${payload.title}. The live goal page is ready and the join command is attached.`;
+            resultCommand.textContent = body.join_command;
+            resultGoalLink.href = body.goal_page_url;
+            resultJoinLink.onclick = async (clickEvent) => {
+              clickEvent.preventDefault();
+              await navigator.clipboard.writeText(body.join_command);
+              resultJoinLink.textContent = 'Copied join command';
+            };
+            window.location = body.goal_page_url;
+          });
+        </script>
+        """,
+    )
+
+
 def _join_command(effort: dict[str, object], *, api_base_url: str) -> str:
     tags = effort.get("tags", {})
     if tags.get("external_harness") == "mlx-history":
@@ -1513,6 +1721,9 @@ def _join_command(effort: dict[str, object], *, api_base_url: str) -> str:
         )
     if explicit := tags.get("join_command"):
         return str(explicit)
+
+    if tags.get("goal_origin") == "user-published":
+        return f"python3 -m clients.tiny_loop.run --base-url {api_base_url} --effort-id {effort.get('effort_id')}"
 
     effort_type = tags.get("effort_type")
     command = "python3 -m clients.tiny_loop.run"
@@ -1529,6 +1740,8 @@ def _join_brief(effort: dict[str, object]) -> str:
         return "README.md#real-overnight-autoresearch-worker"
     if explicit := tags.get("join_brief_path"):
         return str(explicit)
+    if tags.get("goal_origin") == "user-published":
+        return "/publish"
     return "docs/seeded-efforts.md"
 
 
@@ -1582,6 +1795,11 @@ def _effort_state_label(effort) -> dict[str, str]:
         return {
             "label": "Live goal, proxy join path",
             "description": "This goal is live on the hosted control plane, while the current public join path is still a narrow proxy loop for the larger eval objective.",
+        }
+    if tags.get("goal_origin") == "user-published":
+        return {
+            "label": "User-published goal, proxy join path",
+            "description": "This goal was published through the public goal flow. The current join path is still the tiny-loop proxy contribution path in v1.",
         }
     return {
         "label": "Live goal",

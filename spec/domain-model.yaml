@@ -116,7 +116,7 @@ types:
 
 events:
   effort.registered:
-    description: Registers a seeded shared effort that workspaces can join.
+    description: Registers a live shared goal window that workspaces can join.
     required_payload:
       - effort_id
       - name
@@ -125,6 +125,12 @@ events:
       - budget_seconds
     optional_payload:
       - summary
+      - metric_name
+      - direction
+      - constraints
+      - evidence_requirement
+      - stop_condition
+      - author_id
       - tags
 
   workspace.started:

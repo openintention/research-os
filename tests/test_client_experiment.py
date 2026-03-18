@@ -27,6 +27,16 @@ class ClientApiHarness:
         assert response.status_code == 200
         return response.json()
 
+    def get_effort(self, effort_id: str) -> dict[str, Any]:
+        response = self.client.get(f"/api/v1/efforts/{effort_id}")
+        assert response.status_code == 200
+        return response.json()
+
+    def publish_goal(self, payload: dict[str, Any]) -> dict[str, Any]:
+        response = self.client.post("/api/v1/goals/publish", json=payload)
+        assert response.status_code == 201
+        return response.json()
+
     def list_workspaces(self, effort_id: str | None = None) -> list[dict[str, Any]]:
         path = "/api/v1/workspaces"
         if effort_id:
@@ -138,6 +148,49 @@ def test_tiny_loop_client_can_target_seeded_eval_effort(tmp_path):
     assert workspace["objective"] == EVAL_SPRINT_PROFILE.objective
     assert workspace["platform"] == EVAL_SPRINT_PROFILE.platform
     assert workspace["budget_seconds"] == EVAL_SPRINT_PROFILE.budget_seconds
+
+
+def test_tiny_loop_client_can_join_user_published_goal_by_effort_id(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "client-loop-published.db"),
+        artifact_root=str(tmp_path / "service-artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    api = ClientApiHarness(client)
+
+    published = api.publish_goal(
+        {
+            "title": "Improve validation loss on the proxy loop",
+            "summary": "Test a lightweight public goal end to end with a visible handoff for the next contributor.",
+            "objective": "val_loss",
+            "metric_name": "validation loss",
+            "direction": "min",
+            "platform": "cpu",
+            "budget_seconds": 5,
+            "constraints": ["Keep runtime under five seconds."],
+            "evidence_requirement": "Leave behind at least one run and one claim or reproduction.",
+            "stop_condition": "Stop after the first visible claim is reproduced.",
+            "actor_id": "goal-author",
+        }
+    )
+    effort = api.get_effort(published["effort_id"])
+
+    from clients.tiny_loop.experiment import published_goal_profile
+
+    result = run_tiny_loop_experiment(
+        api,
+        artifact_root=Path(tmp_path / "client-artifacts"),
+        profile=published_goal_profile(effort),
+        effort=effort,
+        actor_id="participant-published",
+    )
+
+    assert result.effort_id == effort["effort_id"]
+    workspace = client.get(f"/api/v1/workspaces/{result.workspace_id}").json()
+    assert workspace["effort_id"] == effort["effort_id"]
+    assert workspace["tags"]["goal_origin"] == "user-published"
+    assert "claim.asserted" in client.get(f"/api/v1/events?workspace_id={result.workspace_id}&limit=50").text
 
 
 def test_tiny_loop_client_can_target_seeded_inference_effort(tmp_path):

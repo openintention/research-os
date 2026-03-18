@@ -30,6 +30,8 @@ from research_os.domain.models import (
     NodeHeartbeat,
     NodeHeartbeatCommand,
     ParticipantRole,
+    PublishGoalRequest,
+    PublishedGoalCreated,
     PublicationView,
     RecommendNextRequest,
     RecommendNextResponse,
@@ -141,12 +143,49 @@ class ResearchOSService:
                 "platform": request.platform,
                 "budget_seconds": request.budget_seconds,
                 "summary": request.summary,
+                "metric_name": request.metric_name,
+                "direction": request.direction.value if request.direction is not None else None,
+                "constraints": request.constraints,
+                "evidence_requirement": request.evidence_requirement,
+                "stop_condition": request.stop_condition,
+                "author_id": request.author_id,
                 "tags": request.tags,
             },
             tags=request.tags,
         )
         self.store.append(event)
         return EffortCreated(effort_id=effort_id, bootstrap_event_id=event.event_id)
+
+    def publish_goal(self, request: PublishGoalRequest) -> PublishedGoalCreated:
+        self._validate_publish_goal_request(request)
+        created = self.create_effort(
+            CreateEffortRequest(
+                name=request.title,
+                objective=request.objective,
+                platform=request.platform,
+                budget_seconds=request.budget_seconds,
+                summary=request.summary,
+                metric_name=request.metric_name,
+                direction=request.direction,
+                constraints=request.constraints,
+                evidence_requirement=request.evidence_requirement,
+                stop_condition=request.stop_condition,
+                author_id=request.actor_id,
+                actor_id=request.actor_id,
+                tags={
+                    "goal_origin": "user-published",
+                    "join_mode": "tiny-loop-proxy",
+                    "seeded": "false",
+                    "published": "true",
+                },
+            )
+        )
+        return PublishedGoalCreated(
+            effort_id=created.effort_id,
+            bootstrap_event_id=created.bootstrap_event_id,
+            goal_path=f"/efforts/{created.effort_id}",
+            join_mode="tiny-loop-proxy",
+        )
 
     def _default_lease_store(self, store: EventStore) -> SQLiteLeaseStore:
         db_path = getattr(store, "db_path", ":memory:")
@@ -159,6 +198,24 @@ class ResearchOSService:
         if not isinstance(db_path, str):
             db_path = ":memory:"
         return SQLiteHeartbeatStore(db_path)
+
+    def _validate_publish_goal_request(self, request: PublishGoalRequest) -> None:
+        self._require_identifier_value(
+            key="actor_id",
+            value=request.actor_id,
+            pattern=_HANDLE_RE,
+            max_length=64,
+        )
+        if len(request.constraints) == 0:
+            raise EventIngestionError("published goals require at least one constraint")
+        if len(request.title.strip()) < 8:
+            raise EventIngestionError("published goals require a title of at least 8 characters")
+        if len(request.summary.strip()) < 24:
+            raise EventIngestionError("published goals require a summary of at least 24 characters")
+        if len(request.evidence_requirement.strip()) < 8:
+            raise EventIngestionError("published goals require an evidence requirement")
+        if len(request.stop_condition.strip()) < 8:
+            raise EventIngestionError("published goals require a stop condition")
 
     def append_event(self, event: EventEnvelope) -> EventEnvelope:
         self._validate_incoming_event(event)

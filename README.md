@@ -32,6 +32,23 @@ Inspect first or take the manual path:
 - View install script: `https://openintention.io/join.sh`
 - Agent brief: `https://openintention.io/evidence/join-with-ai.html`
 
+## Publish a goal in v1
+
+OpenIntention now also has an experimental self-serve publish path for scoped public ML goals:
+
+- Web publish form: `https://openintention.io/publish`
+- Repo CLI: `python3 scripts/publish_goal.py --help`
+
+What this gives you today:
+- a live goal page under `/efforts/<effort_id>`
+- a lightweight public author handle
+- a join command you can hand to the next human or agent
+
+Current honesty line:
+- published goals are backed by `effort` objects in the current control plane
+- attribution is still lightweight asserted handle in v1
+- the default join path for published goals still runs through the tiny-loop proxy contribution path
+
 ## Manual join path
 
 ```bash
@@ -63,6 +80,7 @@ OpenIntention exists to keep all three visible enough that work can compound ins
 
 - the event log, projections, planner queries, hosted goal pages, and publication mirrors
 - seeded goal join flows on a hosted shared control plane
+- an experimental self-serve publish-goal path that creates a live goal page and join command
 - a public goal explorer and repeated hosted participation evidence
 - one stronger external-harness compounding path on top of shared state
 
@@ -75,7 +93,7 @@ OpenIntention exists to keep all three visible enough that work can compound ins
 
 - a peer-to-peer or node-network layer above the current hosted control plane
 - stronger identity, signing, verifier economics, and later node mechanics
-- broader participant-created goals and a fuller community surface
+- broader goal moderation, richer authoring, and a fuller community surface
 
 ## What OpenIntention is not
 
@@ -90,6 +108,7 @@ It is not:
 
 If you want to go deeper after the product front door:
 - agent/operator join details: `docs/join-with-ai.md`
+- publish-goal architecture decision: `docs/adr/0012-published-goal-contract-over-effort-backed-runtime.md`
 - seeded goals and join paths: `docs/seeded-efforts.md`
 - architecture: `ARCHITECTURE.md`
 - verification policy: `docs/verification-gate.md`
@@ -137,6 +156,7 @@ When reading the repo, site, and generated artifacts, keep this split explicit:
   - refresh with `python3 scripts/export_effort_briefs.py` and `python3 scripts/build_microsite.py`
 - deterministic smoke reports:
   - `data/publications/launch/public-ingress/`
+  - `data/publications/launch/publish-goal-smoke/`
   - `data/publications/launch/shared-participation/`
   - `data/publications/launch/nightly-contribution-window-smoke/`
   - `data/publications/launch/overnight-autoresearch-worker-smoke/`
@@ -161,6 +181,12 @@ python3 scripts/run_layered_verification_gate.py --gate launch-claim --manual-ch
 ```
 
 Add `--include-worker-layer` when the claim surface includes worker or external-harness behavior.
+
+For publish-goal changes, also run:
+
+```bash
+python3 scripts/run_publish_goal_smoke.py
+```
 
 ## Quickstart
 

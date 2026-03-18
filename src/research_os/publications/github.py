@@ -207,10 +207,15 @@ def render_effort_overview(
             "",
             "## Objective",
             f"- Objective: `{effort.objective}`",
+            *( [f"- Metric: `{effort.metric_name}`"] if effort.metric_name else [] ),
+            *( [f"- Direction: `{effort.direction}`"] if effort.direction else [] ),
             f"- Platform: `{effort.platform}`",
             f"- Budget seconds: `{effort.budget_seconds}`",
             *(["- Summary: " + effort.summary] if effort.summary else []),
+            *( [f"- Author: `{effort.author_id}`"] if effort.author_id else [] ),
             *_render_effort_lifecycle_lines(effort),
+            *(["", "## Goal Contract"] if _render_goal_contract_lines(effort) else []),
+            *_render_goal_contract_lines(effort),
             "",
             "## Proof Context",
             f"- Best current result: {_render_effort_best_result_line(frontier, workspace_actor_map=workspace_actor_map)}",
@@ -586,6 +591,19 @@ def _render_effort_lifecycle_lines(effort: EffortView) -> list[str]:
         f"- Proof version: `{proof_version(effort)}`",
         "- Proof state: `current`",
     ]
+
+
+def _render_goal_contract_lines(effort: EffortView) -> list[str]:
+    lines: list[str] = []
+    for constraint in effort.constraints:
+        lines.append(f"- Constraint: {constraint}")
+    if effort.evidence_requirement:
+        lines.append(f"- Evidence requirement: {effort.evidence_requirement}")
+    if effort.stop_condition:
+        lines.append(f"- Stop condition: {effort.stop_condition}")
+    if join_mode := effort.tags.get("join_mode"):
+        lines.append(f"- Join mode: `{join_mode}`")
+    return lines
 
 
 def _render_artifact_reference(payload: dict[str, object]) -> str:

@@ -16,6 +16,7 @@ def test_build_production_smoke_report_includes_public_and_shared_checks() -> No
                 "MLX History Sprint: compound kept improvements on Apple Silicon",
             ],
             homepage_url="https://openintention.io/",
+            publish_url="https://openintention.io/publish",
             effort_page_urls=[
                 "https://openintention.io/efforts/effort-eval",
                 "https://openintention.io/efforts/effort-mlx",
@@ -26,8 +27,10 @@ def test_build_production_smoke_report_includes_public_and_shared_checks() -> No
     assert "Production Smoke Report" in report
     assert "Hosted Surface" in report
     assert "Homepage freshness copy" in report
+    assert "https://openintention.io/publish" in report
     assert "public-ingress-smoke.md" in report
     assert "shared-participation-smoke.md" in report
     assert "MLX History Sprint" in report
     assert "https://openintention.io/efforts/effort-mlx" in report
+    assert "Hosted publish page exposes the v1 goal contract form and honesty line" in report
     assert "Hosted goal explorer index rendered current goal state" in report

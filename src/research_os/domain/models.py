@@ -30,6 +30,11 @@ class ParticipantRole(StrEnum):
     VERIFIER = "verifier"
 
 
+class MetricDirection(StrEnum):
+    MIN = "min"
+    MAX = "max"
+
+
 class NodeCapability(StrEnum):
     EVENT_APPEND = "event_append"
     NODE_HEARTBEAT = "node_heartbeat"
@@ -185,13 +190,52 @@ class CreateEffortRequest(BaseModel):
     platform: str
     budget_seconds: int = Field(default=300, ge=1)
     summary: str | None = None
+    metric_name: str | None = None
+    direction: MetricDirection | None = None
+    constraints: list[str] = Field(default_factory=list)
+    evidence_requirement: str | None = None
+    stop_condition: str | None = None
+    author_id: str | None = None
     tags: dict[str, str] = Field(default_factory=dict)
     actor_id: str | None = None
+
+    @model_validator(mode="after")
+    def default_metric_name(self) -> CreateEffortRequest:
+        if self.metric_name is None:
+            self.metric_name = self.objective
+        self.constraints = [item.strip() for item in self.constraints if item.strip()]
+        return self
 
 
 class EffortCreated(BaseModel):
     effort_id: str
     bootstrap_event_id: str
+
+
+class PublishGoalRequest(BaseModel):
+    title: str
+    summary: str
+    objective: str
+    metric_name: str
+    direction: MetricDirection
+    platform: str
+    budget_seconds: int = Field(default=300, ge=1)
+    constraints: list[str] = Field(default_factory=list)
+    evidence_requirement: str
+    stop_condition: str
+    actor_id: str
+
+    @model_validator(mode="after")
+    def normalize_fields(self) -> PublishGoalRequest:
+        self.constraints = [item.strip() for item in self.constraints if item.strip()]
+        return self
+
+
+class PublishedGoalCreated(BaseModel):
+    effort_id: str
+    bootstrap_event_id: str
+    goal_path: str
+    join_mode: str
 
 
 class EffortView(BaseModel):
@@ -201,6 +245,12 @@ class EffortView(BaseModel):
     platform: str
     budget_seconds: int
     summary: str | None = None
+    metric_name: str | None = None
+    direction: MetricDirection | None = None
+    constraints: list[str] = Field(default_factory=list)
+    evidence_requirement: str | None = None
+    stop_condition: str | None = None
+    author_id: str | None = None
     tags: dict[str, str] = Field(default_factory=dict)
     workspace_ids: list[str] = Field(default_factory=list)
     successor_effort_id: str | None = None

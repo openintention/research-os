@@ -820,3 +820,44 @@ def test_effort_overview_publication_carries_forward_proof_series_context_for_cu
     assert "window=carried" in body
     assert "## Proof-Series Claim Signals" in body
     assert "`claim-beta` from `mlx-beta`" in body
+
+
+def test_effort_overview_renders_goal_contract_for_user_published_goal(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publication-published-goal.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/goals/publish",
+        json={
+            "title": "Improve validation loss on cpu",
+            "summary": "Create a visible public goal with a clear handoff for the next contributor.",
+            "objective": "val_loss",
+            "metric_name": "validation loss",
+            "direction": "min",
+            "platform": "cpu",
+            "budget_seconds": 300,
+            "constraints": ["Keep runtime under five minutes."],
+            "evidence_requirement": "Leave behind one run and one finding.",
+            "stop_condition": "Stop after the first verified improvement.",
+            "actor_id": "goal-author",
+        },
+    )
+    assert response.status_code == 201
+    effort_id = response.json()["effort_id"]
+
+    overview_response = client.get(f"/api/v1/publications/efforts/{effort_id}")
+    assert overview_response.status_code == 200
+    body = overview_response.json()["body"]
+    assert "## Objective" in body
+    assert "- Metric: `validation loss`" in body
+    assert "- Direction: `min`" in body
+    assert "- Author: `goal-author`" in body
+    assert "## Goal Contract" in body
+    assert "- Constraint: Keep runtime under five minutes." in body
+    assert "- Evidence requirement: Leave behind one run and one finding." in body
+    assert "- Stop condition: Stop after the first verified improvement." in body
+    assert "- Join mode: `tiny-loop-proxy`" in body

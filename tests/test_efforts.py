@@ -162,3 +162,73 @@ def test_effort_rollover_marks_source_historical_and_links_successor(tmp_path):
     assert efforts[source_effort_id]["successor_effort_id"] == successor_effort_id
     assert efforts[source_effort_id]["tags"]["proof_status"] == "historical"
     assert efforts[successor_effort_id]["successor_effort_id"] is None
+
+
+def test_publish_goal_creates_effort_with_goal_contract(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publish-goal.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/goals/publish",
+        json={
+            "title": "Improve validation loss on cpu",
+            "summary": "Create a public goal with enough contract detail for the next contributor to join.",
+            "objective": "val_loss",
+            "metric_name": "validation loss",
+            "direction": "min",
+            "platform": "cpu",
+            "budget_seconds": 5,
+            "constraints": ["Keep runtime under five seconds."],
+            "evidence_requirement": "Leave behind a run and a claim or reproduction.",
+            "stop_condition": "Stop after the first visible reproduction lands.",
+            "actor_id": "goal-author",
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["goal_path"] == f"/efforts/{payload['effort_id']}"
+    effort = client.get(f"/api/v1/efforts/{payload['effort_id']}")
+    assert effort.status_code == 200
+    effort_payload = effort.json()
+    assert effort_payload["metric_name"] == "validation loss"
+    assert effort_payload["direction"] == "min"
+    assert effort_payload["constraints"] == ["Keep runtime under five seconds."]
+    assert effort_payload["evidence_requirement"] == "Leave behind a run and a claim or reproduction."
+    assert effort_payload["stop_condition"] == "Stop after the first visible reproduction lands."
+    assert effort_payload["author_id"] == "goal-author"
+    assert effort_payload["tags"]["goal_origin"] == "user-published"
+    assert effort_payload["tags"]["join_mode"] == "tiny-loop-proxy"
+
+
+def test_publish_goal_requires_minimum_contract(tmp_path):
+    settings = Settings(
+        db_path=str(tmp_path / "publish-goal-invalid.db"),
+        artifact_root=str(tmp_path / "artifacts"),
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/goals/publish",
+        json={
+            "title": "short",
+            "summary": "too short",
+            "objective": "val_loss",
+            "metric_name": "validation loss",
+            "direction": "min",
+            "platform": "cpu",
+            "budget_seconds": 5,
+            "constraints": [],
+            "evidence_requirement": "none",
+            "stop_condition": "none",
+            "actor_id": "goal-author",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "published goals require at least one constraint" in response.json()["detail"]

@@ -1046,3 +1046,242 @@ def test_site_server_splits_current_and_historical_proof_efforts(monkeypatch, tm
     assert "Historical goal windows" in response.text
     assert "Historical goal window" in response.text
     assert "Current successor: <code>effort-current</code>" in response.text
+
+
+def test_site_server_serves_publish_goal_page(tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    client = TestClient(create_site_app(dist_dir))
+
+    response = client.get("/publish")
+    assert response.status_code == 200
+    assert "Publish a live ML goal people and agents can join." in response.text
+    assert "The default join path for newly published goals still runs through the tiny-loop proxy contribution path." in response.text
+    assert "Publish this goal" in response.text
+
+
+def test_site_server_proxies_publish_goal_and_returns_join_command(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    calls: list[tuple[str, str, dict[str, object]]] = []
+
+    def fake_post_json(api_base_url: str, path: str, payload: dict[str, object]) -> dict[str, object]:
+        calls.append((api_base_url, path, payload))
+        return {
+            "effort_id": "effort-published",
+            "bootstrap_event_id": "event-effort-published",
+            "goal_path": "/efforts/effort-published",
+            "join_mode": "tiny-loop-proxy",
+        }
+
+    monkeypatch.setattr("apps.site.server._post_json", fake_post_json)
+    client = TestClient(create_site_app(dist_dir, api_fetch_base_url="http://api.internal:8080"))
+
+    response = client.post(
+        "/publish",
+        json={
+            "title": "Improve validation loss on cpu",
+            "summary": "Create a visible public goal with a clear handoff for the next contributor.",
+            "objective": "val_loss",
+            "metric_name": "validation loss",
+            "direction": "min",
+            "platform": "cpu",
+            "budget_seconds": 300,
+            "constraints": ["Keep runtime under five minutes."],
+            "evidence_requirement": "Leave behind one run and one finding.",
+            "stop_condition": "Stop after the first verified improvement.",
+            "actor_id": "goal-author",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert calls == [
+        (
+            "http://api.internal:8080",
+            "/api/v1/goals/publish",
+            {
+                "title": "Improve validation loss on cpu",
+                "summary": "Create a visible public goal with a clear handoff for the next contributor.",
+                "objective": "val_loss",
+                "metric_name": "validation loss",
+                "direction": "min",
+                "platform": "cpu",
+                "budget_seconds": 300,
+                "constraints": ["Keep runtime under five minutes."],
+                "evidence_requirement": "Leave behind one run and one finding.",
+                "stop_condition": "Stop after the first verified improvement.",
+                "actor_id": "goal-author",
+            },
+        )
+    ]
+    assert payload["goal_page_url"].endswith("/efforts/effort-published")
+    assert "--effort-id effort-published --actor-id <handle>" in payload["join_command"]
+    assert payload["author_id"] == "goal-author"
+
+
+def test_site_server_renders_goal_contract_for_user_published_goal(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    def fake_fetch_json(api_base_url: str, path: str, *, query=None):
+        assert api_base_url == "http://api.internal:8080"
+        if path == "/api/v1/efforts":
+            return [
+                {
+                    "effort_id": "effort-published",
+                    "name": "Improve validation loss on cpu",
+                    "objective": "val_loss",
+                    "platform": "cpu",
+                    "budget_seconds": 300,
+                    "summary": "Create a visible public goal with a clear handoff for the next contributor.",
+                    "metric_name": "validation loss",
+                    "direction": "min",
+                    "constraints": ["Keep runtime under five minutes."],
+                    "evidence_requirement": "Leave behind one run and one finding.",
+                    "stop_condition": "Stop after the first verified improvement.",
+                    "author_id": "goal-author",
+                    "workspace_ids": ["workspace-1"],
+                    "tags": {"goal_origin": "user-published", "join_mode": "tiny-loop-proxy"},
+                    "successor_effort_id": None,
+                    "updated_at": "2026-03-18T10:00:00Z",
+                }
+            ]
+        if path == "/api/v1/workspaces":
+            assert query == {"effort_id": "effort-published"}
+            return [
+                {
+                    "workspace_id": "workspace-1",
+                    "name": "published-goal-contribution",
+                    "actor_id": "participant-goal",
+                    "participant_role": "contributor",
+                    "run_ids": ["run-1"],
+                    "claim_ids": ["claim-1"],
+                    "reproduction_count": 0,
+                    "adoption_count": 0,
+                    "objective": "val_loss",
+                    "platform": "cpu",
+                    "budget_seconds": 300,
+                    "tags": {"goal_origin": "user-published"},
+                    "updated_at": "2026-03-18T10:01:00Z",
+                }
+            ]
+        if path == "/api/v1/claims":
+            return [
+                {
+                    "claim_id": "claim-1",
+                    "workspace_id": "workspace-1",
+                    "status": "pending",
+                    "statement": "Validation loss moved in the right direction.",
+                    "claim_type": "improvement",
+                    "candidate_snapshot_id": "snap-1",
+                    "objective": "val_loss",
+                    "platform": "cpu",
+                    "support_count": 0,
+                    "contradiction_count": 0,
+                    "updated_at": "2026-03-18T10:02:00Z",
+                }
+            ]
+        if path == "/api/v1/events":
+            return [
+                {
+                    "event_id": "event-1",
+                    "kind": "workspace.started",
+                    "occurred_at": "2026-03-18T10:00:00Z",
+                    "workspace_id": "workspace-1",
+                    "aggregate_id": "workspace-1",
+                    "aggregate_kind": "workspace",
+                    "actor_id": "participant-goal",
+                    "payload": {},
+                    "tags": {},
+                },
+                {
+                    "event_id": "event-run",
+                    "kind": "run.completed",
+                    "occurred_at": "2026-03-18T10:01:00Z",
+                    "workspace_id": "workspace-1",
+                    "aggregate_id": "run-1",
+                    "aggregate_kind": "run",
+                    "actor_id": "participant-goal",
+                    "payload": {
+                        "run_id": "run-1",
+                        "snapshot_id": "snap-1",
+                        "metric_name": "validation loss",
+                        "metric_value": 0.42,
+                        "direction": "min",
+                        "status": "success",
+                    },
+                    "tags": {},
+                },
+                {
+                    "event_id": "event-claim",
+                    "kind": "claim.asserted",
+                    "occurred_at": "2026-03-18T10:02:00Z",
+                    "workspace_id": "workspace-1",
+                    "aggregate_id": "claim-1",
+                    "aggregate_kind": "claim",
+                    "actor_id": "participant-goal",
+                    "payload": {"claim_id": "claim-1"},
+                    "tags": {},
+                },
+            ]
+        if path == "/api/v1/frontiers/val_loss/cpu":
+            return {
+                "members": [
+                    {
+                        "run_id": "run-1",
+                        "snapshot_id": "snap-1",
+                        "workspace_id": "workspace-1",
+                        "objective": "val_loss",
+                        "platform": "cpu",
+                        "budget_seconds": 300,
+                        "metric_name": "validation loss",
+                        "metric_value": 0.42,
+                        "direction": "min",
+                        "last_updated_at": "2026-03-18T10:01:00Z",
+                    }
+                ]
+            }
+        if path == "/api/v1/leases":
+            return []
+        raise AssertionError(path)
+
+    monkeypatch.setattr("apps.site.server._fetch_json", fake_fetch_json)
+    client = TestClient(
+        create_site_app(
+            dist_dir,
+            api_base_url="https://api.example.com",
+            api_fetch_base_url="http://api.internal:8080",
+        )
+    )
+
+    response = client.get("/efforts/effort-published")
+    assert response.status_code == 200
+    assert "Goal contract" in response.text
+    assert "validation loss" in response.text
+    assert "goal-author" in response.text
+    assert "Keep runtime under five minutes." in response.text
+    assert "Leave behind one run and one finding." in response.text
+    assert "Stop after the first verified improvement." in response.text
+    assert "User-published goal, proxy join path" in response.text
+    assert "--effort-id effort-published" in response.text

@@ -4,7 +4,12 @@ import argparse
 from pathlib import Path
 
 from clients.tiny_loop.api import HttpResearchOSApi
-from clients.tiny_loop.experiment import EVAL_SPRINT_PROFILE, PROFILES, run_tiny_loop_experiment
+from clients.tiny_loop.experiment import (
+    EVAL_SPRINT_PROFILE,
+    PROFILES,
+    published_goal_profile,
+    run_tiny_loop_experiment,
+)
 
 
 def main() -> None:
@@ -35,12 +40,22 @@ def main() -> None:
         default=None,
         help="Optional suffix appended to the workspace name for repeated shared-effort runs.",
     )
+    parser.add_argument(
+        "--effort-id",
+        default=None,
+        help="Optional live goal id to join directly instead of using one of the seeded profiles.",
+    )
     args = parser.parse_args()
 
+    api = HttpResearchOSApi(args.base_url)
+    effort = api.get_effort(args.effort_id) if args.effort_id else None
+    profile = published_goal_profile(effort) if effort is not None else PROFILES[args.profile]
+
     result = run_tiny_loop_experiment(
-        HttpResearchOSApi(args.base_url),
+        api,
         artifact_root=Path(args.artifact_root),
-        profile=PROFILES[args.profile],
+        profile=profile,
+        effort=effort,
         actor_id=args.actor_id,
         workspace_suffix=args.workspace_suffix,
     )

@@ -163,6 +163,7 @@ For any new feature:
 Examples:
 - envelope-verification work should start with the smallest failing API validation test, then rerun `L0`, then rerun the deploy gate
 - lease work should start with state-machine and idempotency tests, then rerun `L0`, then rerun the deploy gate once the hosted API surface changes
+- publish-goal work should start with publish validation and rendering tests, then rerun `L0`, then run `python3 scripts/run_publish_goal_smoke.py` before calling the public goal flow done
 
 ## Gate runner
 

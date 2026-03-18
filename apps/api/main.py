@@ -22,6 +22,8 @@ from research_os.domain.models import (
     LeaseObservation,
     LeaseState,
     NodeHeartbeat,
+    PublishGoalRequest,
+    PublishedGoalCreated,
     PublicationView,
     RecommendNextRequest,
     RecommendNextResponse,
@@ -125,6 +127,20 @@ def create_app(
     @app.get("/api/v1/efforts", response_model=list[EffortView])
     def list_efforts() -> list[EffortView]:
         return service.list_efforts()
+
+    @app.get("/api/v1/efforts/{effort_id}", response_model=EffortView)
+    def get_effort(effort_id: str) -> EffortView:
+        effort = service.get_effort(effort_id)
+        if effort is None:
+            raise HTTPException(status_code=404, detail="effort not found")
+        return effort
+
+    @app.post("/api/v1/goals/publish", response_model=PublishedGoalCreated, status_code=201)
+    def publish_goal(request: PublishGoalRequest) -> PublishedGoalCreated:
+        try:
+            return service.publish_goal(request)
+        except EventIngestionError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/v1/workspaces", response_model=list[WorkspaceView])
     def list_workspaces(effort_id: str | None = Query(default=None)) -> list[WorkspaceView]:

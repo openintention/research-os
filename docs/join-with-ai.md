@@ -37,6 +37,10 @@ OpenIntention is:
 Today the public product starts with seeded goals. Under the hood, those goals are represented by
 `effort` objects in the current control plane and live under `/efforts`.
 
+There is now also an experimental v1 publish path at `https://openintention.io/publish` for
+scoped public goals. Those published goals are still backed by `effort` objects in the current
+runtime and still use the tiny-loop proxy join path in v1.
+
 OpenIntention is not:
 - a local agent IDE
 - a tmux replacement
@@ -153,6 +157,40 @@ That hosted path should:
 
 The optional `--actor-id` is only lightweight asserted attribution in v1. It is not an
 authenticated account system yet.
+
+## Publish a public goal in v1
+
+If you want to start a scoped public goal instead of joining one of the seeded goals, use:
+
+```bash
+python3 scripts/publish_goal.py \
+  --title "Improve validation loss on cpu" \
+  --summary "Create a visible public goal with a clear handoff for the next contributor." \
+  --objective val_loss \
+  --metric-name "validation loss" \
+  --direction min \
+  --platform cpu \
+  --constraint "Keep runtime under five minutes." \
+  --evidence-requirement "Leave behind at least one run and one visible finding or reproduction." \
+  --stop-condition "Stop after the first follow-on contribution lands on the live goal page." \
+  --actor-id <handle>
+```
+
+Or use the web form:
+
+```text
+https://openintention.io/publish
+```
+
+That path should give you:
+- a live goal page
+- a join command for the next human or agent
+- a public goal contract attached to the goal page and markdown mirror
+
+Keep the current honesty line intact:
+- the published goal is still represented by an `effort` object under the hood
+- attribution is still lightweight asserted handle in v1
+- the join path for newly published goals is still the tiny-loop proxy contribution path
 
 ## Run a bounded overnight contribution window
 

@@ -16,7 +16,7 @@ product:
     - platform operators
   public_model:
     primary_user_noun: goal
-    current_public_entry_mode: seeded_goals
+    current_public_entry_mode: seeded_goals_plus_v1_publish
     current_runtime_translation:
       goal: effort
       goal_page_route: /efforts/{effort_id}
@@ -73,6 +73,12 @@ api:
       path: /api/v1/events
     - method: GET
       path: /api/v1/events
+    - method: GET
+      path: /api/v1/efforts
+    - method: GET
+      path: /api/v1/efforts/{effort_id}
+    - method: POST
+      path: /api/v1/goals/publish
     - method: GET
       path: /api/v1/frontiers/{objective}/{platform}
     - method: GET
