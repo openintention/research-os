@@ -87,11 +87,11 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
         "apps/site/dist/index.html": "\n".join(
             [
                 "Join Eval in 1 command",
-                "Visible workspace + claim",
-                "Freshness model:",
+                "Your result shows up live",
+                "What happens when you join",
                 "View install script",
                 "Manual join path",
-                "Current goal momentum",
+                "Why this is worth joining now",
                 "Deterministic ingress proof",
             ]
         ),

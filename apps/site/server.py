@@ -526,8 +526,8 @@ def _effort_detail_html(
     if show_worker_coordination:
         worker_coordination_section = f"""
         <section class="panel">
-          <div class="eyebrow">Worker coordination</div>
-          <h2>Worker liveness and lease state on this goal</h2>
+          <div class="eyebrow">Worker activity</div>
+          <h2>What background workers are doing on this goal</h2>
           <p class="section-lede">{escape(worker_coordination.summary_line)}</p>
           <ul class="state-pills proof-stat-pills">
             <li><span>Observed leases</span><code>{len(worker_coordination.observations)}</code></li>
@@ -564,31 +564,31 @@ def _effort_detail_html(
         <section class="panel grid two effort-summary-grid">
           <div class="summary-stack">
             <div class="summary-card">
-              <div class="effort-type">Best current result</div>
+              <div class="effort-type">What's working best right now</div>
               <p class="summary-headline">{escape(best_result)}</p>
             </div>
             <div class="summary-card">
-              <div class="effort-type">Latest claim signal</div>
+              <div class="effort-type">Latest finding</div>
               <p class="summary-headline">{escape(latest_claim)}</p>
             </div>
             <div class="summary-card">
-              <div class="effort-type">Best next move</div>
+              <div class="effort-type">What to try next</div>
               <p class="summary-headline">{escape(next_move)}</p>
             </div>
             <ul class="state-pills">
               <li><span>Objective</span><code>{escape(str(effort.objective))}</code></li>
               <li><span>Platform</span><code>{escape(str(effort.platform))}</code></li>
               <li><span>Budget</span><code>{escape(str(effort.budget_seconds))}s</code></li>
-              <li><span>{'Current window' if proof_surface.carries_forward else 'Workspaces'}</span><code>{len(current_workspace_models)}</code></li>
-              <li><span>{'Current claims' if proof_surface.carries_forward else 'Claims'}</span><code>{len(current_claim_models)}</code></li>
+              <li><span>{'Current contributions' if proof_surface.carries_forward else 'Contributions'}</span><code>{len(current_workspace_models)}</code></li>
+              <li><span>{'Current findings' if proof_surface.carries_forward else 'Findings'}</span><code>{len(current_claim_models)}</code></li>
               <li><span>Frontier</span><code>{len(frontier_members)}</code></li>
-              {f'<li><span>Series proof</span><code>{len(display_workspace_models)}</code></li>' if proof_surface.carries_forward else ''}
+              {f'<li><span>Series history</span><code>{len(display_workspace_models)}</code></li>' if proof_surface.carries_forward else ''}
               {'<li><span>Lifecycle</span><code>historical proof run</code></li>' if is_historical_proof_effort(effort) else ''}
               {f'<li><span>Successor</span><code>{escape(str(effort.successor_effort_id))}</code></li>' if effort.successor_effort_id else ''}
-              {f'<li><span>Proof version</span><code>{escape(str(proof_version(effort)))}</code></li>' if is_public_proof_effort(effort) else ''}
+              {f'<li><span>Window version</span><code>{escape(str(proof_version(effort)))}</code></li>' if is_public_proof_effort(effort) else ''}
             </ul>
             {carry_forward_note}
-            <p class="footer-note">Rendered directly from live hosted control-plane state.</p>
+            <p class="footer-note">This page is reading the live hosted goal state right now.</p>
           </div>
           <div id="join-this-effort" class="summary-card join-summary-card">
             <div class="effort-type">Join this goal</div>
@@ -603,8 +603,8 @@ def _effort_detail_html(
         </section>
 
         <section class="panel">
-          <div class="eyebrow">Compounding proof</div>
-          <h2>Visible work is stacking up on this goal</h2>
+          <div class="eyebrow">How this goal is moving</div>
+          <h2>How people are moving this goal forward</h2>
           <p class="section-lede">{escape(proof_summary_line)}</p>
           <ul class="state-pills proof-stat-pills">
             <li><span>Contributors</span><code>{proof.contributor_count}</code></li>
@@ -628,7 +628,7 @@ def _effort_detail_html(
               </ol>
             </article>
             <article class="result-summary-card">
-              <div class="effort-type">Latest public handoff</div>
+              <div class="effort-type">Latest handoff</div>
               <h3>{escape(latest_workspace.actor_id or "unknown") if latest_workspace else "No public handoff yet"}</h3>
               <p class="summary-headline">{escape(_workspace_handoff_summary(latest_workspace) if latest_workspace is not None else proof.latest_handoff_line)}</p>
               {
@@ -685,9 +685,9 @@ def _effort_detail_html(
             </ul>
           </div>
           <div>
-            <h2>{'Proof-series claim signals' if proof_surface.carries_forward else 'Claim signals'}</h2>
+            <h2>{'Goal-series findings' if proof_surface.carries_forward else 'Recorded findings'}</h2>
             <ul class="link-list">
-              {claim_items or "<li>No claims recorded yet.</li>"}
+              {claim_items or "<li>No findings recorded yet.</li>"}
             </ul>
           </div>
           </section>
@@ -807,7 +807,7 @@ def _build_effort_proof(
         ]
         if event_counts[EventKind.CLAIM_ASSERTED.value]:
             summary_bits.append(
-                f"{event_counts[EventKind.CLAIM_ASSERTED.value]} claim signal{'s' if event_counts[EventKind.CLAIM_ASSERTED.value] != 1 else ''}"
+                f"{event_counts[EventKind.CLAIM_ASSERTED.value]} recorded finding{'s' if event_counts[EventKind.CLAIM_ASSERTED.value] != 1 else ''}"
             )
         if event_counts[EventKind.CLAIM_REPRODUCED.value]:
             summary_bits.append(
@@ -1119,7 +1119,7 @@ def _render_join_success_section(
     claim_line = (
         highlighted_claim.statement
         if highlighted_claim is not None
-        else "No claim signal was attached to this highlighted workspace."
+        else "No recorded finding was attached to this highlighted contribution."
     )
     reproduction_line = highlighted_reproduction_run_id or "none"
     return f"""
@@ -1408,7 +1408,7 @@ def _best_result_summary(
     actor = workspace_actor_map.get(best.workspace_id or "", "unknown")
     return (
         f"{best.metric_name} {_format_metric(best.metric_value)} from {actor}. "
-        f"{best.claim_count} claim signal{'s' if best.claim_count != 1 else ''} attached."
+        f"{best.claim_count} recorded finding{'s' if best.claim_count != 1 else ''} attached."
     )
 
 
@@ -1417,12 +1417,12 @@ def _latest_claim_summary(
     workspace_actor_map: dict[str, str],
 ) -> str:
     if not claim_summaries:
-        return "No claims yet. The next participant can leave the first explicit claim."
+        return "No findings yet. The next participant can leave the first explicit finding."
 
     latest = claim_summaries[0]
     actor = workspace_actor_map.get(latest.workspace_id or "", "unknown")
     return (
-        f"{actor} left a {latest.status} claim: "
+        f"{actor} reported a {latest.status} finding: "
         f"{_trim_sentence(latest.statement, limit=120)}"
     )
 

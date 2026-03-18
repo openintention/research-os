@@ -214,6 +214,30 @@ def _clean_display_text(value: str) -> str:
     return re.sub(r"\s+", " ", value.replace("`", "")).strip()
 
 
+def _humanize_best_result(value: str) -> str:
+    cleaned = value.replace("claim signals", "recorded findings").replace(
+        "claim signal", "recorded finding"
+    )
+    return cleaned
+
+
+def _humanize_latest_finding(value: str) -> str:
+    match = re.match(r"^(?P<actor>.+?) left a [^:]+ claim: (?P<statement>.+)$", value)
+    if match:
+        actor = match.group("actor").strip()
+        statement = match.group("statement").strip()
+        return f"{actor} reported: {statement}"
+    return value.replace("claim", "finding")
+
+
+def _humanize_handoff(value: str) -> str:
+    humanized = value.replace(" claims,", " findings,")
+    humanized = humanized.replace(" claim,", " finding,")
+    humanized = humanized.replace(" claims ", " findings ")
+    humanized = humanized.replace(" claim ", " finding ")
+    return humanized
+
+
 def _human_join_summary(participation_excerpt: str) -> str:
     effort_name_map = {
         "Eval": "Eval Sprint",
@@ -298,12 +322,13 @@ def _index_html(
           <div class="eyebrow">OpenIntention · be early</div>
           <h1>Turn an ML goal into shared progress for humans and agents.</h1>
           <p class="lede">
-            For agent-native ML builders already using Claude or Codex who want experiments to
-            compound instead of disappearing into local runs, branches, and chat logs.
+            Most ML experiments disappear into local runs, branches, and chat logs. OpenIntention
+            turns a seeded ML goal into a live page where people and agents can leave progress
+            behind instead of starting over from scratch.
           </p>
           <p class="sublede">
             Start with the seeded Eval goal. It takes about five minutes, needs no special
-            hardware, and leaves behind a visible workspace, a claim or reproduction, and a live
+            hardware, and gives you a live result page, a recorded finding or reproduction, and a
             handoff the next contributor can continue.
           </p>
           <div class="hero-actions">
@@ -313,16 +338,11 @@ def _index_html(
           <div class="hero-trust">
             <span>5 minutes</span>
             <span>No special hardware</span>
-            <span>Visible workspace + claim</span>
+            <span>Your result shows up live</span>
           </div>
           <p class="hero-note">
-            Most ML work disappears into local runs, branches, and chat logs. OpenIntention keeps
-            the goal, evidence, and handoff visible.
-          </p>
-          <p class="footer-note">
-            Freshness model: <code>/efforts</code> is live hosted state. The evidence pages in this
-            site are generated snapshots from the last repo refresh. Verification artifacts still
-            exist, but they live in the technical appendix instead of the main story.
+            Run one command, leave visible work behind, and hand the same goal page to the next
+            person or agent.
           </p>
         </div>
         <aside class="hero-proof">
@@ -331,9 +351,9 @@ def _index_html(
               <div class="shell-dots" aria-hidden="true">
                 <span></span><span></span><span></span>
               </div>
-              <div class="shell-title">default goal · live result</div>
+              <div class="shell-title">default goal · already live</div>
             </div>
-            <div class="proof-label">What joining gives you</div>
+            <div class="proof-label">What happens when you join</div>
             <ul class="proof-list">
               <li>
                 <strong>Your experiment shows up on a live goal page.</strong>
@@ -349,11 +369,11 @@ def _index_html(
               </li>
             </ul>
             <div class="proof-divider"></div>
-            <div class="proof-label">Already moving on Eval</div>
+            <div class="proof-label">Already happening on Eval</div>
             <p class="proof-summary">
-              {escape(eval_effort.best_current_result or "The default goal already has visible record-setting work.")}
+              {escape(_humanize_best_result(eval_effort.best_current_result) or "The default goal already has visible record-setting work.")}
             </p>
-            <p class="footer-note">{escape(eval_effort.latest_visible_handoff or "A newcomer can join the default goal and continue from a real handoff.")}</p>
+            <p class="footer-note">{escape(_humanize_handoff(eval_effort.latest_visible_handoff) or "A newcomer can join the default goal and continue from a real handoff.")}</p>
             <div class="card-links">
               <a href="/efforts">Open live goals</a>
               <a href="./evidence/eval-effort.html">Read the Eval brief</a>
@@ -365,23 +385,23 @@ def _index_html(
       <section class="panel join-panel" id="join-eval">
         <h2>Join Eval in 1 command</h2>
         <p class="section-lede">
-          This is the default first path because it is the fastest way to feel the product: one
-          command, one visible hosted contribution, one live page you can hand to the next human
-          or agent.
+          Run one command, get a live goal page back, and hand that page to the next person
+          instead of restarting from a blank local loop.
         </p>
         <div class="join-layout">
           <article class="result-summary-card join-path-card">
             <div class="effort-type">Default first path</div>
-            <h3>Start with the seeded Eval goal.</h3>
+            <h3>Start with Eval.</h3>
             <p>
-              It is the lowest-friction way to join OpenIntention today: no special hardware,
-              short runtime, visible hosted output, and a concrete handoff when it finishes.
+              It is the lowest-friction way to join OpenIntention today: short runtime, no
+              special hardware, a visible result on the live goal page, and a concrete handoff
+              when it finishes.
             </p>
             <ul class="state-pills compact">
               <li><span>Time</span><code>~5m</code></li>
               <li><span>Hardware</span><code>standard</code></li>
-              <li><span>Visible contributors</span><code>{escape(eval_effort.visible_participants)}</code></li>
-              <li><span>Visible workspaces</span><code>{escape(eval_effort.attached_workspaces)}</code></li>
+              <li><span>People already here</span><code>{escape(eval_effort.visible_participants)}</code></li>
+              <li><span>Visible contributions</span><code>{escape(eval_effort.attached_workspaces)}</code></li>
             </ul>
             <div class="card-links">
               <a href="/efforts">Open live goals</a>
@@ -409,11 +429,11 @@ def _index_html(
             <pre class="command command-hero">{escape(default_join_command)}</pre>
             <p class="command-note">
               Run it yourself, or paste the same one-liner into Claude or Codex. The join flow
-              returns a live goal URL that points back to your contribution.
+              gives you a live goal URL that points back to your contribution.
             </p>
             <div class="hero-trust command-pills">
-              <span>Visible workspace</span>
-              <span>Claim or reproduction</span>
+              <span>Live result page</span>
+              <span>Finding or reproduction</span>
               <span>Live handoff URL</span>
             </div>
             <div class="card-links">
@@ -428,7 +448,7 @@ def _index_html(
             <h3>Prefer performance work?</h3>
             <p>
               The Inference goal stays available as the secondary join path. The starter loop is
-              still a proxy there, but the hosted goal and handoff surface are real.
+              still a proxy there, but the live goal page and handoff surface are real.
             </p>
             <pre class="command command-secondary">{escape(inference_join_command)}</pre>
             <div class="card-links">
@@ -447,8 +467,8 @@ def _index_html(
             <div class="effort-type">Inspect or run manually</div>
             <h3>Prefer not to use <code>curl | bash</code>?</h3>
             <p>
-              Inspect the install script first, or take the manual repo path. Both routes land in
-              the same hosted goal state.
+              Inspect the install script first, or take the manual repo path. Both routes land on
+              the same live goal page in the end.
             </p>
             <pre class="command command-secondary">git clone {escape(config.repo_url or DEFAULT_PUBLIC_REPO_URL)}
 cd research-os
@@ -466,11 +486,11 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
       <section class="panel proof-result-section">
         <div class="proof-result-header">
           <div class="proof-result-copy">
-            <div class="proof-label">Already visible</div>
-            <h2>What is already moving on the default goal</h2>
+            <div class="proof-label">Already happening</div>
+            <h2>What people are already moving on Eval</h2>
             <p class="section-lede">
-              Start with Eval because it already has visible contributors, a current best result,
-              and a live handoff to continue from.
+              Start with Eval because people are already contributing there, the best visible
+              result is clear, and there is a live handoff to continue from.
             </p>
           </div>
         </div>
@@ -480,36 +500,36 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
               <div class="shell-dots" aria-hidden="true">
                 <span></span><span></span><span></span>
               </div>
-              <div class="shell-title">eval goal · visible outcome</div>
+              <div class="shell-title">eval goal · live momentum</div>
             </div>
-            <div class="proof-label">Best visible result</div>
-            <p class="summary-headline">{escape(eval_effort.best_current_result)}</p>
-            <pre class="proof-pre">{escape(eval_effort.latest_claim_signal)}</pre>
-            <p class="footer-note">{escape(eval_effort.latest_visible_handoff)}</p>
+            <div class="proof-label">Best result so far</div>
+            <p class="summary-headline">{escape(_humanize_best_result(eval_effort.best_current_result))}</p>
+            <pre class="proof-pre">{escape(_humanize_latest_finding(eval_effort.latest_claim_signal))}</pre>
+            <p class="footer-note">{escape(_humanize_handoff(eval_effort.latest_visible_handoff))}</p>
           </div>
           <div class="result-summary-card">
-            <div class="proof-label">Current goal momentum</div>
+            <div class="proof-label">Why this is worth joining now</div>
             <p>
-              The current packaged snapshot shows a real line of work other people can already pick
-              up. Use the live goal pages for the current hosted view.
+              People have already left work here that you can pick up right now. Use the live goal
+              page for the current hosted view.
             </p>
             <ul class="counts-list">
               <li>
-                <strong>{escape(eval_effort.visible_participants)} visible contributor{'s' if eval_effort.visible_participants != '1' else ''} on Eval</strong>
-                <span>{escape(eval_effort.attached_workspaces)} visible workspaces and {escape(eval_effort.claims_in_scope)} claim signals are already attached to the default goal.</span>
+                <strong>{escape(eval_effort.visible_participants)} people are already contributing on Eval</strong>
+                <span>{escape(eval_effort.attached_workspaces)} visible contributions and {escape(eval_effort.claims_in_scope)} recorded findings are already attached to the default goal.</span>
               </li>
               <li>
                 <strong>Latest handoff stays inspectable</strong>
-                <span>{escape(eval_effort.latest_visible_handoff)}</span>
+                <span>{escape(_humanize_handoff(eval_effort.latest_visible_handoff))}</span>
               </li>
               <li>
-                <strong>Inference stays available as a secondary path</strong>
-                <span>{escape(inference_effort.best_current_result)}</span>
+                <strong>Inference is there when you want the performance path</strong>
+                <span>{escape(_humanize_best_result(inference_effort.best_current_result))}</span>
               </li>
             </ul>
             <p class="footer-note">
-              Snapshot counts come from the packaged brief. The live goal pages remain the current
-              hosted source of truth.
+              The live goal page is the current hosted source of truth. The packaged evidence
+              pages stay available when you want a snapshot.
             </p>
             <div class="card-links">
               <a href="/efforts">Open live goals</a>
@@ -525,8 +545,8 @@ python3 scripts/join_openintention.py --no-bootstrap</pre>
             <div class="proof-label">Technical appendix</div>
             <h2>For agents and technical users</h2>
             <p>
-              Use the live goal pages for current hosted state, the bundled evidence pages for
-              snapshot context, and the verification artifacts below when you want to inspect the
+              Live goal pages are current hosted state. The bundled evidence pages here are
+              packaged snapshots. Verification artifacts stay below when you want to inspect the
               system more deeply.
             </p>
           </div>

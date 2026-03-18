@@ -43,33 +43,32 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "OpenIntention" in html
     assert "Turn an ML goal into shared progress for humans and agents." in html
     assert "Join Eval in 1 command" in html
-    assert "Visible workspace + claim" in html
-    assert "For agent-native ML builders already using Claude or Codex" in html
-    assert "Most ML work disappears into local runs, branches, and chat logs." in html
-    assert "Freshness model:" in html
-    assert "What joining gives you" in html
+    assert "Your result shows up live" in html
+    assert "Most ML experiments disappear into local runs, branches, and chat logs." in html
+    assert "Run one command, leave visible work behind" in html
+    assert "What happens when you join" in html
     assert "Your experiment shows up on a live goal page." in html
     assert "Your finding stays attached to the goal." in html
     assert "The next contributor gets a clear handoff." in html
     assert "./styles.css?v=" in html
-    assert "This is the default first path because it is the fastest way to feel the product" in html
-    assert "Start with the seeded Eval goal." in html
+    assert "Run one command, get a live goal page back" in html
+    assert "Start with Eval." in html
     assert "Prefer performance work?" in html
     assert "Prefer not to use <code>curl | bash</code>?" in html
     assert "Copy this" in html
     assert "Copy command" in html
-    assert "Run it yourself, or paste the same one-liner into Claude or Codex." in html
-    assert "What is already moving on the default goal" in html
-    assert "Current goal momentum" in html
-    assert "Best visible result" in html
+    assert "gives you a live goal URL that points back to your contribution" in html
+    assert "What people are already moving on Eval" in html
+    assert "Why this is worth joining now" in html
+    assert "Best result so far" in html
     assert "Eval Sprint" in html
     assert "Inference Sprint" in html
-    assert "4 visible workspaces" in html
+    assert "4 visible contributions" in html
     assert "For agents and technical users" in html
     assert "Technical appendix" in html
     assert "View install script" in html
     assert "Manual join path" in html
-    assert "Use the live goal pages for current hosted state" in html
+    assert "Live goal pages are current hosted state." in html
     assert "https://github.com/example/openintention" in html
     assert "./evidence/join-with-ai.html" in html
     assert "./evidence/public-ingress-smoke.html" in html
@@ -79,7 +78,7 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "--profile inference-sprint" in html
     assert "data-copy-text=" in html
     assert "Open the agent brief" in html
-    assert "Snapshot counts come from the packaged brief." in html
+    assert "The live goal page is the current hosted source of truth." in html
     assert "Both seeded efforts already have visible work" not in html
     assert "Already live now" not in html
     assert "What an effort is" not in html

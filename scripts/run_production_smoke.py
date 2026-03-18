@@ -45,9 +45,9 @@ def run_production_smoke(
     _require_text(f"{api_base_url.rstrip('/')}/healthz", must_include="ok")
     homepage_url = f"{site_url.rstrip('/')}/"
     homepage_html = _require_text(homepage_url, must_include="Join Eval in 1 command")
-    for phrase in ("Visible workspace + claim", "Freshness model:", "View install script", "Manual join path"):
+    for phrase in ("Your result shows up live", "View install script", "Manual join path", "What happens when you join"):
         if phrase not in homepage_html:
-            raise RuntimeError(f"homepage missing freshness phrase `{phrase}`: {homepage_url}")
+            raise RuntimeError(f"homepage missing expected phrase `{phrase}`: {homepage_url}")
     public_ingress_report = run_public_ingress_smoke(
         site_url=site_url,
         output_dir=str(output_root / "public-ingress"),

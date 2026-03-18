@@ -375,26 +375,26 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "README.md#real-overnight-autoresearch-worker" in response.text
     assert "python3 scripts/run_overnight_autoresearch_worker.py" in response.text
     assert "&lt;external_harness_command&gt;" in response.text
-    assert "Best current result" in response.text
-    assert "Latest claim signal" in response.text
-    assert "Best next move" in response.text
-    assert "Compounding proof" in response.text
-    assert "Visible work is stacking up on this goal" in response.text
+    assert "working best right now" in response.text
+    assert "Latest finding" in response.text
+    assert "What to try next" in response.text
+    assert "How this goal is moving" in response.text
+    assert "How people are moving this goal forward" in response.text
     assert "2 contributors" in response.text
     assert "2 visible handoffs" in response.text
     assert "2 successful runs" in response.text
-    assert "1 claim signal" in response.text
+    assert "1 recorded finding" in response.text
     assert "1 reproduction" in response.text
     assert "1 adoption" in response.text
     assert "Best-so-far progression" in response.text
     assert "Starting point" in response.text
     assert "mlx-history:overnight-autoresearch" in response.text
     assert "New best #1" in response.text
-    assert "Latest public handoff" in response.text
+    assert "Latest handoff" in response.text
     assert "Who is involved" in response.text
     assert "People and agents visible on this goal" in response.text
-    assert "Worker coordination" in response.text
-    assert "Worker liveness and lease state on this goal" in response.text
+    assert "Worker activity" in response.text
+    assert "What background workers are doing on this goal" in response.text
     assert "No worker is active right now" in response.text
     assert "Open lease observation" in response.text
     assert "node_mlxworkerproof01" in response.text
@@ -917,8 +917,8 @@ def test_site_server_carries_forward_proof_series_context_for_fresh_successor(mo
 
     response = client.get("/efforts/effort-current")
     assert response.status_code == 200
-    assert "Current window</span><code>0</code>" in response.text
-    assert "Series proof</span><code>2</code>" in response.text
+    assert "Current contributions</span><code>0</code>" in response.text
+    assert "Series history</span><code>2</code>" in response.text
     assert "proof cards below carry forward" in response.text
     assert "This goal series already has 2 contributors" in response.text
     assert "current proof window is fresh" in response.text.lower()
@@ -926,7 +926,7 @@ def test_site_server_carries_forward_proof_series_context_for_fresh_successor(mo
     assert "from <code>unknown</code>" not in response.text
     assert "Window</span><code>carried</code>" in response.text
     assert "carried forward from an earlier proof window in this series" in response.text
-    assert "Proof-series claim signals" in response.text
+    assert "Goal-series findings" in response.text
     assert "reduce depth from 8 to 4" in response.text
 
 

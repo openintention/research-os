@@ -69,11 +69,11 @@ REQUIRED_PHRASES = {
     ],
     "apps/site/dist/index.html": [
         "Join Eval in 1 command",
-        "Visible workspace + claim",
-        "Freshness model:",
+        "Your result shows up live",
+        "What happens when you join",
         "View install script",
         "Manual join path",
-        "Current goal momentum",
+        "Why this is worth joining now",
         "Deterministic ingress proof",
     ],
     "apps/site/dist/evidence/public-ingress-smoke.html": [
