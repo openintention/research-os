@@ -88,7 +88,8 @@ def test_run_surface_coherence_check_validates_required_phrases(tmp_path: Path) 
             [
                 "Join Eval in 1 command",
                 "Your result shows up live",
-                "What happens when you join",
+                "See the live Eval goal",
+                "Already happening on Eval",
                 "View install script",
                 "Manual join path",
                 "Why this is worth joining now",

@@ -304,7 +304,7 @@ def _index_html(
     <title>OpenIntention</title>
     <meta
       name="description"
-      content="Turn an ML goal into visible shared progress for humans and agents."
+      content="Make ML work compound instead of disappear."
     >
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -320,20 +320,18 @@ def _index_html(
       <section class="hero hero-grid">
         <div class="hero-copy">
           <div class="eyebrow">OpenIntention · be early</div>
-          <h1>Turn an ML goal into shared progress for humans and agents.</h1>
+          <h1>Make ML work compound instead of disappear.</h1>
           <p class="lede">
-            Most ML experiments disappear into local runs, branches, and chat logs. OpenIntention
-            turns a seeded ML goal into a live page where people and agents can leave progress
-            behind instead of starting over from scratch.
+            Join a live ML goal in one command. Your result shows up on the goal page so the next
+            person or agent can continue from it.
           </p>
           <p class="sublede">
-            Start with the seeded Eval goal. It takes about five minutes, needs no special
-            hardware, and gives you a live result page, a recorded finding or reproduction, and a
-            handoff the next contributor can continue.
+            Start with Eval: about five minutes, no special hardware, and a visible result or
+            reproduction you can hand off.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#join-eval">Join Eval in 1 command</a>
-            <a class="button secondary" href="/efforts">Watch live goals</a>
+            <a class="button secondary" href="/efforts">See the live Eval goal</a>
           </div>
           <div class="hero-trust">
             <span>5 minutes</span>
@@ -341,8 +339,8 @@ def _index_html(
             <span>Your result shows up live</span>
           </div>
           <p class="hero-note">
-            Run one command, leave visible work behind, and hand the same goal page to the next
-            person or agent.
+            Run one command. Leave visible work behind. Hand the same goal page to the next
+            contributor.
           </p>
         </div>
         <aside class="hero-proof">
@@ -351,32 +349,25 @@ def _index_html(
               <div class="shell-dots" aria-hidden="true">
                 <span></span><span></span><span></span>
               </div>
-              <div class="shell-title">default goal · already live</div>
+              <div class="shell-title">eval goal · already live</div>
             </div>
-            <div class="proof-label">What happens when you join</div>
-            <ul class="proof-list">
-              <li>
-                <strong>Your experiment shows up on a live goal page.</strong>
-                <span>Your work lands in shared hosted state instead of staying trapped in a local loop.</span>
-              </li>
-              <li>
-                <strong>Your finding stays attached to the goal.</strong>
-                <span>The next person can inspect your claim or reproduction instead of repeating your first step.</span>
-              </li>
-              <li>
-                <strong>The next contributor gets a clear handoff.</strong>
-                <span>The goal page and discussion mirror make it obvious what happened and what to try next.</span>
-              </li>
-            </ul>
-            <div class="proof-divider"></div>
             <div class="proof-label">Already happening on Eval</div>
             <p class="proof-summary">
-              {escape(_humanize_best_result(eval_effort.best_current_result) or "The default goal already has visible record-setting work.")}
+              {escape(_humanize_best_result(eval_effort.best_current_result) or "Eval already has visible progress to build on.")}
             </p>
-            <p class="footer-note">{escape(_humanize_handoff(eval_effort.latest_visible_handoff) or "A newcomer can join the default goal and continue from a real handoff.")}</p>
+            <ul class="proof-list">
+              <li>
+                <strong>{escape(eval_effort.visible_participants)} people are already here.</strong>
+                <span>{escape(eval_effort.attached_workspaces)} visible contributions are already attached to this goal.</span>
+              </li>
+              <li>
+                <strong>Latest handoff.</strong>
+                <span>{escape(_humanize_handoff(eval_effort.latest_visible_handoff) or "A newcomer can join the goal and continue from a real handoff.")}</span>
+              </li>
+            </ul>
             <div class="card-links">
-              <a href="/efforts">Open live goals</a>
-              <a href="./evidence/eval-effort.html">Read the Eval brief</a>
+              <a href="/efforts">See the live Eval goal</a>
+              <a href="./evidence/repeated-external-participation.html">See a real contribution</a>
             </div>
           </div>
         </aside>

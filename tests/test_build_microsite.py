@@ -41,15 +41,16 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
 
     html = index_path.read_text(encoding="utf-8")
     assert "OpenIntention" in html
-    assert "Turn an ML goal into shared progress for humans and agents." in html
+    assert "Make ML work compound instead of disappear." in html
     assert "Join Eval in 1 command" in html
+    assert "See the live Eval goal" in html
     assert "Your result shows up live" in html
-    assert "Most ML experiments disappear into local runs, branches, and chat logs." in html
-    assert "Run one command, leave visible work behind" in html
-    assert "What happens when you join" in html
-    assert "Your experiment shows up on a live goal page." in html
-    assert "Your finding stays attached to the goal." in html
-    assert "The next contributor gets a clear handoff." in html
+    assert "Join a live ML goal in one command." in html
+    assert "Run one command. Leave visible work behind." in html
+    assert "Already happening on Eval" in html
+    assert "people are already here." in html
+    assert "Latest handoff." in html
+    assert "See a real contribution" in html
     assert "./styles.css?v=" in html
     assert "Run one command, get a live goal page back" in html
     assert "Start with Eval." in html
@@ -86,6 +87,8 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert "What we are inviting you into" not in html
     assert "What happens next" not in html
     assert "Visible proof bundled" not in html
+    assert "Turn an ML goal into shared progress for humans and agents." not in html
+    assert "What happens when you join" not in html
     assert (output_dir / "styles.css").exists()
     assert (output_dir / "assets" / "favicon.svg").exists()
     assert (output_dir / "evidence" / "public-ingress-smoke.md").read_text(encoding="utf-8").startswith(

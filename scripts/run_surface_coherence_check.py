@@ -70,7 +70,8 @@ REQUIRED_PHRASES = {
     "apps/site/dist/index.html": [
         "Join Eval in 1 command",
         "Your result shows up live",
-        "What happens when you join",
+        "See the live Eval goal",
+        "Already happening on Eval",
         "View install script",
         "Manual join path",
         "Why this is worth joining now",
