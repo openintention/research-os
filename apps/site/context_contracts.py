@@ -52,6 +52,7 @@ class MicrositeIndexContext(AssetContext):
     participation_excerpt: str
     eval_effort: MicrositeEffortOverview
     inference_effort: MicrositeEffortOverview
+    generated_at: str
     default_join_command: str
     inference_join_command: str
     styles_version: str

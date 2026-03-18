@@ -17,6 +17,7 @@ def build_index_context(
     participation_excerpt: str,
     eval_effort: MicrositeEffortOverview,
     inference_effort: MicrositeEffortOverview,
+    generated_at: str,
     default_join_command: str,
     inference_join_command: str,
     styles_version: str,
@@ -29,6 +30,7 @@ def build_index_context(
         participation_excerpt=participation_excerpt,
         eval_effort=eval_effort,
         inference_effort=inference_effort,
+        generated_at=generated_at,
         default_join_command=default_join_command,
         inference_join_command=inference_join_command,
         styles_version=styles_version,
@@ -57,6 +59,7 @@ def render_index_page(context: MicrositeIndexContext) -> str:
         participation_excerpt=context.participation_excerpt,
         eval_effort=context.eval_effort,
         inference_effort=context.inference_effort,
+        generated_at=context.generated_at,
         repo_url=context.repo_url,
         default_join_command=context.default_join_command,
         inference_join_command=context.inference_join_command,
@@ -128,6 +131,7 @@ def _index_html(
     participation_excerpt: str,
     eval_effort: MicrositeEffortOverview,
     inference_effort: MicrositeEffortOverview,
+    generated_at: str,
     repo_url: str | None,
     default_join_command: str,
     inference_join_command: str,
@@ -197,6 +201,10 @@ def _index_html(
           <p class="hero-note">
             Run one command. Leave visible work behind. Hand the same goal page to the next
             contributor.
+          </p>
+          <p class="footer-note">
+            Homepage is a generated snapshot from {escape(generated_at)} UTC. Live contribution
+            state lives in /efforts.
           </p>
         </div>
         <aside class="hero-proof">

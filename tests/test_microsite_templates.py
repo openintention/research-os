@@ -31,6 +31,7 @@ def test_microsite_index_rendered_output_matches_internal_renderer(tmp_path: Pat
         participation_excerpt=participation_excerpt,
         eval_effort=_parse_effort_overview(eval_brief),
         inference_effort=_parse_effort_overview(inference_brief),
+        generated_at="2026-03-19 00:00:00",
         default_join_command="curl -fsSL https://openintention.io/join | bash",
         inference_join_command="curl -fsSL https://openintention.io/join | bash -- --profile inference-sprint",
         styles_version="abcdef1234",
@@ -45,6 +46,7 @@ def test_microsite_index_rendered_output_matches_internal_renderer(tmp_path: Pat
     assert "Join Eval in 1 command" in rendered
     assert "See a real contribution" in rendered
     assert "gives you a live goal URL that points back to your contribution" in rendered
+    assert "Homepage is a generated snapshot from 2026-03-19 00:00:00 UTC." in rendered
     assert "Prefer not to use <code>curl | bash</code>?" in rendered
     assert "https://github.com/example/openintention" in rendered
     assert "Open the GitHub repo" in rendered

@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from html import escape
 import os
+from datetime import UTC, datetime
 import sys
 from pathlib import Path
 import shutil
@@ -111,6 +112,7 @@ def build_microsite(
         participation_excerpt=participation_excerpt,
         eval_effort=eval_effort,
         inference_effort=inference_effort,
+        generated_at=datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
         default_join_command=default_join_command,
         inference_join_command=inference_join_command,
         styles_version=styles_version,

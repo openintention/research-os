@@ -108,7 +108,12 @@ def build_join_report(result: HostedJoinResult) -> str:
     )
     return "\n".join(
         [
-            "# Joined OpenIntention",
+            "# OpenIntention Join Result",
+            "",
+            "## Success",
+            f"- ✅ You successfully joined `{result.effort_name or 'an open goal'}` on the hosted control plane.",
+            f"- 🎯 Your progress is visible on: `{effort_url}`.",
+            f"- 🧩 Share this goal link with your next human or agent and continue from there.",
             "",
             "## Joined",
             f"- Actor: `{result.actor_id}`",
@@ -125,12 +130,12 @@ def build_join_report(result: HostedJoinResult) -> str:
             f"- Live goal page: `{effort_url}`",
             f"- Workspace discussion: `{discussion_url}`",
             "- The live goal URL is intended to land back on your own highlighted contribution.",
-            "- Hand the live goal page or this report to the next human or agent.",
+            "- Share the live goal URL with the next person or agent so they can continue with this context.",
             "",
             "## Verifier-Ready Provenance",
             *(result.provenance_snippet if result.provenance_snippet else ["- Not available yet."]),
             "",
-            "## Command Output",
+            "## Raw command output",
             "```text",
             result.output.strip(),
             "```",
@@ -207,9 +212,14 @@ def main() -> None:
         bootstrap_environment=not args.no_bootstrap,
     )
     report_text = report_path.read_text(encoding="utf-8")
+    success_url = _live_goal_url_from_report(report_text)
+    print()
+    print("✅ Join complete. Your contribution is now visible.")
+    print(f"Live goal page: {success_url}")
+    print("➡️  Next step: hand this link and this next report to the next person or agent.")
     print()
     print(report_text)
-    print(f"live_goal_url={_live_goal_url_from_report(report_text)}")
+    print(f"live_goal_url={success_url}")
     print(f"report_path={report_path}")
 
 

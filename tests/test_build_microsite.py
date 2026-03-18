@@ -65,6 +65,9 @@ def test_build_microsite_generates_index_and_copies_evidence(tmp_path):
     assert f"./styles.css?v={expected_styles_hash}" in html
     assert f"./site.js?v={expected_script_hash}" in html
     assert "Run one command, get a live goal page back" in html
+    assert "Homepage is a generated snapshot from" in html
+    assert "Live contribution" in html
+    assert "state lives in /efforts." in html
     assert "Start with Eval." in html
     assert "Prefer performance work?" in html
     assert "Prefer not to use <code>curl | bash</code>?" in html
