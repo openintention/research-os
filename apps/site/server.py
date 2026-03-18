@@ -424,10 +424,10 @@ def _render_effort_index_card(*, public_api_base_url: str, effort: dict[str, obj
       <h2>{escape(str(effort_model.name))}</h2>
       <p>{escape(state["description"])}</p>
       <ul class="link-list">
-        <li>Objective: <code>{escape(str(effort_model.objective))}</code></li>
-        <li>Platform: <code>{escape(str(effort_model.platform))}</code></li>
-        <li>Budget seconds: <code>{escape(str(effort_model.budget_seconds))}</code></li>
-        <li>Attached workspaces: <code>{len(effort_model.workspace_ids)}</code></li>
+        <li>Goal metric: <code>{escape(str(effort_model.objective))}</code></li>
+        <li>Environment: <code>{escape(str(effort_model.platform))}</code></li>
+        <li>Time budget: <code>{escape(str(effort_model.budget_seconds))}s</code></li>
+        <li>Visible contributions: <code>{len(effort_model.workspace_ids)}</code></li>
         {f'<li>Current successor: <code>{escape(str(effort_model.successor_effort_id))}</code></li>' if effort_model.successor_effort_id else ''}
       </ul>
       <div class="hero-actions">
@@ -641,6 +641,31 @@ def _effort_detail_html(
             f'The proof cards below carry forward <code>{carried_workspace_count}</code> earlier handoff'
             f'{"s" if carried_workspace_count != 1 else ""} from this proof series.</p>'
         )
+    effort_summary_core_pills: list[tuple[str, str]] = [
+        ("Objective", str(effort.objective)),
+        ("Platform", str(effort.platform)),
+        ("Budget", f"{str(effort.budget_seconds)}s"),
+        (
+            "Current contributions" if proof_surface.carries_forward else "Contributions",
+            str(len(current_workspace_models)),
+        ),
+        (
+            "Current findings" if proof_surface.carries_forward else "Findings",
+            str(len(current_claim_models)),
+        ),
+        ("Frontier", str(len(frontier_members))),
+    ]
+    effort_summary_detail_pills = [
+        *effort_summary_core_pills,
+        ("Series history", str(len(display_workspace_models))) if proof_surface.carries_forward else ("", ""),
+        ("Lifecycle", "historical proof run") if is_historical_proof_effort(effort) else ("", ""),
+        ("Successor", str(effort.successor_effort_id)) if effort.successor_effort_id else ("", ""),
+        ("Window version", str(proof_version(effort))) if is_public_proof_effort(effort) else ("", ""),
+    ]
+    effort_summary_pills = _render_state_pill_list(effort_summary_core_pills, max_items=3)
+    effort_metric_pills = _render_state_pill_list(
+        [stat for stat in effort_summary_detail_pills if stat[0]],
+    )
     machine_state_lede = (
         "This lower section keeps raw state visible for agents and technical users while carrying forward earlier proof-window context in the same proof series."
         if proof_surface.carries_forward
@@ -685,62 +710,10 @@ def _effort_detail_html(
 
         {join_success_section}
 
-        <section class="panel grid two effort-summary-grid">
-          <div class="summary-stack">
-            <div class="summary-card">
-              <div class="effort-type">What's working best right now</div>
-              <p class="summary-headline">{escape(best_result)}</p>
-            </div>
-            <div class="summary-card">
-              <div class="effort-type">Latest finding</div>
-              <p class="summary-headline">{escape(latest_claim)}</p>
-            </div>
-            <div class="summary-card">
-              <div class="effort-type">What to try next</div>
-              <p class="summary-headline">{escape(next_move)}</p>
-            </div>
-            {goal_contract_card}
-            <ul class="state-pills">
-              <li><span>Objective</span><code>{escape(str(effort.objective))}</code></li>
-              <li><span>Platform</span><code>{escape(str(effort.platform))}</code></li>
-              <li><span>Budget</span><code>{escape(str(effort.budget_seconds))}s</code></li>
-              <li><span>{'Current contributions' if proof_surface.carries_forward else 'Contributions'}</span><code>{len(current_workspace_models)}</code></li>
-              <li><span>{'Current findings' if proof_surface.carries_forward else 'Findings'}</span><code>{len(current_claim_models)}</code></li>
-              <li><span>Frontier</span><code>{len(frontier_members)}</code></li>
-              {f'<li><span>Series history</span><code>{len(display_workspace_models)}</code></li>' if proof_surface.carries_forward else ''}
-              {'<li><span>Lifecycle</span><code>historical proof run</code></li>' if is_historical_proof_effort(effort) else ''}
-              {f'<li><span>Successor</span><code>{escape(str(effort.successor_effort_id))}</code></li>' if effort.successor_effort_id else ''}
-              {f'<li><span>Window version</span><code>{escape(str(proof_version(effort)))}</code></li>' if is_public_proof_effort(effort) else ''}
-            </ul>
-            {carry_forward_note}
-            <p class="footer-note">This page is reading the live hosted goal state right now.</p>
-          </div>
-          <div id="join-this-effort" class="summary-card join-summary-card">
-            <div class="effort-type">Join this goal</div>
-            <h2>Pick up the current line of work</h2>
-            <p>Pick up the current line of work on this goal, then leave behind a workspace, a claim or reproduction, and an inspectable brief for the next participant.</p>
-            <p class="command">{escape(join_command)}</p>
-            <ul>
-              <li>Brief: <code>{escape(join_brief)}</code></li>
-              <li>Optional attribution: add <code>--actor-id &lt;handle&gt;</code></li>
-            </ul>
-          </div>
-        </section>
-
         <section class="panel">
           <div class="eyebrow">How this goal is moving</div>
           <h2>How people are moving this goal forward</h2>
           <p class="section-lede">{escape(proof_summary_line)}</p>
-          <ul class="state-pills proof-stat-pills">
-            <li><span>Contributors</span><code>{proof.contributor_count}</code></li>
-            <li><span>Visible handoffs</span><code>{proof.visible_handoff_count}</code></li>
-            <li><span>Runs</span><code>{proof.successful_run_count}</code></li>
-            <li><span>Claims</span><code>{proof.claim_count}</code></li>
-            <li><span>Reproductions</span><code>{proof.reproduction_count}</code></li>
-            <li><span>Record setters</span><code>{proof.record_setter_count}</code></li>
-            {'<li><span>Adoptions</span><code>%s</code></li>' % proof.adoption_count if proof.adoption_count else ''}
-            {'<li><span>Repeat contributors</span><code>%s</code></li>' % proof.repeat_contributor_count if proof.repeat_contributor_count else ''}
-          </ul>
           <div class="proof-surface-grid">
             <article class="result-card shell-card">
               <div class="shell-bar">
@@ -776,6 +749,47 @@ def _effort_detail_html(
               }
             </article>
           </div>
+          <ul class="state-pills proof-stat-pills">
+            <li><span>Contributors</span><code>{proof.contributor_count}</code></li>
+            <li><span>Visible handoffs</span><code>{proof.visible_handoff_count}</code></li>
+            <li><span>Runs</span><code>{proof.successful_run_count}</code></li>
+            <li><span>Claims</span><code>{proof.claim_count}</code></li>
+            <li><span>Reproductions</span><code>{proof.reproduction_count}</code></li>
+            <li><span>Record setters</span><code>{proof.record_setter_count}</code></li>
+            {'<li><span>Adoptions</span><code>%s</code></li>' % proof.adoption_count if proof.adoption_count else ''}
+            {'<li><span>Repeat contributors</span><code>%s</code></li>' % proof.repeat_contributor_count if proof.repeat_contributor_count else ''}
+          </ul>
+        </section>
+
+        <section class="panel grid two effort-summary-grid">
+          <div class="summary-stack">
+            <div class="summary-card">
+              <div class="effort-type">What's working best right now</div>
+              <p class="summary-headline">{escape(best_result)}</p>
+            </div>
+            <div class="summary-card">
+              <div class="effort-type">Latest finding</div>
+              <p class="summary-headline">{escape(latest_claim)}</p>
+            </div>
+            <div class="summary-card">
+              <div class="effort-type">What to try next</div>
+              <p class="summary-headline">{escape(next_move)}</p>
+            </div>
+            {goal_contract_card}
+            {effort_summary_pills}
+            {carry_forward_note}
+            <p class="footer-note">This page is reading the live hosted goal state right now.</p>
+          </div>
+          <div id="join-this-effort" class="summary-card join-summary-card">
+            <div class="effort-type">Join this goal</div>
+            <h2>Pick up the current line of work</h2>
+            <p>Pick up the current line of work on this goal, then leave behind a workspace, a claim or reproduction, and an inspectable brief for the next participant.</p>
+            <p class="command">{escape(join_command)}</p>
+            <ul>
+              <li>Brief: <code>{escape(join_brief)}</code></li>
+              <li>Optional attribution: add <code>--actor-id &lt;handle&gt;</code></li>
+            </ul>
+          </div>
         </section>
 
         <section class="panel">
@@ -802,6 +816,7 @@ def _effort_detail_html(
           <div class="eyebrow">Full live goal state</div>
           <h2>Machine-readable goal state</h2>
           <p class="section-lede">{escape(machine_state_lede)}</p>
+          {effort_metric_pills}
           <section class="grid two">
           <div>
             <h2>{'Frontier context' if proof_surface.carries_forward else 'Frontier'}</h2>
@@ -1627,6 +1642,25 @@ def _is_better_run_event(candidate: EventEnvelope, existing: EventEnvelope) -> b
     if candidate_direction == "min":
         return candidate_metric < existing_metric
     return candidate_metric > existing_metric
+
+
+def _render_state_pill_list(
+    stats: list[tuple[str, str]],
+    *,
+    max_items: int | None = None,
+    compact: bool = False,
+) -> str:
+    rendered = stats
+    if max_items is not None:
+        rendered = rendered[:max_items]
+    if not rendered:
+        return ""
+    compact_class = " compact" if compact else ""
+    pills = "\n".join(
+        f'<li><span>{escape(label)}</span><code>{escape(value)}</code></li>'
+        for label, value in rendered
+    )
+    return f'<ul class="state-pills{compact_class}">{pills}</ul>'
 
 
 def _render_goal_contract_card(effort: EffortView) -> str:

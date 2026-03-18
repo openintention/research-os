@@ -119,6 +119,10 @@ def test_site_server_renders_effort_index_from_live_api(monkeypatch, tmp_path):
     assert response.status_code == 200
     assert "Live external-harness goal" in response.text
     assert "Live goal, proxy join path" in response.text
+    assert "Goal metric:" in response.text
+    assert "Environment:" in response.text
+    assert "Time budget:" in response.text
+    assert "Attached workspaces" not in response.text
     assert "/efforts/effort-1" in response.text
     assert "/efforts/effort-2" in response.text
     assert "https://api.example.com/api/v1/publications/efforts/effort-1" in response.text
@@ -425,6 +429,17 @@ def test_site_server_renders_effort_detail_from_live_api(monkeypatch, tmp_path):
     assert "/api/v1/publications/workspaces/workspace-beta/discussion" in response.text
     assert "claim-beta" in response.text
     assert "snap-beta" in response.text
+    assert response.text.index("Best-so-far progression") < response.text.index("What's working best right now")
+    effort_summary_section_start = response.text.index('<section class="panel grid two effort-summary-grid"')
+    effort_summary_section_end = response.text.index(
+        '<section class="panel">',
+        effort_summary_section_start + 1,
+    )
+    effort_summary_section = response.text[effort_summary_section_start:effort_summary_section_end]
+    assert "<span>Frontier</span><code>" not in effort_summary_section
+    assert '<span>Objective</span><code>val_bpb</code>' in effort_summary_section
+    machine_state_section_start = response.text.index('<section class="panel machine-state-panel"')
+    assert "<span>Frontier</span><code>1</code>" in response.text[machine_state_section_start:]
 
 
 def test_site_server_highlights_joined_contribution_on_goal_page(monkeypatch, tmp_path):
