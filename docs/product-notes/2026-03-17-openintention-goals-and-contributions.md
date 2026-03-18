@@ -14,6 +14,9 @@ It builds on:
 - `docs/product-notes/2026-03-10-openintention-brand-architecture.md`
 - `docs/product-notes/2026-03-17-goal-to-effort-translation.md`
 
+Refined by:
+- `docs/product-notes/2026-03-18-publish-goal-cta-and-honesty-gap.md`
+
 ## The gap
 
 Most ML research and autonomous work does not compound.
