@@ -112,6 +112,7 @@ def create_site_app(
     *,
     api_base_url: str | None = None,
     api_fetch_base_url: str | None = None,
+    site_base_url: str | None = None,
 ) -> FastAPI:
     dist_root = dist_dir or Path(__file__).resolve().parent / "dist"
     assets_root = dist_root / "assets"
@@ -127,6 +128,13 @@ def create_site_app(
         or os.getenv("OPENINTENTION_API_FETCH_BASE_URL")
         or normalized_public_api_base_url
     ).rstrip("/")
+    normalized_site_base_url = (
+        site_base_url
+        or os.getenv("OPENINTENTION_SITE_BASE_URL")
+        or None
+    )
+    if normalized_site_base_url is not None:
+        normalized_site_base_url = normalized_site_base_url.rstrip("/")
     assets_root.mkdir(parents=True, exist_ok=True)
     evidence_root.mkdir(parents=True, exist_ok=True)
     app = FastAPI(title="OpenIntention Site", docs_url=None, redoc_url=None, openapi_url=None)
@@ -167,7 +175,7 @@ def create_site_app(
         )
         effort_id = str(created["effort_id"])
         actor_id = str(payload.get("actor_id") or "unknown")
-        site_base_url = str(request.base_url).rstrip("/")
+        site_base_url = _resolve_site_base_url(request, configured_base_url=normalized_site_base_url)
         return {
             **created,
             "goal_page_url": f"{site_base_url}/efforts/{effort_id}",
@@ -309,6 +317,16 @@ def _post_json(
         except json.JSONDecodeError:
             detail = detail_text
         raise HTTPException(status_code=exc.code, detail=detail) from exc
+
+
+def _resolve_site_base_url(request: Request, *, configured_base_url: str | None) -> str:
+    if configured_base_url:
+        return configured_base_url
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    if forwarded_proto and forwarded_host:
+        return f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+    return str(request.base_url).rstrip("/")
 
 
 def _effort_index_html(*, public_api_base_url: str, efforts: list[dict[str, object]]) -> str:

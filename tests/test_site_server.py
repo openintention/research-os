@@ -1134,6 +1134,56 @@ def test_site_server_proxies_publish_goal_and_returns_join_command(monkeypatch, 
     assert payload["author_id"] == "goal-author"
 
 
+def test_site_server_publish_uses_forwarded_https_headers(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    assets_dir = dist_dir / "assets"
+    evidence_dir = dist_dir / "evidence"
+    assets_dir.mkdir(parents=True)
+    evidence_dir.mkdir(parents=True)
+    (dist_dir / "index.html").write_text("<html><body>OpenIntention</body></html>", encoding="utf-8")
+    (dist_dir / "styles.css").write_text("body {}", encoding="utf-8")
+    (assets_dir / "favicon.svg").write_text("<svg></svg>", encoding="utf-8")
+
+    monkeypatch.setattr(
+        "apps.site.server._post_json",
+        lambda api_base_url, path, payload: {
+            "effort_id": "effort-published",
+            "bootstrap_event_id": "event-effort-published",
+            "goal_path": "/efforts/effort-published",
+            "join_mode": "tiny-loop-proxy",
+        },
+    )
+    client = TestClient(create_site_app(dist_dir, api_fetch_base_url="http://api.internal:8080"))
+
+    response = client.post(
+        "/publish",
+        json={
+            "title": "Improve validation loss on cpu",
+            "summary": "Create a visible public goal with a clear handoff for the next contributor.",
+            "objective": "val_loss",
+            "metric_name": "validation loss",
+            "direction": "min",
+            "platform": "cpu",
+            "budget_seconds": 300,
+            "constraints": ["Keep runtime under five minutes."],
+            "evidence_requirement": "Leave behind one run and one finding.",
+            "stop_condition": "Stop after the first verified improvement.",
+            "actor_id": "goal-author",
+        },
+        headers={
+            "x-forwarded-proto": "https",
+            "x-forwarded-host": "openintention.io",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["goal_page_url"] == "https://openintention.io/efforts/effort-published"
+    assert payload["join_command"].startswith(
+        "curl -fsSL https://openintention.io/join | bash -s -- --effort-id effort-published"
+    )
+
+
 def test_site_server_renders_goal_contract_for_user_published_goal(monkeypatch, tmp_path):
     dist_dir = tmp_path / "dist"
     assets_dir = dist_dir / "assets"
