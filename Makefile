@@ -1,4 +1,4 @@
-.PHONY: install run test seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window overnight-worker export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-overnight-worker smoke-mlx-history smoke-surface-coherence smoke-production verify-gate backup-runtime restore-runtime backup-production build-microsite
+.PHONY: install run test verify-test-environment seed lint openapi rebuild-frontier rebuild-claims tiny-loop nightly-window overnight-worker export-effort-briefs smoke-first-user smoke-public-ingress smoke-shared-participation smoke-nightly-window smoke-overnight-worker smoke-mlx-history smoke-surface-coherence smoke-production verify-gate backup-runtime restore-runtime backup-production build-microsite
 
 PYTHON ?= python3
 
@@ -8,8 +8,11 @@ install:
 run:
 	uvicorn apps.api.main:app --reload
 
-test:
+test: verify-test-environment
 	$(PYTHON) -m pytest
+
+verify-test-environment:
+	$(PYTHON) scripts/verify_test_environment.py
 
 seed:
 	$(PYTHON) scripts/seed_demo.py --reset

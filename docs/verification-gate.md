@@ -73,6 +73,7 @@ Commands:
 
 ```bash
 ruff check .
+python3 scripts/verify_test_environment.py
 pytest -q
 ```
 

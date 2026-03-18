@@ -60,6 +60,13 @@ pip install -e .
 python3 scripts/join_openintention.py --no-bootstrap
 ```
 
+For local test runs (including `pytest -q`), install development dependencies:
+
+```bash
+python3 -m pip install -e ".[dev]"
+pytest -q
+```
+
 ## Why this exists
 
 Most ML research and autonomous work disappears into:
@@ -196,6 +203,12 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 python3 scripts/seed_demo.py --reset
 uvicorn apps.api.main:app --reload
+```
+
+If pytest fails at collection on `cryptography`, reinstall the environment with:
+
+```bash
+python3 -m pip install -e ".[dev]" --upgrade
 ```
 
 Then inspect:
